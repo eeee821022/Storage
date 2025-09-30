@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<title>老人復健器材市場分析 - RWD互動式報告 (彈出引用版)</title>
+<title>老人復健器材市場分析 - RWD互動式報告</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -13,6 +13,7 @@
         --primary-color: #003366;
         --secondary-color: #0056b3;
         --text-color: #333;
+        --sidebar-width: 280px; /* 側邊欄寬度 */
         --bg-light: #f9f9f9;
         --bg-white: #ffffff;
         --border-color: #e9ecef;
@@ -22,20 +23,50 @@
         background-color: var(--bg-light);
         color: var(--text-color);
     }
+    
+    /* --- START: 側邊欄與主內容區塊排版 --- */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: var(--sidebar-width);
+        background-color: var(--primary-color);
+        color: var(--bg-light);
+        padding: 1.5rem 0;
+        overflow-y: auto;
+        transition: width 0.3s ease;
+    }
     #main-content {
+        margin-left: var(--sidebar-width);
         padding: 20px;
         height: 100vh;
         overflow-y: auto;
+        transition: margin-left 0.3s ease;
     }
+    /* 在窄螢幕上隱藏側邊欄，讓內容全寬 */
+    @media (max-width: 992px) {
+        :root { --sidebar-width: 0px; }
+        #sidebar { display: none; }
+    }
+    /* --- END: 側邊欄與主內容區塊排版 --- */
+
     .page-content { display: none; }
     .page-content.active { display: block; }
 
     h1, h2, h3, h4, h5 { color: var(--primary-color); }
-    h1 { font-size: 2.2em; margin-top: 40px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+    h1 { font-size: 2.2em; margin-top: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
     h2 { font-size: 1.8em; margin-top: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; scroll-margin-top: 20px; }
     h3 { font-size: 1.4em; margin-top: 25px; color: var(--secondary-color); border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;}
     
-    /* --- 上標引用樣式 --- */
+    .highlight {
+        background-color: #fffacd;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+    
+    /* --- START: 上標引用樣式 (優化版) --- */
     sup {
         font-size: 0.7em;
         vertical-align: super;
@@ -43,49 +74,64 @@
     }
     sup a { 
         text-decoration: none; 
-        color: #007bff; 
+        color: #607D8B; /* 改為灰藍色 */
         font-weight: bold; 
-        background-color: rgba(0, 123, 255, 0.1); 
-        padding: 2px 5px; 
+        background-color: transparent; /* 移除背景色 */
+        padding: 2px 3px; 
         border-radius: 4px; 
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: color 0.2s;
     }
-    sup a:hover { background-color: rgba(0, 123, 255, 0.25); }
+    sup a:hover { 
+        color: var(--secondary-color);
+        text-decoration: underline; /* 滑鼠懸浮時改為底線 */
+    }
+    /* --- END: 上標引用樣式 (優化版) --- */
 
-    /* --- Offcanvas 側邊欄樣式 --- */
-    .offcanvas { background-color: var(--primary-color); color: var(--bg-light); }
-    .offcanvas-header { border-bottom: 1px solid var(--secondary-color); }
-    .offcanvas-title { color: var(--bg-white); }
-    .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
-    .offcanvas-body .nav-link { color: #adb5bd; font-size: 1.1rem; padding: 0.75rem 1.5rem; }
-    .offcanvas-body .nav-link:hover { color: var(--bg-white); background-color: var(--secondary-color); }
-    .offcanvas-body .nav-link.active-link { background-color: var(--secondary-color); color: var(--bg-white); font-weight: bold; }
-    .accordion-button { background-color: transparent !important; color: #adb5bd !important; font-size: 1.1rem; padding: 0.75rem 1.5rem; }
-    .accordion-button:not(.collapsed) { box-shadow: none; color: var(--bg-white) !important; }
-    .accordion-button:focus { box-shadow: none; }
-    .accordion-button::after { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23adb5bd'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important; }
-    .accordion-body { padding: 0; }
-    .accordion-item { border: none; background-color: transparent; }
-    .accordion-body .nav-link { padding-left: 3rem; }
+    /* --- START: 側邊欄導覽樣式 --- */
+    #sidebar-header {
+        padding: 0 1.5rem 1rem 1.5rem;
+        border-bottom: 1px solid var(--secondary-color);
+    }
+    #sidebar-header h5 {
+        color: var(--bg-white);
+        margin: 0;
+    }
+    #sidebar .nav-link { 
+        color: #adb5bd; 
+        font-size: 1rem; 
+        padding: 0.7rem 1.5rem; 
+        border-left: 3px solid transparent;
+    }
+    #sidebar .nav-link:hover { 
+        color: var(--bg-white); 
+        background-color: var(--secondary-color);
+        border-left-color: #FFC107;
+    }
+    #sidebar .nav-link.active-main-link { /* 主要分頁啟用樣式 */
+        color: var(--bg-white);
+        font-weight: bold;
+        background-color: var(--secondary-color);
+    }
+    #sidebar .report-nav-link.active-link { /* 報告章節滾動啟用樣式 */
+        color: var(--bg-white);
+        font-weight: bold;
+    }
 
-    /* --- 圖表容器 --- */
+    #sidebar .accordion-button { background-color: transparent !important; color: #adb5bd !important; font-size: 1rem; padding: 0.7rem 1.5rem; }
+    #sidebar .accordion-button:not(.collapsed) { box-shadow: none; color: var(--bg-white) !important; font-weight: bold; }
+    #sidebar .accordion-button:focus { box-shadow: none; }
+    #sidebar .accordion-button::after { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23adb5bd'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important; }
+    #sidebar .accordion-body { padding: 0; }
+    #sidebar .accordion-item { border: none; background-color: transparent; }
+    #sidebar .accordion-body .nav-link { padding-left: 2.5rem; }
+    /* --- END: 側邊欄導覽樣式 --- */
+
     .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 20px; }
     .chart-container { position: relative; height: 350px; width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; }
-    #menu-trigger { position: fixed; top: 15px; left: 15px; z-index: 1030; }
 
-    /* --- START: 引用資料彈出視窗樣式 --- */
     .citation-popup {
-        position: fixed; bottom: 0; left: 0; right: 0;
-        z-index: 1055; /* 比 Bootstrap Offcanvas (1050)更高 */
-        background-color: white;
-        border-top: 1px solid #ccc;
-        box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
-        transform: translateY(100%);
-        transition: transform 0.3s ease-in-out;
-        max-height: 40vh; /* 最大高度為畫面的 40% */
-        display: flex;
-        flex-direction: column;
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 1055; background-color: white; border-top: 1px solid #ccc; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease-in-out; max-height: 40vh; display: flex; flex-direction: column;
     }
     .citation-popup.active { transform: translateY(0); }
     .citation-popup-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
@@ -93,70 +139,59 @@
     .citation-popup-body { padding: 1rem; overflow-y: auto; }
     .citation-popup-body a { font-weight: 500; }
     .citation-backdrop {
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(0,0,0,0.4);
-        z-index: 1054;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s ease-in-out;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.4); z-index: 1054; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out;
     }
     .citation-backdrop.active { opacity: 1; visibility: visible; }
-    /* --- END: 引用資料彈出視窗樣式 --- */
 </style>
 </head>
 <body>
 
-<button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#reportOffcanvas" aria-controls="reportOffcanvas" id="menu-trigger">
-    &#9776; 目錄
-</button>
-  
-<div class="offcanvas offcanvas-start" tabindex="-1" id="reportOffcanvas" aria-labelledby="offcanvasLabel">
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="offcanvasLabel">報告導覽</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+<nav id="sidebar">
+    <div id="sidebar-header">
+        <h5>報告導覽</h5>
     </div>
-    <div class="offcanvas-body">
-        <nav class="nav flex-column">
-            <a class="nav-link" href="#" data-bs-dismiss="offcanvas" onclick="showPage('page-overview')">總覽：AI數據駕駛艙</a>
-            <div class="accordion accordion-flush" id="reportAccordion">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingOne">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">原始報告</button>
-                    </h2>
-                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#reportAccordion">
-                        <div class="accordion-body">
-                             <nav class="nav flex-column">
-                                <a class="nav-link report-nav-link" href="#" data-bs-dismiss="offcanvas" onclick="showPage('page-report', '#section-1')">第一章 執行摘要</a>
-                                <a class="nav-link report-nav-link" href="#" data-bs-dismiss="offcanvas" onclick="showPage('page-report', '#section-2')">第二章 全球與北美市場格局</a>
-                                <a class="nav-link report-nav-link" href="#" data-bs-dismiss="offcanvas" onclick="showPage('page-report', '#section-3')">第三章 復健的必要性</a>
-                                <a class="nav-link report-nav-link" href="#" data-bs-dismiss="offcanvas" onclick="showPage('page-report', '#section-4')">第四章 使用環境分析</a>
-                                <a class="nav-link report-nav-link" href="#" data-bs-dismiss="offcanvas" onclick="showPage('page-report', '#section-5')">第五章 技術採納趨勢</a>
-                                <a class="nav-link report-nav-link" href="#" data-bs-dismiss="offcanvas" onclick="showPage('page-report', '#section-6')">第六章 戰略分析與建議</a>
-                            </nav>
-                        </div>
+    <div class="nav flex-column">
+        <a class="nav-link main-nav-link active-main-link" href="#" onclick="showPage('page-overview', null, this)">總覽：AI數據駕駛艙</a>
+        <div class="accordion accordion-flush" id="reportAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        原始報告
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#reportAccordion">
+                    <div class="accordion-body">
+                         <nav class="nav flex-column">
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-1')">第一章 執行摘要</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-2')">第二章 全球與北美市場格局</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-3')">第三章 復健的必要性</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-4')">第四章 使用環境分析</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-5')">第五章 技術採納趨勢</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-6')">第六章 戰略分析與建議</a>
+                        </nav>
                     </div>
                 </div>
             </div>
-            <a class="nav-link" href="#" data-bs-dismiss="offcanvas" onclick="showPage('page-data-list')">資料列表</a>
-        </nav>
+        </div>
+        <a class="nav-link main-nav-link" href="#" onclick="showPage('page-data-list', null, this)">資料列表</a>
     </div>
-</div>
+</nav>
 
-<div id="main-content">
-    <div class="container pb-5">
+<main id="main-content">
+    <div class="container-fluid pb-5">
         <h1 id="top-title">老人復健器材市場：北美市場動態、使用者行為與技術採納分析</h1>
 
         <div id="page-overview" class="page-content active">
             <h2>AI 深度洞察：數據駕駛艙</h2>
             
             <h3>【市場規模】結構性需求驅動的穩健增長</h3>
-            <p>全球老人復健器材市場正處於一個由人口結構變遷所驅動的長期增長軌道。當前市場估值已達 **155億至220億美元** 級別，並預計以 **5%至8%** 的穩健年均複合增長率（CAGR）擴張，至2030年代初期，市場規模將攀升至 **240億至413億美元** 的龐大規模<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。此增長的核心動力源於全球高齡化及慢性病（特別是肌肉骨骼疾病）盛行率的攀升，這創造了不可逆轉的結構性需求。</p>
+            <p>全球老人復健器材市場正處於一個由人口結構變遷所驅動的長期增長軌道。當前市場估值已達 <span class="highlight">155億至220.4億美元</span> 級別，並預計以 <span class="highlight">4.8%至8.3%</span> 的穩健年均複合增長率（CAGR）擴張，至2034年，市場規模將攀升至 <span class="highlight">412.9億美元</span> 的龐大規模<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。此增長的核心動力源於全球高齡化及慢性病盛行率的攀升（約93%的65歲以上長者患有至少一種慢性病<sup><a href="javascript:void(0)" onclick="showCitation('cite-12')">[12]</a></sup>），這創造了不可逆轉的結構性需求。</p>
             
             <h3>【市場現況】北美主導，雙軌市場成形</h3>
-            <p>目前，**北美市場是全球的重心**，佔據超過 **1/3** 的市場份額，其消費趨勢與技術採納模式是全球市場的風向標<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。市場最顯著的結構性特徵是 **「雙軌生態系」** 的形成：一個是專注於舒適、便利與長期依從性的 **B2C居家復健市場**；另一個是依靠專業指導、高端設備與社交功能的 **B2B社群/臨床市場**。居家市場正成為增長最快的引擎，而社群/臨床機構則依然是設備銷售的主要通路。這意味著單一的產品或通路策略已無法滿足市場的多元化需求。</p>
+            <p>目前，<span class="highlight">北美市場是全球的重心</span>，佔據 <span class="highlight">34.9%至43%</span> 的市場份額，其消費趨勢與技術採納模式是全球市場的風向標<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。市場最顯著的結構性特徵是 <span class="highlight">「雙軌生態系」</span> 的形成：一個是專注於舒適、便利與長期依從性的 <span class="highlight">B2C居家復健市場</span>（兩年後依從率高達68%<sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>）；另一個是依靠專業指導、高端設備與社交功能的 <span class="highlight">B2B社群/臨床市場</span>（佔終端使用者30.3%至48.8%<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>）。居家市場正成為增長最快的引擎，而社群/臨床機構則依然是設備銷售的主要通路。這意味著單一的產品或通路策略已無法滿足市場的多元化需求。</p>
             
             <h3>【未來趨勢】「極簡主義」智慧化，決戰使用者體驗</h3>
-            <p>展望未來，技術的競爭焦點並非功能的疊加，而是 **「極致的易用性」**。儘管老年使用者對新科技（如IoT設備、健康App）的接納度遠超傳統想像，但高達 **64%** 的使用者認為當前科技產品並非為他們設計<sup><a href="javascript:void(0)" onclick="showCitation('cite-41')">[41]</a></sup>。市場的成功關鍵將屬於那些能夠奉行 **「極簡主義設計哲學」** 的企業。未來的智慧復健設備必須在不增加任何操作負擔的前提下，提供超越傳統機械設備的明確價值（如提升動機、保障安全）。能夠深刻理解並回應老年使用者對「價值」與「簡易性」雙重需求的品牌，才能定義下一個十年的市場格局。</p>
+            <p>老年使用者對數位科技的接納度遠超傳統印象，50歲以上成年人中高達<span class="highlight">91%擁有智慧型手機</span>，<span class="highlight">81.4%曾使用過數位健康技術</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-21')">[21]</a></sup>。然而，市場採納面臨一道「易用性之牆」：高達<span class="highlight">59%至64%</span>的老年人認為當今科技並非為他們設計<sup><a href="javascript:void(0)" onclick="showCitation('cite-21')">[21]</a></sup>。<span class="highlight">可用性與複雜性是首要障礙</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-24')">[24]</a></sup>。因此，智慧設備的成功關鍵不在於技術先進，而在於能否提供超越傳統機械設備的明確價值（如提升動機、保障安全），同時保持極簡的操作體驗，以克服使用者在可用性、成本和信任方面的核心障礙。</p>
             
             <div class="chart-grid">
                 <div class="chart-container"><canvas id="globalMarketChart"></canvas></div>
@@ -217,20 +252,20 @@
                 <p>本章節將從市場需求的根本源頭進行探討，分析北美老年人的健康狀況和生活方式如何構成對復健器材的結構性需求，從而回答「市場為何存在及其根本潛力為何」的問題。</p>
                 <h3>慢性病的普遍流行</h3>
                 <p>北美老年人的健康狀況清晰地表明，復健並非一種選擇，而是一種必需。大量的流行病學數據證實，慢性病在這一群體中極為普遍，創造了對復健解決方案的持續性、非任意性需求。</p>
-                <p>根據美國疾病管制與預防中心（CDC）的數據，約有93%的65歲及以上美國老年人報告患有至少一種慢性病，而近80%的人則患有多種慢性病（MCC）<sup><a href="javascript:void(0)" onclick="showCitation('cite-19')">[19]</a></sup>。預測數據更顯示，50歲以上患有至少一種慢性病的成年人數量，將從2020年的7,152萬人幾乎翻倍增長至2050年的1.426億人<sup><a href="javascript:void(0)" onclick="showCitation('cite-21')">[21]</a></sup>。</p>
-                <p>肌肉骨骼疾病是其中最為普遍的問題之一。在美國，每兩位成年人中就有一位患有肌肉骨骼相關疾病<sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>。在加拿大，關節炎是最常見的慢性病，影響著五分之一的成年人（約600萬人），預計到2045年，這一數字將增至900萬人。其中，骨關節炎影響超過400萬加拿大人<sup><a href="javascript:void(0)" onclick="showCitation('cite-22')">[22]</a></sup>。此外，隨著年齡增長而出現的肌肉減少症（Sarcopenia），即與年齡相關的肌肉質量流失，是一種常見但常被低估的合併症，它會顯著加劇對力量訓練和功能性復健的需求<sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup>。</p>
+                <p>根據美國疾病管制與預防中心（CDC）的數據，約有93%的65歲及以上美國老年人報告患有至少一種慢性病，而近80%的人則患有多種慢性病（MCC）<sup><a href="javascript:void(0)" onclick="showCitation('cite-12')">[12]</a></sup>。預測數據更顯示，50歲以上患有至少一種慢性病的成年人數量，將從2020年的7,152萬人幾乎翻倍增長至2050年的1.426億人<sup><a href="javascript:void(0)" onclick="showCitation('cite-35')">[35]</a></sup>。</p>
+                <p>肌肉骨骼疾病是其中最為普遍的問題之一。在美國，每兩位成年人中就有一位患有肌肉骨骼相關疾病<sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>。在加拿大，關節炎是最常見的慢性病，影響著五分之一的成年人（約600萬人），預計到2045年，這一數字將增至900萬人。其中，骨關節炎影響超過400萬加拿大人<sup><a href="javascript:void(0)" onclick="showCitation('cite-36')">[36]</a></sup>。此外，隨著年齡增長而出現的肌肉減少症（Sarcopenia），即與年齡相關的肌肉質量流失，是一種常見但常被低估的合併症，它會顯著加劇對力量訓練和功能性復健的需求<sup><a href="javascript:void(0)" onclick="showCitation('cite-37')">[37]</a></sup>。</p>
                 <h3>「復健缺口」：一個巨大的未開發市場</h3>
                 <p>儘管臨床需求明確，但北美老年人的實際身體活動水平卻普遍偏低，這在需求與實際行為之間形成了一個巨大的「復健缺口」，也代表著巨大的市場潛力。</p>
-                <p>CDC的數據顯示，僅有13.9%的65歲及以上成年人達到了聯邦政府推薦的有氧運動和肌肉強化活動的雙重標準<sup><a href="javascript:void(0)" onclick="showCitation('cite-25')">[25]</a></sup>。在加拿大，情況類似，只有不到15%的59歲以上成年人符合國際身體活動指南的要求<sup><a href="javascript:void(0)" onclick="showCitation('cite-26')">[26]</a></sup>。更令人擔憂的是，客觀測量數據可能揭示了更嚴峻的現實：只有4.5%的60至79歲加拿大人，能夠以建議的10分鐘為單位，每天累積30分鐘的身体活動<sup><a href="javascript:void(0)" onclick="showCitation('cite-27')">[27]</a></sup>。</p>
-                <p>更值得注意的是，有相當一部分老年人（28%至44%）在閒暇時間完全不參與任何身體活動<sup><a href="javascript:void(0)" onclick="showCitation('cite-28')">[28]</a></sup>。這種普遍的靜態生活方式，與他們因慢性病而產生的迫切復健需求形成了鮮明對比。</p>
+                <p>CDC的數據顯示，僅有13.9%的65歲及以上成年人達到了聯邦政府推薦的有氧運動和肌肉強化活動的雙重標準<sup><a href="javascript:void(0)" onclick="showCitation('cite-14')">[14]</a></sup>。在加拿大，情況類似，只有不到15%的59歲以上成年人符合國際身體活動指南的要求<sup><a href="javascript:void(0)" onclick="showCitation('cite-20')">[20]</a></sup>。更令人擔憂的是，客觀測量數據可能揭示了更嚴峻的現實：只有4.5%の60至79歲加拿大人，能夠以建議的10分鐘為單位，每天累積30分鐘的身体活動<sup><a href="javascript:void(0)" onclick="showCitation('cite-39')">[39]</a></sup>。</p>
+                <p>更值得注意的是，有相當一部分老年人（28%至44%）在閒暇時間完全不參與任何身體活動<sup><a href="javascript:void(0)" onclick="showCitation('cite-17')">[17]</a></sup>。這種普遍的靜態生活方式，與他們因慢性病而產生的迫切復健需求形成了鮮明對比。</p>
 
                 <h2 id="section-4">第四章：使用環境：居家與社群復健的雙軌市場</h2>
                 <p>本章節將深入探討老年使用者在何處使用或偏好使用復健器材，揭示出市場並非單一整體，而是由不同環境需求所區隔的多元化市場。</p>
                 <h3>居家復健的興起</h3>
-                <p>居家復健市場正成為一個強勁且快速增長的領域。全球居家復健產品與服務市場在2024年的估值已超過1150億至1500億美元，並以6%至7%的複合年均增長率持續擴張<sup><a href="javascript:void(0)" onclick="showCitation('cite-29')">[29]</a></sup>。北美在這一細分市場中佔據主導地位，份額超過35%<sup><a href="javascript:void(0)" onclick="showCitation('cite-29')">[29]</a></sup>，顯示出居家復健模式在該地區的廣泛接受度。</p>
-                <p>推動居家復健市場增長的關鍵因素包括：舒適與便利性<sup><a href="javascript:void(0)" onclick="showCitation('cite-30')">[30]</a></sup>、個人化護理<sup><a href="javascript:void(0)" onclick="showCitation('cite-32')">[32]</a></sup>、安全性<sup><a href="javascript:void(0)" onclick="showCitation('cite-32')">[32]</a></sup>，以及更高的長期依從性。一項關鍵研究顯示，居家組在兩年後的依從率為68%，而中心組僅為36%<sup><a href="javascript:void(0)" onclick="showCitation('cite-33')">[33]</a></sup>。</p>
+                <p>居家復健市場正成為一個強勁且快速增長的領域。全球居家復健產品與服務市場在2024年的估值已超過1150億至1500億美元，並以6%至7%的複合年均增長率持續擴張<sup><a href="javascript:void(0)" onclick="showCitation('cite-15')">[15]</a></sup>。北美在這一細分市場中佔據主導地位，份額超過35%<sup><a href="javascript:void(0)" onclick="showCitation('cite-15')">[15]</a></sup>，顯示出居家復健模式在該地區的廣泛接受度。</p>
+                <p>推動居家復健市場增長的關鍵因素包括：舒適與便利性<sup><a href="javascript:void(0)" onclick="showCitation('cite-16')">[16]</a></sup>、個人化護理<sup><a href="javascript:void(0)" onclick="showCitation('cite-41')">[41]</a></sup>、安全性<sup><a href="javascript:void(0)" onclick="showCitation('cite-41')">[41]</a></sup>，以及更高的長期依從性。一項關鍵研究顯示，居家組在兩年後的依從率為68%，而中心組僅為36%<sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。</p>
                 <h3>社群與臨床機構的持久角色</h3>
-                <p>儘管居家護理市場蓬勃發展，但醫院、診所和社群中心仍然是整個復健器材市場中最大的終端使用者群體<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。這表明，公共和專業場所提供的價值是家庭環境難以完全替代的，其關鍵因素包括：社交互動<sup><a href="javascript:void(0)" onclick="showCitation('cite-34')">[34]</a></sup>、專業指導與結構化課程<sup><a href="javascript:void(0)" onclick="showCitation('cite-38')">[38]</a></sup>，以及更能激發動力的環境氛圍<sup><a href="javascript:void(0)" onclick="showCitation('cite-39')">[39]</a></sup>。</p>
+                <p>儘管居家護理市場蓬勃發展，但醫院、診所和社群中心仍然是整個復健器材市場中最大的終端使用者群體<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。這表明，公共和專業場所提供的價值是家庭環境難以完全替代的，其關鍵因素包括：社交互動<sup><a href="javascript:void(0)" onclick="showCitation('cite-42')">[42]</a></sup>、專業指導與結構化課程<sup><a href="javascript:void(0)" onclick="showCitation('cite-46')">[46]</a></sup>，以及更能激發動力的環境氛圍<sup><a href="javascript:void(0)" onclick="showCitation('cite-47')">[47]</a></sup>。</p>
                 <h5>表4.1：老年人復健環境比較分析</h5>
                 <table class="table table-striped table-hover">
                     <thead>
@@ -251,13 +286,13 @@
                 <h2 id="section-5">第五章：技術採納：數位創新與傳統簡易性的抉擇</h2>
                 <p>本章節將深入探討最為複雜的問題，即老年人與復健技術之間的微妙關係，分析他們在功能豐富的數位化設備與直觀可靠的傳統機械設備之間的偏好。</p>
                 <h3>破除迷思：數位化參與的老年群體</h3>
-                <p>傳統觀念中老年人對科技產品敬而遠之的刻板印象已不再準確。事實上，當代老年群體對數位科技的接納程度和使用頻率都相當高。根據美國退休人員協會（AARP）的數據，50歲以上的成年人中，高達91%的人擁有智慧型手機，他們在科技產品上的年均支出自疫情前幾乎翻了一倍<sup><a href="javascript:void(0)" onclick="showCitation('cite-41')">[41]</a></sup>。約80%的老年人至少擁有一項有助於「在地安老」（AgeTech）的科技設備<sup><a href="javascript:void(0)" onclick="showCitation('cite-42')">[42]</a></sup>。</p>
+                <p>傳統觀念中老年人對科技產品敬而遠之的刻板印象已不再準確。事實上，當代老年群體對數位科技的接納程度和使用頻率都相當高。根據美國退休人員協會（AARP）的數據，50歲以上的成年人中，高達91%的人擁有智慧型手機，他們在科技產品上的年均支出自疫情前幾乎翻了一倍<sup><a href="javascript:void(0)" onclick="showCitation('cite-21')">[21]</a></sup>。約80%的老年人至少擁有一項有助於「在地安老」（AgeTech）的科技設備<sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup>。2021年的一項調查發現，在50至80歲的美國成年人中，81.4%的人曾使用過數位健康技術（DHT）<sup><a href="javascript:void(0)" onclick="showCitation('cite-22')">[22]</a></sup>。</p>
                 <h3>智慧復健（物聯網/App賦能）的吸引力</h3>
-                <p>老年人對將科技應用於健康管理表現出明顯的興趣。數據顯示，65%的老年人認為應用人工智慧進行健康監測和提升安全性具有吸引力，並相信這能幫助他們更獨立地生活<sup><a href="javascript:void(0)" onclick="showCitation('cite-44')">[44]</a></sup>。智慧設備的潛在優勢十分顯著，包括：即時監測與回饋<sup><a href="javascript:void(0)" onclick="showCitation('cite-29')">[29]</a></sup>、數據視覺化與進度追蹤<sup><a href="javascript:void(0)" onclick="showCitation('cite-46')">[46]</a></sup>、遊戲化與動機提升<sup><a href="javascript:void(0)" onclick="showCitation('cite-47')">[47]</a></sup>，以及遠端監督與指導<sup><a href="javascript:void(0)" onclick="showCitation('cite-49')">[49]</a></sup>。</p>
+                <p>老年人對將科技應用於健康管理表現出明顯的興趣。數據顯示，65%的老年人認為應用人工智慧進行健康監測和提升安全性具有吸引力，並相信這能幫助他們更獨立地生活<sup><a href="javascript:void(0)" onclick="showCitation('cite-49')">[49]</a></sup>。智慧設備的潛在優勢十分顯著，包括：即時監測與回饋<sup><a href="javascript:void(0)" onclick="showCitation('cite-15')">[15]</a></sup>、數據視覺化與進度追蹤<sup><a href="javascript:void(0)" onclick="showCitation('cite-51')">[51]</a></sup>、遊戲化與動機提升<sup><a href="javascript:void(0)" onclick="showCitation('cite-52')">[52]</a></sup>，以及遠端監督與指導<sup><a href="javascript:void(0)" onclick="showCitation('cite-54')">[54]</a></sup>。</p>
                 <h3>「易用性之牆」：數位採納的關鍵障礙</h3>
-                <p>儘管潛力巨大且使用者興趣濃厚，但智慧復健設備的廣泛採納仍面臨著一道難以逾越的「易用性之牆」。高達59%至64%的老年人明確表示，他們認為當今的科技產品並非為他們這個年齡層設計的<sup><a href="javascript:void(0)" onclick="showCitation('cite-41')">[41]</a></sup>。關鍵障礙包括：可用性與複雜性<sup><a href="javascript:void(0)" onclick="showCitation('cite-50')">[50]</a></sup>、成本與可及性<sup><a href="javascript:void(0)" onclick="showCitation('cite-42')">[42]</a></sup>、信任與隱私<sup><a href="javascript:void(0)" onclick="showCitation('cite-44')">[44]</a></sup>、心理因素<sup><a href="javascript:void(0)" onclick="showCitation('cite-50')">[50]</a></sup>，以及感知價值不足<sup><a href="javascript:void(0)" onclick="showCitation('cite-41')">[41]</a></sup>。</p>
+                <p>儘管潛力巨大且使用者興趣濃厚，但智慧復健設備的廣泛採納仍面臨著一道難以逾越的「易用性之牆」。高達59%至64%的老年人明確表示，他們認為當今的科技產品並非為他們這個年齡層設計的<sup><a href="javascript:void(0)" onclick="showCitation('cite-21')">[21]</a></sup>。關鍵障礙包括：可用性與複雜性<sup><a href="javascript:void(0)" onclick="showCitation('cite-24')">[24]</a></sup>、成本與可及性<sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup>、信任與隱私<sup><a href="javascript:void(0)" onclick="showCitation('cite-49')">[49]</a></sup>、心理因素<sup><a href="javascript:void(0)" onclick="showCitation('cite-24')">[24]</a></sup>，以及感知價值不足<sup><a href="javascript:void(0)" onclick="showCitation('cite-21')">[21]</a></sup>。</p>
                 <h3>傳統機械式設備的持久價值</h3>
-                <p>在數位化浪潮中，傳統機械式復健器材因其固有的簡單性和可靠性，對許多老年人而言仍然是首選。其優勢在於：已被證實的有效性與安全性<sup><a href="javascript:void(0)" onclick="showCitation('cite-59')">[59]</a></sup>，以及「零認知負擔」的直觀易用性<sup><a href="javascript:void(0)" onclick="showCitation('cite-37')">[37]</a></sup>。</p>
+                <p>在數位化浪潮中，傳統機械式復健器材因其固有的簡單性和可靠性，對許多老年人而言仍然是首選。其優勢在於：已被證實的有效性與安全性<sup><a href="javascript:void(0)" onclick="showCitation('cite-59')">[59]</a></sup>，以及「零認知負擔」的直觀易用性<sup><a href="javascript:void(0)" onclick="showCitation('cite-45')">[45]</a></sup>。</p>
 
                 <h2 id="section-6">第六章：戰略分析與建議</h2>
                 <p>本章節將前述的市場數據、使用者行為和技術趨勢分析，整合成一個可操作的戰略框架，為產品開發、市場行銷和市場進入策略提供具體指導。</p>
@@ -272,9 +307,9 @@
                 <h3>產品開發建議</h3>
                 <p><b>針對數位/物聯網設備：</b></p>
                 <ul>
-                    <li>奉行「極簡主義」設計哲學，讓老年使用者參與開發過程<sup><a href="javascript:void(0)" onclick="showCitation('cite-53')">[53]</a></sup>。</li>
+                    <li>奉行「極簡主義」設計哲學，讓老年使用者參與開發過程<sup><a href="javascript:void(0)" onclick="showCitation('cite-27')">[27]</a></sup>。</li>
                     <li>聚焦核心價值，如透過遊戲化提升動機，透過跌倒偵測等功能保障安全。</li>
-                    <li>依託熟悉平台，盡量將功能整合到老年人已經熟悉的平台（如智慧型手機App）<sup><a href="javascript:void(0)" onclick="showCitation('cite-44')">[44]</a></sup>。</li>
+                    <li>依託熟悉平台，盡量將功能整合到老年人已經熟悉的平台（如智慧型手機App）<sup><a href="javascript:void(0)" onclick="showCitation('cite-49')">[49]</a></sup>。</li>
                 </ul>
                 <p><b>針對傳統機械設備：</b></p>
                 <ul>
@@ -292,7 +327,7 @@
                 <p><b>針對社群/臨床市場 (B2B)：</b></p>
                 <ul>
                     <li>銷售的核心是向機構證明其投資回報率 (ROI)。</li>
-                    <li>建立與團體採購組織（GPO）、連鎖診所、以及像SilverSneakers這樣的老年人健康計畫的合作關係是關鍵<sup><a href="javascript:void(0)" onclick="showCitation('cite-38')">[38]</a></sup>。</li>
+                    <li>建立與團體採購組織（GPO）、連鎖診所、以及像SilverSneakers這樣的老年人健康計畫的合作關係是關鍵<sup><a href="javascript:void(0)" onclick="showCitation('cite-46')">[46]</a></sup>。</li>
                 </ul>
             </div>
         </div>
@@ -301,60 +336,60 @@
             <h2>引用資料來源</h2>
             <div class="data-list">
                 <ol>
-                    <li id="cite-1"><a href="https://straitsresearch.com/report/rehabilitation-equipment-market" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Size, Demand \& Growth Report ...</a></li>
+                    <li id="cite-1"><a href="https://straitsresearch.com/report/rehabilitation-equipment-market" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Size, Demand & Growth Report ...</a></li>
                     <li id="cite-2"><a href="https://www.gminsights.com/industry-analysis/rehabilitation-equipment-market" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Size -- Trends Report, 2032</a></li>
                     <li id="cite-3"><a href="https://www.maximizemarketresearch.com/market-report/global-rehabilitation-equipment-market/22656/" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Size, Share, Trends and Forecast Analysis (2025-2032)</a></li>
                     <li id="cite-4"><a href="https://market.us/report/global-rehabilitation-equipment-market/" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Size | CAGR Of 4.8%</a></li>
                     <li id="cite-5"><a href="https://www.grandviewresearch.com/industry-analysis/rehabilitation-products-market" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Size | Industry Report, 2030</a></li>
-                    <li id="cite-6"><a href="https://www.thebusinessresearchcompany.com/report/rehabilitation-equipment-global-market-report" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Report 2025 - Analysis \& Outlook</a></li>
+                    <li id="cite-6"><a href="https://www.thebusinessresearchcompany.com/report/rehabilitation-equipment-global-market-report" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Report 2025 - Analysis & Outlook</a></li>
                     <li id="cite-7"><a href="https://www.alliedmarketresearch.com/rehabilitation-equipment-market" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Size, Share | Forecast - 2031</a></li>
                     <li id="cite-8"><a href="https://www.towardshealthcare.com/insights/rehabilitation-equipment-market-sizing" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Surges with 2.4 Billion People Needing Rehab Services</a></li>
                     <li id="cite-9"><a href="https://www.skyquestt.com/report/rehabilitation-equipment-market/companies" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Companies - SkyQuest Technology Consulting</a></li>
                     <li id="cite-10"><a href="https://introspectivemarketresearch.com/reports/rehabilitation-equipment-market-global-industry-growth-and-trend-analysis/" target="_blank" rel="noopener noreferrer">North America Rehabilitation Equipment Market Booming with ...</a></li>
-                    <li id="cite-11"><a href="https://www.grandviewresearch.com/horizon/outlook/rehabilitation-equipment-market/north-america" target="_blank" rel="noopener noreferrer">North America Rehabilitation Equipment Market Size \& Outlook, 2030</a></li>
-                    <li id="cite-12"><a href="https://www.marketsandmarkets.com/Market-Reports/physiotherapy-equipment-market-65250228.html" target="_blank" rel="noopener noreferrer">Physiotherapy Equipment Market Size \& Growth Forecast to 2029</a></li>
-                    <li id="cite-13"><a href="https://www.grandviewresearch.com/industry-analysis/physiotherapy-equipment-market" target="_blank" rel="noopener noreferrer">Physiotherapy Equipment Market Size \& Share Report, 2030</a></li>
-                    <li id="cite-14"><a href="https://www.imarcgroup.com/physiotherapy-equipment-market" target="_blank" rel="noopener noreferrer">Physiotherapy Equipment Market Size, Share | Report, 2033</a></li>
-                    <li id="cite-15"><a href="https://www.biospace.com/press-releases/global-physical-therapy-market-size-and-future-growth-forecast-2025-2035-key-insights-by-custom-market-insights" target="_blank" rel="noopener noreferrer">Global Physical Therapy Market Size and Future Growth Forecast 2025-2035</a></li>
-                    <li id="cite-16"><a href="https://www.factmr.com/report/disabled-and-elderly-assistive-technology-market" target="_blank" rel="noopener noreferrer">Disabled and Elderly Assistive Technology Market - Fact.MR</a></li>
-                    <li id="cite-17"><a href="https://www.marketsandmarkets.com/Market-Reports/rehabilitation-equipment-market-194775519.html" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Growth, Drivers, and Opportunities</a></li>
-                    <li id="cite-18"><a href="https://www.reanin.com/reports/global-elderly-and-disabled-assistive-devices-market" target="_blank" rel="noopener noreferrer">Elderly and Disabled Assistive Devices Market Size \& Share - ReAnIn</a></li>
-                    <li id="cite-19"><a href="https://www.cdc.gov/pcd/issues/2025/pdf/24_0539.pdf" target="_blank" rel="noopener noreferrer">preventing chronic disease - CDC</a></li>
-                    <li id="cite-20"><a href="https://www.cdc.gov/pcd/issues/2025/24_0539.htm" target="_blank" rel="noopener noreferrer">Trends in Multiple Chronic Conditions Among US Adults, By Life Stage... - CDC</a></li>
-                    <li id="cite-21"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9881650/" target="_blank" rel="noopener noreferrer">Projecting the chronic disease burden among the adult population in the United States...</a></li>
-                    <li id="cite-22"><a href="https://arthritis.ca/about-arthritis/what-is-arthritis/arthritis-facts-and-figures" target="_blank" rel="noopener noreferrer">Arthritis Facts, Figures and Statistics</a></li>
-                    <li id="cite-23"><a href="https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2020.583825/full" target="_blank" rel="noopener noreferrer">Prevalence of Sarcopenic Obesity Using Different Definitions...</a></li>
-                    <li id="cite-24"><a href="https://pubmed.ncbi.nlm.nih.gov/32744576/" target="_blank" rel="noopener noreferrer">Sarcopenia Prevalence Using Different Definitions in Older Community-Dwelling Canadians</a></li>
-                    <li id="cite-25"><a href="https://www.ncbi.nlm.nih.gov/books/NBK610676/" target="_blank" rel="noopener noreferrer">Characteristics of Older Adults Who Met Federal Physical Activity Guidelines...</a></li>
-                    <li id="cite-26"><a href="https://kin.educ.ubc.ca/study-finds-seniors-stick-with-fitness-routines-when-they-work-out-together/" target="_blank" rel="noopener noreferrer">Study finds seniors stick with fitness routines when they work out together</a></li>
-                    <li id="cite-27"><a href="https://www150.statcan.gc.ca/n1/pub/82-003-x/2017002/article/14772-eng.htm" target="_blank" rel="noopener noreferrer">Prolonged sedentary time and physical fitness among Canadian men and women aged 60 to 69</a></li>
-                    <li id="cite-28"><a href="https://fallpreventionla.files.wordpress.com/2009/05/bp_physicalactivity.pdf" target="_blank" rel="noopener noreferrer">Best Practices in Physical Activity - WordPress.com</a></li>
-                    <li id="cite-29"><a href="https://media.market.us/home-rehabilitation-products-services-market-news/" target="_blank" rel="noopener noreferrer">Home Rehabilitation Products \& Services Market to Hit $222.8 Billion by 2034</a></li>
-                    <li id="cite-30"><a href="https://www.precedenceresearch.com/home-rehabilitation-products-and-services-market" target="_blank" rel="noopener noreferrer">Home Rehabilitation Products and Services Market Size to Hit USD 274.23 Bn by 2034</a></li>
-                    <li id="cite-31"><a href="https://www.alliedmarketresearch.com/home-rehabilitation-products-market-A16857" target="_blank" rel="noopener noreferrer">Home Rehabilitation Products Market Size \& Share - 2031</a></li>
-                    <li id="cite-32"><a href="https://www.talemhomecare.com/broomfield/5-reasons-rehabilitation-services-at-home-is-the-best-decision/" target="_blank" rel="noopener noreferrer">5 Reasons Rehabilitation Services at Home Is the Best Decision</a></li>
-                    <li id="cite-33"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6464851/" target="_blank" rel="noopener noreferrer">Home versus center based physical activity programs in older adults</a></li>
-                    <li id="cite-34"><a href="https://karmacare.com/best-recreation-and-physical-activity-center/" target="_blank" rel="noopener noreferrer">Recreation and Physical Activity Center for Seniors</a></li>
-                    <li id="cite-35"><a href="https://www.nrpa.org/parks-recreation-magazine/2018/january/senior-center-vs.-community-center/" target="_blank" rel="noopener noreferrer">Senior Center vs. Community Center</a></li>
-                    <li id="cite-36"><a href="https://www.nrpa.org/parks-recreation-magazine/2017/january/older-adults-exploring-their-changing-demographics-and-health-outlook/" target="_blank" rel="noopener noreferrer">Older Adults: Exploring Their Changing Demographics and Health Outlook</a></li>
-                    <li id="cite-37"><a href="https://clinmedjournals.org/articles/jfmdp/journal-of-family-medicine-and-disease-prevention-jfmdp-8-148.php?jid=jfmdp" target="_blank" rel="noopener noreferrer">Elderly Individuals have Similar Attitudes Towards Physical Activity...</a></li>
-                    <li id="cite-38"><a href="https://tools.silversneakers.com/" target="_blank" rel="noopener noreferrer">SilverSneakers | Live \& On‑Demand Fitness Classes for Seniors</a></li>
-                    <li id="cite-39"><a href="https://cflri.ca/publication/sport-participation-by-age/" target="_blank" rel="noopener noreferrer">Sport Participation by age - Canadian Fitness and Lifestyle Research Institute</a></li>
-                    <li id="cite-40"><a href="https://cflri.ca/publication/sport-participation/" target="_blank" rel="noopener noreferrer">Sport Participation - Canadian Fitness and Lifestyle Research Institute</a></li>
-                    <li id="cite-41"><a href="https://www.aarp.org/pri/topics/technology/internet-media-devices/aarp-research-insights-technology/" target="_blank" rel="noopener noreferrer">AARP Research Insights on Technology</a></li>
-                    <li id="cite-42"><a href="https://press.aarp.org/2025-1-8-New-Report-Finds-Growing-Interest-Tech-Aging-Well-Home" target="_blank" rel="noopener noreferrer">New Report Finds Growing Interest in Tech for Aging Well At Home</a></li>
-                    <li id="cite-43"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11736496/" target="_blank" rel="noopener noreferrer">Use of Digital Health Technologies by Older US Adults</a></li>
-                    <li id="cite-44"><a href="https://www.aarp.org/pri/topics/technology/internet-media-devices/artificial-intelligence-survey/" target="_blank" rel="noopener noreferrer">Older Adults are Navigating AI - AARP</a></li>
-                    <li id="cite-45"><a href="https://www.mdpi.com/2076-0825/14/3/133" target="_blank" rel="noopener noreferrer">Next-Generation Tools for Patient Care and Rehabilitation: A Review of Modern Innovations</a></li>
-                    <li id="cite-46"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8212622/" target="_blank" rel="noopener noreferrer">Older Adults' Experiences With Using Wearable Devices</a></li>
-                    <li id="cite-47"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9680329/" target="_blank" rel="noopener noreferrer">The Technology Acceptance Model and Older Adults' Exercise Intentions</a></li>
-                    <li id="cite-48"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12136182/" target="_blank" rel="noopener noreferrer">Smart Wearable Technologies for Balance Rehabilitation in Older Adults...</a></li>
-                    <li id="cite-49"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10544986/" target="_blank" rel="noopener noreferrer">A novel smart somatosensory wearable assistive device for older adults' home rehabilitation...</a></li>
-                    <li id="cite-50"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12464506/" target="_blank" rel="noopener noreferrer">Barriers to and Facilitators of Digital Health Technology Adoption Among Older Adults...</a></li>
-                    <li id="cite-51"><a href="https://www.frontiersin.org/journals/medicine/articles/10.3389/fmed.2025.1483366/full" target="_blank" rel="noopener noreferrer">Addressing barriers to equitable telehealth for older adults</a></li>
-                    <li id="cite-52"><a href="https://journal.gerontechnology.org/archives/2e0cb6b8554b4b50a1077f1449c06fe8.pdf" target="_blank" rel="noopener noreferrer">Exploring the barriers and facilitators which influence mHealth adoption among older adults</a></li>
-                    <li id="cite-53"><a href="https://www.tandfonline.com/doi/full/10.1080/17483107.2023.2239277" target="_blank" rel="noopener noreferrer">A scoping review of the use of intelligent assistive technologies in rehabilitation practice with older adults</a></li>
-                    <li id="cite-54"><a href="https://www.geekwire.com/contributor-content/smart-devices-without-the-fuss-iot-innovations-for-the-senior-market/" target="_blank" rel="noopener noreferrer">Smart Devices Without the Fuss: IoT Innovations for the Senior Market</a></li>
+                    <li id="cite-11"><a href="https://www.grandviewresearch.com/horizon/outlook/rehabilitation-equipment-market/north-america" target="_blank" rel="noopener noreferrer">North America Rehabilitation Equipment Market Size & Outlook, 2030</a></li>
+                    <li id="cite-12"><a href="https://www.cdc.gov/pcd/issues/2025/pdf/24_0539.pdf" target="_blank" rel="noopener noreferrer">preventing chronic disease - CDC</a></li>
+                    <li id="cite-13"><a href="https://www.cdc.gov/pcd/issues/2025/24_0539.htm" target="_blank" rel="noopener noreferrer">Trends in Multiple Chronic Conditions Among US Adults, By Life Stage... - CDC</a></li>
+                    <li id="cite-14"><a href="https://www.ncbi.nlm.nih.gov/books/NBK610676/" target="_blank" rel="noopener noreferrer">Characteristics of Older Adults Who Met Federal Physical Activity Guidelines...</a></li>
+                    <li id="cite-15"><a href="https://media.market.us/home-rehabilitation-products-services-market-news/" target="_blank" rel="noopener noreferrer">Home Rehabilitation Products & Services Market to Hit $222.8 Billion by 2034</a></li>
+                    <li id="cite-16"><a href="https://www.precedenceresearch.com/home-rehabilitation-products-and-services-market" target="_blank" rel="noopener noreferrer">Home Rehabilitation Products and Services Market Size to Hit USD 274.23 Bn by 2034</a></li>
+                    <li id="cite-17"><a href="https://fallpreventionla.files.wordpress.com/2009/05/bp_physicalactivity.pdf" target="_blank" rel="noopener noreferrer">Best Practices in Physical Activity - WordPress.com</a></li>
+                    <li id="cite-18"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6464851/" target="_blank" rel="noopener noreferrer">Home versus center based physical activity programs in older adults</a></li>
+                    <li id="cite-19"><a href="https://www.marketsandmarkets.com/Market-Reports/rehabilitation-equipment-market-194775519.html" target="_blank" rel="noopener noreferrer">Rehabilitation Equipment Market Growth, Drivers, and Opportunities</a></li>
+                    <li id="cite-20"><a href="https://kin.educ.ubc.ca/study-finds-seniors-stick-with-fitness-routines-when-they-work-out-together/" target="_blank" rel="noopener noreferrer">Study finds seniors stick with fitness routines when they work out together</a></li>
+                    <li id="cite-21"><a href="https://www.aarp.org/pri/topics/technology/internet-media-devices/aarp-research-insights-technology/" target="_blank" rel="noopener noreferrer">AARP Research Insights on Technology</a></li>
+                    <li id="cite-22"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11736496/" target="_blank" rel="noopener noreferrer">Use of Digital Health Technologies by Older US Adults</a></li>
+                    <li id="cite-23"><a href="https://press.aarp.org/2025-1-8-New-Report-Finds-Growing-Interest-Tech-Aging-Well-Home" target="_blank" rel="noopener noreferrer">New Report Finds Growing Interest in Tech for Aging Well At Home</a></li>
+                    <li id="cite-24"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12464506/" target="_blank" rel="noopener noreferrer">Barriers to and Facilitators of Digital Health Technology Adoption Among Older Adults...</a></li>
+                    <li id="cite-25"><a href="https://www.frontiersin.org/journals/medicine/articles/10.3389/fmed.2025.1483366/full" target="_blank" rel="noopener noreferrer">Addressing barriers to equitable telehealth for older adults</a></li>
+                    <li id="cite-26"><a href="https://journal.gerontechnology.org/archives/2e0cb6b8554b4b50a1077f1449c06fe8.pdf" target="_blank" rel="noopener noreferrer">Exploring the barriers and facilitators which influence mHealth adoption among older adults</a></li>
+                    <li id="cite-27"><a href="https://www.tandfonline.com/doi/full/10.1080/17483107.2023.2239277" target="_blank" rel="noopener noreferrer">A scoping review of the use of intelligent assistive technologies in rehabilitation practice with older adults</a></li>
+                    <li id="cite-28"><a href="https://www.geekwire.com/contributor-content/smart-devices-without-the-fuss-iot-innovations-for-the-senior-market/" target="_blank" rel="noopener noreferrer">Smart Devices Without the Fuss: IoT Innovations for the Senior Market</a></li>
+                    <li id="cite-29"><a href="https://www.marketsandmarkets.com/Market-Reports/physiotherapy-equipment-market-65250228.html" target="_blank" rel="noopener noreferrer">Physiotherapy Equipment Market Size & Growth Forecast to 2029</a></li>
+                    <li id="cite-30"><a href="https://www.grandviewresearch.com/industry-analysis/physiotherapy-equipment-market" target="_blank" rel="noopener noreferrer">Physiotherapy Equipment Market Size & Share Report, 2030</a></li>
+                    <li id="cite-31"><a href="https://www.imarcgroup.com/physiotherapy-equipment-market" target="_blank" rel="noopener noreferrer">Physiotherapy Equipment Market Size, Share | Report, 2033</a></li>
+                    <li id="cite-32"><a href="https://www.biospace.com/press-releases/global-physical-therapy-market-size-and-future-growth-forecast-2025-2035-key-insights-by-custom-market-insights" target="_blank" rel="noopener noreferrer">Global Physical Therapy Market Size and Future Growth Forecast 2025-2035</a></li>
+                    <li id="cite-33"><a href="https://www.factmr.com/report/disabled-and-elderly-assistive-technology-market" target="_blank" rel="noopener noreferrer">Disabled and Elderly Assistive Technology Market - Fact.MR</a></li>
+                    <li id="cite-34"><a href="https://www.reanin.com/reports/global-elderly-and-disabled-assistive-devices-market" target="_blank" rel="noopener noreferrer">Elderly and Disabled Assistive Devices Market Size & Share - ReAnIn</a></li>
+                    <li id="cite-35"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9881650/" target="_blank" rel="noopener noreferrer">Projecting the chronic disease burden among the adult population in the United States...</a></li>
+                    <li id="cite-36"><a href="https://arthritis.ca/about-arthritis/what-is-arthritis/arthritis-facts-and-figures" target="_blank" rel="noopener noreferrer">Arthritis Facts, Figures and Statistics</a></li>
+                    <li id="cite-37"><a href="https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2020.583825/full" target="_blank" rel="noopener noreferrer">Prevalence of Sarcopenic Obesity Using Different Definitions...</a></li>
+                    <li id="cite-38"><a href="https://pubmed.ncbi.nlm.nih.gov/32744576/" target="_blank" rel="noopener noreferrer">Sarcopenia Prevalence Using Different Definitions in Older Community-Dwelling Canadians</a></li>
+                    <li id="cite-39"><a href="https://www150.statcan.gc.ca/n1/pub/82-003-x/2017002/article/14772-eng.htm" target="_blank" rel="noopener noreferrer">Prolonged sedentary time and physical fitness among Canadian men and women aged 60 to 69</a></li>
+                    <li id="cite-40"><a href="https://www.alliedmarketresearch.com/home-rehabilitation-products-market-A16857" target="_blank" rel="noopener noreferrer">Home Rehabilitation Products Market Size & Share - 2031</a></li>
+                    <li id="cite-41"><a href="https://www.talemhomecare.com/broomfield/5-reasons-rehabilitation-services-at-home-is-the-best-decision/" target="_blank" rel="noopener noreferrer">5 Reasons Rehabilitation Services at Home Is the Best Decision</a></li>
+                    <li id="cite-42"><a href="https://karmacare.com/best-recreation-and-physical-activity-center/" target="_blank" rel="noopener noreferrer">Recreation and Physical Activity Center for Seniors</a></li>
+                    <li id="cite-43"><a href="https://www.nrpa.org/parks-recreation-magazine/2018/january/senior-center-vs.-community-center/" target="_blank" rel="noopener noreferrer">Senior Center vs. Community Center</a></li>
+                    <li id="cite-44"><a href="https://www.nrpa.org/parks-recreation-magazine/2017/january/older-adults-exploring-their-changing-demographics-and-health-outlook/" target="_blank" rel="noopener noreferrer">Older Adults: Exploring Their Changing Demographics and Health Outlook</a></li>
+                    <li id="cite-45"><a href="https://clinmedjournals.org/articles/jfmdp/journal-of-family-medicine-and-disease-prevention-jfmdp-8-148.php?jid=jfmdp" target="_blank" rel="noopener noreferrer">Elderly Individuals have Similar Attitudes Towards Physical Activity...</a></li>
+                    <li id="cite-46"><a href="https://tools.silversneakers.com/" target="_blank" rel="noopener noreferrer">SilverSneakers | Live & On‑Demand Fitness Classes for Seniors</a></li>
+                    <li id="cite-47"><a href="https://cflri.ca/publication/sport-participation-by-age/" target="_blank" rel="noopener noreferrer">Sport Participation by age - Canadian Fitness and Lifestyle Research Institute</a></li>
+                    <li id="cite-48"><a href="https://cflri.ca/publication/sport-participation/" target="_blank" rel="noopener noreferrer">Sport Participation - Canadian Fitness and Lifestyle Research Institute</a></li>
+                    <li id="cite-49"><a href="https://www.aarp.org/pri/topics/technology/internet-media-devices/artificial-intelligence-survey/" target="_blank" rel="noopener noreferrer">Older Adults are Navigating AI - AARP</a></li>
+                    <li id="cite-50"><a href="https://www.mdpi.com/2076-0825/14/3/133" target="_blank" rel="noopener noreferrer">Next-Generation Tools for Patient Care and Rehabilitation: A Review of Modern Innovations</a></li>
+                    <li id="cite-51"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8212622/" target="_blank" rel="noopener noreferrer">Older Adults' Experiences With Using Wearable Devices</a></li>
+                    <li id="cite-52"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9680329/" target="_blank" rel="noopener noreferrer">The Technology Acceptance Model and Older Adults' Exercise Intentions</a></li>
+                    <li id="cite-53"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12136182/" target="_blank" rel="noopener noreferrer">Smart Wearable Technologies for Balance Rehabilitation in Older Adults...</a></li>
+                    <li id="cite-54"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10544986/" target="_blank" rel="noopener noreferrer">A novel smart somatosensory wearable assistive device for older adults' home rehabilitation...</a></li>
                     <li id="cite-55"><a href="https://www.aarp.org/pri/topics/health/prevention-wellness/health-app-users/" target="_blank" rel="noopener noreferrer">Health and Wellness Apps: Considerable Use Among Older Adults But Room to Grow</a></li>
                     <li id="cite-56"><a href="https://www.scitepress.org/Papers/2025/133077/133077.pdf" target="_blank" rel="noopener noreferrer">Adoption and Challenges of Digital Technologies in Home Care for Older Adults in Austria...</a></li>
                     <li id="cite-57"><a href="https://journal.gerontechnology.org/archives/1464-1508-1-PB.pdf" target="_blank" rel="noopener noreferrer">A review of technology acceptance by older adults</a></li>
@@ -379,20 +414,27 @@
 </div>
 <script>
     /* --- 頁面內容切換 --- */
-    function showPage(pageId, anchor) {
+    function showPage(pageId, anchor, element) {
+        // 處理頁面顯示
         document.querySelectorAll('.page-content').forEach(page => page.classList.remove('active'));
         const pageToShow = document.getElementById(pageId);
         if (pageToShow) pageToShow.classList.add('active');
+
+        // 處理側邊欄主連結的 active 狀態
+        if (element) {
+            document.querySelectorAll('.main-nav-link').forEach(link => link.classList.remove('active-main-link'));
+            element.classList.add('active-main-link');
+        }
         
         const mainContent = document.getElementById('main-content');
         if (anchor) {
             setTimeout(() => {
-                const element = document.querySelector(anchor);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    element.style.transition = 'background-color 0.5s ease-in-out';
-                    element.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
-                    setTimeout(() => { element.style.backgroundColor = ''; }, 1500);
+                const targetElement = document.querySelector(anchor);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    targetElement.style.transition = 'background-color 0.5s ease-in-out';
+                    targetElement.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+                    setTimeout(() => { targetElement.style.backgroundColor = ''; }, 1500);
                 }
             }, 100);
         } else {
@@ -400,7 +442,7 @@
         }
     }
     
-    /* --- START: 引用資料彈出視窗的 JavaScript 功能 --- */
+    /* --- 引用資料彈出視窗的 JavaScript 功能 --- */
     const citationPopup = document.getElementById('citation-popup');
     const citationBody = document.getElementById('citation-popup-body');
     const citationBackdrop = document.getElementById('citation-backdrop');
@@ -408,7 +450,6 @@
     function showCitation(citationId) {
         const citationElement = document.getElementById(citationId);
         if (citationElement) {
-            // 將對應的 li 內容複製到彈出視窗中
             citationBody.innerHTML = citationElement.innerHTML;
             citationPopup.classList.add('active');
             citationBackdrop.classList.add('active');
@@ -419,37 +460,43 @@
         citationPopup.classList.remove('active');
         citationBackdrop.classList.remove('active');
     }
-    // 點擊背景遮罩時也關閉彈出視窗
     citationBackdrop.addEventListener('click', hideCitation);
-    /* --- END: 引用資料彈出視窗的 JavaScript 功能 --- */
-
 
     /* --- 圖表與滾動監聽初始化 --- */
     window.onload = function() {
-        // Chart.js 設定
+        // Chart.js 全域設定
         Chart.register(ChartDataLabels);
         Chart.defaults.set('plugins.datalabels', {
-            anchor: 'end', align: 'top',
-            formatter: (value, context) => {
-                if (context.dataset.label && context.dataset.label.includes('CAGR')) return value + '%';
-                return value;
-            },
-            font: { weight: 'normal' }, color: '#333'
+            font: { weight: 'normal' }, 
+            color: '#333'
         });
         
-        // 繪製圖表...
+        // --- 圖表繪製 ---
         const ctxGlobal = document.getElementById('globalMarketChart').getContext('2d');
+        const forecastData = [387.8, 376, 265.7, 248, 272.9, 239.7, 412.9];
         new Chart(ctxGlobal, {
             type: 'bar',
             data: {
                 labels: ['Straits', 'GM Insights', 'Maximize', 'Market.us', 'Grand View', 'Business Co.', 'Allied'],
                 datasets: [
                     { label: '基準年市值 (億美元)', data: [220.4, 201, 166.7, 155, 169.6, 173.6, 195.1], backgroundColor: 'rgba(0, 86, 179, 0.5)' },
-                    { label: '預測年市值 (億美元)', data: [387.8, 376, 265.7, 248, 272.9, 239.7, 412.9], backgroundColor: 'rgba(0, 86, 179, 1)' }
+                    { label: '預測年市值 (億美元)', data: forecastData, backgroundColor: 'rgba(0, 86, 179, 1)' }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: '全球市場市值預測 (億美元)', font: { size: 16 } }, datalabels: { display: true } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                scales: { y: { suggestedMax: Math.max(...forecastData) * 1.15 } },
+                plugins: { 
+                    title: { display: true, text: '全球市場市值預測 (億美元)', font: { size: 16 } }, 
+                    datalabels: { 
+                        display: true, anchor: 'end', align: 'top',
+                        formatter: (value) => value
+                    } 
+                } 
+            }
         });
+
         const ctxCagr = document.getElementById('cagrChart').getContext('2d');
         new Chart(ctxCagr, {
             type: 'bar',
@@ -457,21 +504,77 @@
                 labels: ['Grand View', 'Allied', 'GM Insights', 'Business Co.', 'Straits', 'Maximize', 'Market.us'],
                 datasets: [{ label: 'CAGR (%)', data: [8.3, 7.7, 7.2, 6.7, 6.48, 6.0, 4.8], backgroundColor: 'rgba(255, 159, 64, 1)' }]
             },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: '年均複合增長率(CAGR)預測', font: { size: 16 } }, datalabels: { align: 'center', anchor: 'center', color: 'white' } } }
+            options: { 
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false, 
+                plugins: { 
+                    title: { display: true, text: '年均複合增長率(CAGR)預測', font: { size: 16 } }, 
+                    datalabels: { 
+                        align: 'center', anchor: 'center', color: 'white',
+                        formatter: (value) => value + '%'
+                    } 
+                } 
+            }
         });
+
         const ctxUserTech = document.getElementById('userTechAdoptionChart').getContext('2d');
         new Chart(ctxUserTech, {
-            type: 'doughnut',
+            type: 'bar',
             data: {
-                labels: ['擁有智慧型手機 (50歲以上)', '擁有AgeTech設備', '使用社群媒體', '曾用過數位健康技術'],
-                datasets: [{
-                    label: '使用者科技採納率',
-                    data: [91, 80, 89, 81.4],
-                    backgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
-                }]
+                labels: ['擁有智慧型手機 (50歲以上)', '曾用過數位健康技術', '擁有AgeTech設備'],
+                datasets: [
+                    {
+                        label: '採納/擁有',
+                        data: [91, 81.4, 80],
+                        backgroundColor: '#36A2EB',
+                    },
+                    {
+                        label: '未採納/未擁有',
+                        data: [9, 18.6, 20],
+                        backgroundColor: '#E0E0E0',
+                    }
+                ]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: '北美老年使用者科技採納率 (%)', font: { size: 16 } }, legend: { position: 'bottom' }, datalabels: { formatter: (value) => value + '%', color: '#fff', font: { weight: 'bold' }}}}
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) { return value + "%" }
+                        }
+                    },
+                    y: { stacked: true }
+                },
+                plugins: {
+                    title: { display: true, text: '北美老年使用者科技採納率 (%)', font: { size: 16 } },
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.x !== null) { label += context.parsed.x + '%'; }
+                                return label;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        formatter: (value, context) => {
+                            if (context.datasetIndex === 0 && value > 10) { 
+                                return value + '%';
+                            }
+                            return '';
+                        },
+                        color: '#fff',
+                        font: { weight: 'bold' }
+                    }
+                }
+            }
         });
+
         const ctxCompliance = document.getElementById('rehabComplianceChart').getContext('2d');
         new Chart(ctxCompliance, {
             type: 'bar',
@@ -482,7 +585,18 @@
                     { label: '中心復健', data: [36], backgroundColor: 'rgba(255, 99, 132, 0.8)' }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: '復健模式長期依從性比較 (%)', font: { size: 16 } }, datalabels: { display: true, formatter: (value) => value + '%', font: { size: 14, weight: 'bold' }, color: 'white', anchor: 'center', align: 'center' }}}
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                plugins: { 
+                    title: { display: true, text: '復健模式長期依從性比較 (%)', font: { size: 16 } }, 
+                    datalabels: { 
+                        display: true, 
+                        formatter: (value) => value + '%',
+                        font: { size: 14, weight: 'bold' }, 
+                        color: 'white', anchor: 'center', align: 'center' 
+                    }
+                }
+            }
         });
 
         // --- 滾動監聽 (Scrollspy) 功能 ---
