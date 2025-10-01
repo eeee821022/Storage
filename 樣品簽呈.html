@@ -42,6 +42,10 @@
             .budget-table, .plan-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
             .budget-table th, .budget-table td, .plan-table th, .plan-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             .budget-table tfoot td { font-weight: bold; }
+            /* 移除不需要的元素，例如簽核欄 */
+            .documentToPrint .print-remove {
+                display: none !important;
+            }
         }
         
         /* 建立一個隱藏的容器，用於儲存列印內容 */
@@ -152,7 +156,7 @@
                             <input type="hidden" name="itemLink" value="">
                         </div>
 
-                        <input type="number" name="itemPrice" required min="0" step="0.01" class="itemPrice col-span-2 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="單價">
+                        <input type="number" name="itemPrice" required min="0" step="1" class="itemPrice col-span-2 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="單價">
                         <input type="number" name="itemQuantity" required min="1" class="itemQuantity col-span-1 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" value="1">
                         <button type="button" class="removeBudgetItemBtn col-span-1 text-red-500 hover:text-red-700 p-1 rounded-full" aria-label="移除品項">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -222,6 +226,12 @@
 
 
     <script>
+        // 幫助數字格式化成千分位 (移除小數點)
+        const formatNumber = (num) => {
+            // 確保數字四捨五入到整數，並使用千分位格式化
+            return Math.round(parseFloat(num)).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        };
+        
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('purchaseForm');
             const totalAmountDisplay = document.getElementById('totalAmount');
@@ -252,7 +262,8 @@
                     const quantity = parseInt(quantityInput ? quantityInput.value : 0, 10) || 0;
                     total += price * quantity;
                 });
-                totalAmountDisplay.textContent = total.toFixed(2);
+                // 更新：格式化總金額顯示
+                totalAmountDisplay.textContent = formatNumber(total);
             };
 
             // --- 2. 預計花費品項操作 ---
@@ -270,7 +281,7 @@
                         <input type="hidden" name="itemLink" value="${link}">
                     </div>
 
-                    <input type="number" name="itemPrice" required min="0" step="0.01" class="itemPrice col-span-2 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="單價" value="${price}">
+                    <input type="number" name="itemPrice" required min="0" step="1" class="itemPrice col-span-2 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="單價" value="${price}">
                     <input type="number" name="itemQuantity" required min="1" class="itemQuantity col-span-1 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" value="${quantity}">
                     <button type="button" class="removeBudgetItemBtn col-span-1 text-red-500 hover:text-red-700 p-1 rounded-full" aria-label="移除品項">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -489,13 +500,17 @@
                     const linkDisplay = item.link 
                         ? `<a href="${item.link}" target="_blank" style="text-decoration: underline; color: blue;">➤ 連結</a>` 
                         : '';
+                    // 更新：格式化價格和小計
+                    const formattedPrice = formatNumber(item.price);
+                    const formattedSubtotal = formatNumber(item.subtotal);
+
                     return `
                         <tr>
                             <td>${item.name}</td>
                             <td>${linkDisplay}</td>
-                            <td align="right">NT$${item.price}</td>
+                            <td align="right">NT$${formattedPrice}</td>
                             <td align="right">${item.quantity}</td>
-                            <td align="right">NT$${item.subtotal}</td>
+                            <td align="right">NT$${formattedSubtotal}</td>
                         </tr>
                     `;
                 }).join('');
@@ -557,8 +572,9 @@
                             </tr>
                         </tfoot>
                     </table>
-
-                    <div class="mt-8 pt-4 border-t border-gray-400">
+                    
+                    <!-- 移除簽核欄 -->
+                    <div class="mt-8 pt-4 border-t border-gray-400 print-remove">
                         <h3 class="text-base font-semibold">四、簽核欄 (請手動簽核)</h3>
                         <div class="grid grid-cols-4 gap-4 mt-2 text-sm">
                             <div class="border border-gray-300 p-2 h-16">申請人：</div>
@@ -597,7 +613,8 @@
                         link: link,
                         price: price,
                         quantity: quantity,
-                        subtotal: (parseFloat(price) * parseInt(quantity)).toFixed(2)
+                        // 更新：計算小計時四捨五入到整數
+                        subtotal: Math.round(parseFloat(price) * parseInt(quantity))
                     });
                 });
 
@@ -672,7 +689,9 @@
                 summary += `---\n預計花費：\n`;
                 if (budgetItems.length > 0) {
                     budgetItems.forEach((item, index) => {
-                        summary += `${index + 1}. ${item.name}_NT$${item.price}_數量${item.quantity}\n`;
+                        // 更新：格式化金額
+                        const formattedPrice = formatNumber(item.price);
+                        summary += `${index + 1}. ${item.name}_NT$${formattedPrice}_數量${item.quantity}\n`;
                     });
                 } else {
                     summary += "無預計花費項目。\n";
