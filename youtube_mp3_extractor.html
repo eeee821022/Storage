@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube MP3 片段擷取工具</title>
+    <!-- 載入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 設定Inter字體，確保中文字體美觀 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #0d1117; /* GitHub Dark Mode Background */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="w-full max-w-xl bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700">
+        <h1 class="text-3xl font-bold text-white mb-6 border-b border-gray-700 pb-3">
+            <span class="text-red-500">YouTube</span> 音頻片段擷取
+        </h1>
+        <p class="text-sm text-gray-400 mb-8">
+            請輸入影片連結，以及您想要擷取的音頻片段的開始和結束時間（單位：秒）。
+        </p>
+        
+        <!-- 連線提示 -->
+        <div class="mb-4 p-3 bg-blue-900/50 text-blue-300 rounded-lg text-xs">
+            💡 <span class="font-bold">連線目標：</span> 本程式將嘗試連線到 <code class="bg-blue-800/70 p-1 rounded">http://127.0.0.1:5000/convert</code> 進行轉換。
+        </div>
+
+        <!-- 輸入區塊 -->
+        <div class="space-y-6">
+            <div>
+                <label for="youtubeUrl" class="block text-sm font-medium text-gray-300 mb-2">YouTube 影片連結 (URL)</label>
+                <input type="url" id="youtubeUrl" placeholder="例如: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                       class="w-full p-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="startTime" class="block text-sm font-medium text-gray-300 mb-2">開始時間 (秒)</label>
+                    <input type="number" id="startTime" value="0" min="0"
+                           class="w-full p-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                </div>
+                <div>
+                    <label for="endTime" class="block text-sm font-medium text-gray-300 mb-2">結束時間 (秒)</label>
+                    <input type="number" id="endTime" placeholder="例如: 60" min="1"
+                           class="w-full p-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                </div>
+            </div>
+
+            <button id="convertBtn"
+                    class="w-full py-3 mt-4 text-white font-semibold rounded-lg bg-red-600 hover:bg-red-700 transition duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50">
+                轉換並下載 MP3 片段
+            </button>
+        </div>
+
+        <!-- 訊息/結果區塊 -->
+        <div id="messageBox" class="mt-8 p-4 border-l-4 rounded-lg transition-all duration-300 hidden">
+            <p id="messageText" class="text-sm"></p>
+        </div>
+        
+        <!-- 下載連結區塊 (成功時顯示) -->
+        <div id="downloadLinkBox" class="mt-4 hidden">
+            <a id="downloadLink" href="#" target="_blank"
+               class="inline-flex items-center justify-center w-full py-3 text-white font-semibold rounded-lg bg-green-600 hover:bg-green-700 transition duration-200 shadow-md hover:shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 11.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v7a1 1 0 11-2 0V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                點擊下載 MP3 檔案
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000/convert';
+
+        document.getElementById('convertBtn').addEventListener('click', async function() {
+            const url = document.getElementById('youtubeUrl').value.trim();
+            const start = parseInt(document.getElementById('startTime').value);
+            const end = parseInt(document.getElementById('endTime').value);
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+            const convertBtn = this;
+            const downloadLinkBox = document.getElementById('downloadLinkBox');
+            
+            // 重置狀態
+            messageBox.classList.add('hidden');
+            downloadLinkBox.classList.add('hidden');
+            convertBtn.disabled = true;
+            convertBtn.textContent = '正在驗證輸入...';
+
+            // 1. 輸入驗證
+            if (!url) {
+                showMessage('錯誤：請輸入有效的 YouTube 連結。', 'yellow');
+                convertBtn.disabled = false;
+                convertBtn.textContent = '轉換並下載 MP3 片段';
+                return;
+            }
+            if (isNaN(start) || isNaN(end) || start < 0 || end <= start) {
+                showMessage('錯誤：時間輸入無效。結束時間必須大於開始時間。', 'yellow');
+                convertBtn.disabled = false;
+                convertBtn.textContent = '轉換並下載 MP3 片段';
+                return;
+            }
+
+            // 2. 發送請求到後端
+            showMessage('正在連線到後端伺服器 (127.0.0.1:5000) 進行轉換...', 'blue');
+            convertBtn.textContent = '正在處理中... 請稍候';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        startTime: start,
+                        endTime: end
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // 成功處理
+                    showMessage(`轉換成功！後端訊息: ${result.message}`, 'green');
+                    
+                    // 模擬下載連結
+                    const downloadLink = document.getElementById('downloadLink');
+                    downloadLink.href = result.download_url;
+                    downloadLinkBox.classList.remove('hidden');
+
+                } else {
+                    // 伺服器回傳錯誤
+                    const errMsg = result.message || '後端伺服器回傳錯誤。';
+                    showMessage(`轉換失敗：${errMsg}`, 'red');
+                }
+
+            } catch (error) {
+                // 網路連線錯誤 (例如：後端伺服器未運行)
+                console.error('Fetch error:', error);
+                showMessage(`連線失敗：請確認後端伺服器 (backend_server.py) 已在 Port 5000 上運行。錯誤詳情: ${error.message}`, 'red');
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.textContent = '轉換並下載 MP3 片段';
+            }
+        });
+
+        /**
+         * 顯示訊息
+         * @param {string} text - 要顯示的文字
+         * @param {'red' | 'yellow' | 'green' | 'blue'} type - 訊息類型
+         */
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+            
+            messageBox.classList.remove('hidden', 'bg-gray-900', 'border-red-500', 'border-yellow-500', 'border-green-500', 'border-blue-500');
+            messageText.classList.remove('text-gray-300', 'text-red-300', 'text-yellow-300', 'text-green-300', 'text-blue-300');
+
+            switch(type) {
+                case 'red':
+                    messageBox.classList.add('bg-red-900/50', 'border-red-500');
+                    messageText.classList.add('text-red-300');
+                    break;
+                case 'yellow':
+                    messageBox.classList.add('bg-yellow-900/50', 'border-yellow-500');
+                    messageText.classList.add('text-yellow-300');
+                    break;
+                case 'green':
+                    messageBox.classList.add('bg-green-900/50', 'border-green-500');
+                    messageText.classList.add('text-green-300');
+                    break;
+                case 'blue':
+                default:
+                    messageBox.classList.add('bg-blue-900/50', 'border-blue-500');
+                    messageText.classList.add('text-blue-300');
+                    break;
+            }
+            messageText.innerHTML = text;
+        }
+    </script>
+</body>
+</html>
