@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<title>北美寵物健身遊戲機市場分析 - RWD互動式報告</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<style>
+    :root {
+        --primary-color: #003366;
+        --secondary-color: #0056b3;
+        --text-color: #333;
+        --sidebar-width: 280px; /* 側邊欄寬度 */
+        --bg-light: #f9f9f9;
+        --bg-white: #ffffff;
+        --border-color: #e9ecef;
+    }
+    body {
+        font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif;
+        background-color: var(--bg-light);
+        color: var(--text-color);
+    }
+    
+    /* --- START: 側邊欄與主內容區塊排版 --- */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: var(--sidebar-width);
+        background-color: var(--primary-color);
+        color: var(--bg-light);
+        padding: 1.5rem 0;
+        overflow-y: auto;
+        transition: width 0.3s ease;
+    }
+    #main-content {
+        margin-left: var(--sidebar-width);
+        padding: 20px;
+        height: 100vh;
+        overflow-y: auto;
+        transition: margin-left 0.3s ease;
+    }
+    /* 在窄螢幕上隱藏側邊欄，讓內容全寬 */
+    @media (max-width: 992px) {
+        #main-content { margin-left: 0; }
+        #sidebar { display: none; }
+    }
+    /* --- END: 側邊欄與主內容區塊排版 --- */
+
+    .page-content { display: none; }
+    .page-content.active { display: block; }
+
+    h1, h2, h3, h4, h5 { color: var(--primary-color); }
+    h1 { font-size: 2.2em; margin-top: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+    h2 { font-size: 1.8em; margin-top: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; scroll-margin-top: 20px; }
+    h3 { font-size: 1.4em; margin-top: 25px; color: var(--secondary-color); border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;}
+    
+    .highlight {
+        background-color: #fffacd;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+    
+    /* --- START: 上標引用樣式 (優化版) --- */
+    sup {
+        font-size: 0.7em;
+        vertical-align: super;
+        margin-left: 2px;
+    }
+    sup a { 
+        text-decoration: none; 
+        color: #607D8B; /* 改為灰藍色 */
+        font-weight: bold; 
+        background-color: transparent; /* 移除背景色 */
+        padding: 2px 3px; 
+        border-radius: 4px; 
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    sup a:hover { 
+        color: var(--secondary-color);
+        text-decoration: underline; /* 滑鼠懸浮時改為底線 */
+    }
+    /* --- END: 上標引用樣式 (優化版) --- */
+
+    /* --- START: 側邊欄導覽樣式 --- */
+    #sidebar-header {
+        padding: 0 1.5rem 1rem 1.5rem;
+        border-bottom: 1px solid var(--secondary-color);
+    }
+    #sidebar-header h5 {
+        color: var(--bg-white);
+        margin: 0;
+    }
+    #sidebar .nav-link { 
+        color: #adb5bd; 
+        font-size: 1rem; 
+        padding: 0.7rem 1.5rem; 
+        border-left: 3px solid transparent;
+    }
+    #sidebar .nav-link:hover { 
+        color: var(--bg-white); 
+        background-color: var(--secondary-color);
+        border-left-color: #FFC107;
+    }
+    #sidebar .nav-link.active-main-link { /* 主要分頁啟用樣式 */
+        color: var(--bg-white);
+        font-weight: bold;
+        background-color: var(--secondary-color);
+    }
+    #sidebar .report-nav-link.active-link { /* 報告章節滾動啟用樣式 */
+        color: var(--bg-white);
+        font-weight: bold;
+    }
+
+    #sidebar .accordion-button { background-color: transparent !important; color: #adb5bd !important; font-size: 1rem; padding: 0.7rem 1.5rem; }
+    #sidebar .accordion-button:not(.collapsed) { box-shadow: none; color: var(--bg-white) !important; font-weight: bold; }
+    #sidebar .accordion-button:focus { box-shadow: none; }
+    #sidebar .accordion-button::after { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23adb5bd'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important; }
+    #sidebar .accordion-body { padding: 0; }
+    #sidebar .accordion-item { border: none; background-color: transparent; }
+    #sidebar .accordion-body .nav-link { padding-left: 2.5rem; }
+    /* --- END: 側邊欄導覽樣式 --- */
+
+    .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 20px; }
+    .chart-container { position: relative; height: 350px; width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; }
+
+    .citation-popup {
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 1055; background-color: white; border-top: 1px solid #ccc; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease-in-out; max-height: 40vh; display: flex; flex-direction: column;
+    }
+    .citation-popup.active { transform: translateY(0); }
+    .citation-popup-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+    .citation-popup-header h4 { margin: 0; font-size: 1.1rem; color: var(--primary-color); }
+    .citation-popup-body { padding: 1rem; overflow-y: auto; }
+    .citation-popup-body a { font-weight: 500; }
+    .citation-backdrop {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.4); z-index: 1054; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out;
+    }
+    .citation-backdrop.active { opacity: 1; visibility: visible; }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+    <div id="sidebar-header">
+        <h5>報告導覽</h5>
+    </div>
+    <div class="nav flex-column">
+        <a class="nav-link main-nav-link active-main-link" href="#" onclick="showPage('page-overview', null, this)">摘要：AI數據駕駛艙</a>
+        <div class="accordion accordion-flush" id="reportAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        原始報告
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#reportAccordion">
+                    <div class="accordion-body">
+                         <nav class="nav flex-column">
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-1')">第一章 宏觀寵物產業格局</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-2')">第二章 北美寵物飼主輪廓</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-3')">第三章 寵物健身護理市場分析</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-4')">第四章 寵物互動遊戲與智能玩具市場分析</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-5')">第五章 消費者洞察：需求驅動力與觀念</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <a class="nav-link main-nav-link" href="#" onclick="showPage('page-data-list', null, this)">資料列表</a>
+    </div>
+</nav>
+
+<main id="main-content">
+    <div class="container-fluid pb-5">
+        <h1 id="top-title">2025年北美寵物健身與互動遊戲市場情報報告</h1>
+
+        <div id="page-overview" class="page-content active">
+            <h2>AI 深度洞察：數據駕駛艙</h2>
+            
+            <h3>【摘要總覽】</h3>
+            <p>本報告旨在深入剖析北美寵物健身與互動遊戲市場，提供全面的數據分析與策略洞察。全球寵物護理市場展現出強勁的增長潛力，2024年市場規模達到 <span class="highlight">2593.7 億美元</span>，預計到2032年將增長至 <span class="highlight">4277.5 億美元</span>，預測期內（2025-2032年）的複合年均增長率（CAGR）為 <span class="highlight">6.60%</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。北美地區以 <span class="highlight">33.61%</span> 的市佔率主導全球市場，2024年市場規模為 <span class="highlight">871.8 億美元</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。根據美國寵物產品協會（APPA）的數據，僅美國市場在2024年的總支出就高達 <span class="highlight">1520 億美元</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。</p>
+            <p>北美寵物飼主輪廓清晰，現有<span class="highlight">9400萬美國家庭</span>擁有至少一隻寵物，其中<span class="highlight">6800萬戶飼養犬隻</span>，<span class="highlight">4900萬戶飼養貓隻</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。每個寵物家庭的年均支出約為 <span class="highlight">1,515 至 1,516 美元</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-5')">[5]</a></sup>。</p>
+            <p>在利基市場方面，全球寵物健身護理市場在2024年的規模約為 <span class="highlight">63 億至 66 億美元</span>，預計將以約 <span class="highlight">6.4% 至 6.7%</span> 的CAGR持續增長<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。北美在此領域佔據絕對主導地位，市佔率超過 <span class="highlight">41%</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-9')">[9]</a></sup>。全球寵物玩具市場2024年的規模約為 <span class="highlight">90 億美元</span>，預計CAGR約為 <span class="highlight">6.8%</span>，其中互動式玩具佔據了約 <span class="highlight">39% 至 40%</span> 的重要份額<sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup>。北美寵物玩具市場在2023年的規模為 <span class="highlight">28.7 億美元</span>，預計將以 <span class="highlight">8.7%</span> 的CAGR增長<sup><a href="javascript:void(0)" onclick="showCitation('cite-12')">[12]</a></sup>。</p>
+            <p>市場的核心驅動力源於「寵物人性化」趨勢、日益嚴重的寵物肥胖問題（數據顯示<span class="highlight">59%的狗和61%的貓</span>被歸類為超重或肥胖）以及飼主為緩解寵物焦慮和破壞性行為而尋求精神刺激解決方案的需求<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。然而，市場存在一個關鍵的「價值感知差距」：飼主購買高科技設備是為了解決問題（如無聊、運動不足），但這些產品常因寵物漠不關心、耐用性不足或寵物更偏好與飼主直接互動而未能達到預期效果<sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。</p>
+            
+            <div class="chart-grid">
+                <div class="chart-container"><canvas id="marketSizeChart"></canvas></div>
+                <div class="chart-container"><canvas id="cagrChart"></canvas></div>
+                <div class="chart-container"><canvas id="marketStructureChart"></canvas></div>
+                <div class="chart-container"><canvas id="petObesityChart"></canvas></div>
+                <div class="chart-container"><canvas id="petOwnershipChart"></canvas></div>
+                <div class="chart-container"><canvas id="nicheMarketChart"></canvas></div>
+            </div>
+        </div>
+
+        <div id="page-report" class="page-content">
+            <div id="report-content">
+                <h2 id="section-1">第一章：宏觀寵物產業格局</h2>
+                <h3>1.1 全球寵物產業市場動態</h3>
+                <p>全球寵物護理市場展現出穩健且富有韌性的增長態勢。2024年，其市場估值已達到 2593.7 億美元。展望未來，市場預計將持續擴張，至2032年達到 4277.5 億美元的規模，這反映了在2025至2032年預測期間內，6.60% 的強勁複合年均增長率（CAGR）<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。</p>
+                <p>值得注意的是，不同市場研究機構對市場規模的估算存在差異。例如，其他來源將2024年的市場規模分別定為 1900.2 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-22')">[22]</a></sup>、3241.9 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup> 或 2560 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-24')">[24]</a></sup>。這種數據差異可能源於不同的統計方法和市場覆蓋範圍。本報告將主要採用Fortune Business Insights提供的數據，因其提供了詳細的市場細分，同時也承認這種估算範圍的存在，反映了市場報告領域的動態性和潛在的碎片化特徵。</p>
+                <p>在市場細分方面，寵物食品類別佔據絕對主導地位，於2024年佔據了 52.85% 的市場份額<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。這凸顯了營養是寵物支出的基石。</p>
+                <p>獸醫護理是另一個穩定增長的關鍵領域，預計在2025至2032年間的CAGR為 5.44%<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。從寵物類型來看，犬隻是市場中最大的細分市場，預計在2025年將佔據 48.09% 的份額，而貓隻市場的增長速度稍快，預計CAGR為 5.87%<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。</p>
+                <h3>1.2 北美寵物產業：主導市場</h3>
+                <p>北美在全球寵物護理市場中扮演著無可爭議的領導者角色。2024年，該地區佔據了全球市場總額的 33.61%，市場價值高達 871.8 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。另一份報告甚至將該地區的市場價值評估為 1152 億美元，市佔率為 45.3%，進一步鞏固了其主導地位<sup><a href="javascript:void(0)" onclick="showCitation('cite-24')">[24]</a></sup>。</p>
+                <p>美國是驅動這一市場的核心引擎。根據美國寵物產品協會（APPA）的報告，2024年美國寵物產業的總支出達到了驚人的 1520 億美元，並預計在2025年增長至 1570 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。這一數字高於全球報告中對整個北美地區的估算，可能是由於其統計方法論的差異（例如，可能包含了活體動物銷售和更廣泛的服務類別），但這無疑突顯了美國市場支出的巨大規模。僅美國市場本身，預計從2024年到2033年的CAGR就將達到 7.10%<sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup>。</p>
+                <p>北美市場的主導地位得益於多種因素的共同作用，包括極高的寵物擁有率、將寵物視為家庭成員的「寵物人性化」文化趨勢，以及較高的可支配收入，這使得飼主在高品質產品和服務上的單均花費更高<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。</p>
+                <h3>1.3 北美寵物產業細分分析</h3>
+                <p>根據APPA的2024年數據，美國寵物相關支出的構成如下<sup><a href="javascript:void(0)" onclick="showCitation('cite-25')">[25]</a></sup>：</p>
+                <ul>
+                    <li>寵物食品與零食：658 億美元 (43.3%)</li>
+                    <li>獸醫護理與產品銷售：398 億美元 (26.2%)</li>
+                    <li>用品、活體動物與非處方藥：333 億美元 (21.9%)</li>
+                    <li>其他服務（美容、寄宿等）：130 億美元 (8.6%)</li>
+                </ul>
+                <p>從各細分市場的增長趨勢來看，寵物食品與零食領域增長最為迅速，其市場份額從2019年的 39% 增長至2024年的 45%<sup><a href="javascript:void(0)" onclick="showCitation('cite-26')">[26]</a></sup>。包含健康相關活動的「其他服務」類別也呈現快速增長，預計到2030年，美國寵物服務市場的CAGR將達到 7.7%<sup><a href="javascript:void(0)" onclick="showCitation('cite-27')">[27]</a></sup>。</p>
+                <p>這些數據揭示了一個深層次的市場動態。食品和獸醫護理這兩個基礎領域的強勁表現，為寵物健身和遊戲等非必需消費領域創造了「消費許可」的光環效應。數據顯示，超過 69% 的寵物總支出集中在必需品上：食品 (43.3%) 和獸醫護理 (26.2%)<sup><a href="javascript:void(0)" onclick="showCitation('cite-25')">[25]</a></sup>。這建立了一個高額且不可協商的支出基線。「寵物人性化」的趨勢意味著飼主將人類的健康標準應用於寵物，將優質食品和預防性獸醫護理視為基本責任<sup><a href="javascript:void(0)" onclick="showCitation('cite-28')">[28]</a></sup>。一旦這些核心需求通過高端解決方案得到滿足，飼主在「非必需品」上消費的心理障礙便會降低。一位願意為寵物購買有機、無穀物食品的消費者，在邏輯上更有可能投資於健身監測器，以追踪這些食品帶來的健康益處。因此，高端食品和獸醫護理市場的增長，是未來健身與娛樂科技領域增長的先行指標。這些設備的市場營銷策略應與這些基礎類別所建立的健康與保健話語體系保持一致，而非僅僅將其定位為普通的玩具。</p>
+                
+                <h2 id="section-2">第二章：北美寵物飼主輪廓</h2>
+                <h3>2.1 寵物數量與飼主人口統計</h3>
+                <p>寵物飼養在北美已成為一種普遍且持續增長的社會現象。2024年，美國有9400萬戶家庭擁有至少一隻寵物，相較於2023年的8200萬戶有顯著增長<sup><a href="javascript:void(0)" onclick="showCitation('cite-30')">[30]</a></sup>。這相當於佔美國家庭總數的約 66% 至 71%<sup><a href="javascript:void(0)" onclick="showCitation('cite-31')">[31]</a></sup>。</p>
+                <p>在寵物類型的選擇上，犬隻依然是最受歡迎的寵物：</p>
+                <ul>
+                    <li>按家庭計算：6800萬美國家庭（佔比 51%）飼養犬隻，而飼養貓隻的家庭為4900萬戶（佔比 37%）<sup><a href="javascript:void(0)" onclick="showCitation('cite-25')">[25]</a></sup>。這意味著一個家庭飼養狗的可能性比飼養貓高出約 1.4倍。</li>
+                    <li>按總數計算：美國寵物犬的總數約為8970萬隻，而寵物貓的總數為7380萬隻<sup><a href="javascript:void(0)" onclick="showCitation('cite-5')">[5]</a></sup>。然而，值得注意的是，養貓家庭更傾向於飼養多隻貓（平均每戶1.8隻貓，而狗為1.5隻）<sup><a href="javascript:void(0)" onclick="showCitation('cite-32')">[32]</a></sup>。</li>
+                </ul>
+                <p>飼主群體正在經歷一場顯著的代際轉變。千禧一代目前已成為最大的寵物飼主群體，佔比約 30% 至 33%，緊隨其後的是X世代（25%）和嬰兒潮一代（24% 至 25%）。Z世代則是增長最快的群體，在2024年佔寵物家庭的 20%，相較於2023年增長了驚人的 43.5%<sup><a href="javascript:void(0)" onclick="showCitation('cite-31')">[31]</a></sup>。</p>
+                <h3>2.2 寵物飼主支出分析</h3>
+                <p>在2023年和2024年，美國每個寵物家庭的年均總支出穩定在約1,515 至 1,516 美元之間<sup><a href="javascript:void(0)" onclick="showCitation('cite-5')">[5]</a></sup>。</p>
+                <p>犬隻飼主的花費持續高於貓隻飼主，這一支出差距體現在各個消費類別中：</p>
+                <ul>
+                    <li>2024年，飼養一隻狗的年均花費為1,740 美元，而貓則為1,311 美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-33')">[33]</a></sup>。另一項數據顯示，僅在獸醫護理方面，犬隻的年均花費為 580 美元，而貓隻為433 美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-35')">[35]</a></sup>。</li>
+                    <li>這種支出差異貫穿食品、獸醫就診和玩具等多個類別<sup><a href="javascript:void(0)" onclick="showCitation('cite-5')">[5]</a></sup>，使得犬隻市場成為高價位產品的主要目標市場。</li>
+                </ul>
+                <p>從人口統計學角度看，年收入超過7萬美元的高收入家庭佔據了寵物市場總支出的三分之二<sup><a href="javascript:void(0)" onclick="showCitation('cite-26')">[26]</a></sup>。千禧一代和Z世代則被認為是推動市場高端化以及在安撫產品和科技產品等類別上消費的主要力量<sup><a href="javascript:void(0)" onclick="showCitation('cite-4')">[4]</a></sup>。</p>
+                <h5>表 2.1：2024年美國單隻寵物年均支出（美元）</h5>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr><th>支出類別</th><th>犬隻平均花費 ($)</th><th>貓隻平均花費 ($)</th><th>數據來源</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>食品與零食</td><td>363</td><td>307</td><td>[36]</td></tr>
+                        <tr><td>常規獸醫就診</td><td>256</td><td>203</td><td>[36]</td></tr>
+                        <tr><td>手術獸醫費用</td><td>484</td><td>238</td><td>[36]</td></tr>
+                        <tr><td>用品/美容</td><td>38</td><td>40</td><td>[36]</td></tr>
+                        <tr><td>玩具</td><td>70</td><td>50</td><td>[36]</td></tr>
+                        <tr><td><b>總計年均支出</b></td><td><b>1,740</b></td><td><b>1,311</b></td><td>[33]</td></tr>
+                    </tbody>
+                </table>
+                <p>Z世代寵物飼養的快速增長，結合他們作為數位原住民的特性以及將「寵物視為孩子」的養育觀念，將加速智能互聯健身和遊戲設備的市場採納曲線，使其從利基市場的小眾產品轉變為主流的健康工具。Z世代在一年內於寵物飼養市場的份額爆炸性增長了 43.5%，已成為一股主要的市場力量<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。這一代人是數位原住民，習慣於將科技融入生活的各個方面，包括寵物護理，因此他們是應用程式控制設備的理想目標受眾<sup><a href="javascript:void(0)" onclick="showCitation('cite-17')">[17]</a></sup>。此外，Z世代和千禧一代更傾向於使用安撫產品，並高度關注寵物的福祉，顯示出他們主動、以健康為導向的心態<sup><a href="javascript:void(0)" onclick="showCitation('cite-4')">[4]</a></sup>。他們也更有可能飼養多隻寵物，這增加了家庭中可能出現混亂和破壞性行為的機率，從而創造了對豐富化和分散注意力的工具（即智能玩具）的強烈需求<sup><a href="javascript:void(0)" onclick="showCitation('cite-25')">[25]</a></sup>。因此，寵物科技市場的未來將由Z世代的期望所定義。產品必須提供無縫的應用程式整合、數據追踪、社交分享功能（例如，與朋友的狗比較活動水平），並與整體的健康敘事相符。其用戶體驗必須與任何其他消費科技產品一樣精緻。</p>
+
+                <h2 id="section-3">第三章：寵物健身護理市場分析</h2>
+                <h3>3.1 全球市場概覽</h3>
+                <p>全球寵物健身護理市場在2023至2024年間的估值介於59 億至 62.9 億美元之間<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。該市場預計將以 6.4% 至 6.7% 的穩健複合年均增長率（CAGR）增長，到2032至2037年，市場規模預計將達到 104 億至 144.4 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-37')">[37]</a></sup>。這個利基市場的增長速度略高於整體寵物護理市場，顯示出其強勁的特定需求。</p>
+                <h3>3.2 北美市場深度剖析</h3>
+                <p>北美是全球最大的寵物健身護理市場，佔據了超過 41% 的主導份額，並預計到2037年將佔據約 47.4% 的市場<sup><a href="javascript:void(0)" onclick="showCitation('cite-8')">[8]</a></sup>。</p>
+                <p>根據2024年全球市場規模約 66.5 億美元的數據<sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>及其 41% 的佔比進行計算，2024年北美寵物健身護理市場的價值約為 27.3 億美元。美國是該市場的主要驅動力，預計其CAGR為 6.1%<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。</p>
+                <p>推動該市場的核心驅動力是日益嚴峻的寵物肥胖問題。在美國，高達59%的犬隻和61%的貓隻被歸類為超重或肥胖<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。這一健康危機直接催生了對運動設備和活動監測器的需求，因為飼主們正在積極尋求解決方案<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。</p>
+                <h3>3.3 市場細分：健身護理</h3>
+                <ul>
+                    <li><b>按組成部分：</b>
+                        <ul>
+                            <li>服務：這是市場的主導部分，2024年佔據了超過 <b>67%</b> 的市場份額，並以 6.6% 的CAGR增長<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。服務內容包括敏捷訓練/健身房課程、水療和物理治療評估。</li>
+                            <li>設備：此部分包括跑步機、滾輪和平衡訓練產品等<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。</li>
+                            <li>軟體：此部分主要由健身追踪器和健康監測應用程式（如FitBark、Tractive）組成，隨著技術採納率的提高，預計將擁有最高的CAGR<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。</li>
+                        </ul>
+                    </li>
+                    <li><b>按寵物類型：</b>
+                        <ul>
+                            <li>犬隻：犬隻市場是迄今為止最大的細分市場，2024年佔據了約 <b>60% 至 72%</b> 的市場份額<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。這歸因於犬隻對體能活動的較高需求以及市場上更廣泛的相關產品。</li>
+                            <li>貓隻：貓隻市場規模較小，但預計將成為增長最快的細分市場，因為飼主越來越重視為室內貓提供豐富的生活環境<sup><a href="javascript:void(0)" onclick="showCitation('cite-8')">[8]</a></sup>。</li>
+                        </ul>
+                    </li>
+                </ul>
+                <p>「服務」類別在市場中的主導地位揭示了一個關鍵的市場機會：消費者願意為專業知識和結構化方案付費，而不僅僅是購買硬體。這表明硬體製造商有潛力轉向以服務為基礎和訂閱制的商業模式。數據顯示，健身房和物理治療等服務佔據了健身市場三分之二的份額，這反映出市場對指導性、專業化健身解決方案的高度認可<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。消費者對寵物跑步機的評價中，一個核心痛點是訓練犬隻使用設備的困難和不確定性；飼主購買了設備，卻在實施過程中遇到困難<sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。人類健身領域的Peloton等公司的崛起，展示了將硬體與基於訂閱的內容和社群相結合的強大力量<sup><a href="javascript:void(0)" onclick="showCitation('cite-9')">[9]</a></sup>。因此，一家銷售寵物跑步機的公司可以通過提供訂閱服務來顯著提升其價值主張並創造經常性收入，例如提供由專業訓練師指導的虛擬訓練課程、指導性鍛煉和社群挑戰。這將產品從一次性的硬體銷售轉變為一個綜合的健身生態系統，直接滿足了消費者對指導和結構化方案的需求。</p>
+
+                <h2 id="section-4">第四章：寵物互動遊戲與智能玩具市場分析</h2>
+                <h3>4.1 全球市場概覽</h3>
+                <p>此類別是更廣泛的「寵物玩具」市場的一個子集。全球寵物玩具市場在2024年的估值為90.3 億美元，預計到2032年將達到 152.9 億美元，CAGR為 6.81%<sup><a href="javascript:void(0)" onclick="showCitation('cite-12')">[12]</a></sup>。部分報告使用「寵物益智玩具」一詞，將該市場在2024年的價值定為 86 億美元，CAGR為 7.2%<sup><a href="javascript:void(0)" onclick="showCitation('cite-40')">[40]</a></sup>。</p>
+                <p>互動玩具是這個市場中一個主要且不斷增長的組成部分。據估計，它們佔玩具總銷售額的39%<sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup>，或者「互動與自玩玩具」佔據了<b>40%</b>的市場份額<sup><a href="javascript:void(0)" onclick="showCitation('cite-13')">[13]</a></sup>。</p>
+                <h3>4.2 北美市場深度剖析</h3>
+                <p>北美是全球最大的寵物玩具市場，2023年佔據了33.76%的份額，價值28.7 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-12')">[12]</a></sup>。該市場預計到2030年將以驚人的 8.7% CAGR增長<sup><a href="javascript:void(0)" onclick="showCitation('cite-14')">[14]</a></sup>。</p>
+                <p>基於互動玩具約 39% 的市場份額，應用於2023年北美市場規模 28.7 億美元，可估算出北美互動/遊戲市場的價值約為11.2 億美元。僅美國的寵物益智玩具市場在2024年就達到了 24 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-40')">[40]</a></sup>。這表明智能和互動玩具的潛在市場規模相當可觀。</p>
+                <h3>4.3 市場細分：互動玩具</h3>
+                <ul>
+                    <li><b>按產品類型：</b>
+                        <ul>
+                            <li>互動/益智玩具：包括零食分發謎題和需要解決問題的玩具<sup><a href="javascript:void(0)" onclick="showCitation('cite-13')">[13]</a></sup>。此類別的需求主要來自於對寵物精神豐富化的需求。</li>
+                            <li>智能/電子玩具：包括應用程式控制的設備、遙控球、自動雷射筆和自動拋球機<sup><a href="javascript:void(0)" onclick="showCitation('cite-42')">[42]</a></sup>。這是本報告所關注的「遊戲」部分。</li>
+                            <li>咀嚼、絨毛、球類玩具：雖然是傳統類別，但這些產品也正在被賦予互動元素。球類是最大的單一玩具類別，佔有<b>46%</b>的市場份額<sup><a href="javascript:void(0)" onclick="showCitation('cite-45')">[45]</a></sup>，但互動玩具是更廣泛市場中增長最快的趨勢。</li>
+                        </ul>
+                    </li>
+                    <li><b>按寵物類型：</b>
+                        <ul>
+                            <li>犬隻：犬隻市場是最大的細分市場，佔寵物玩具市場的51% 至 56%<sup><a href="javascript:void(0)" onclick="showCitation('cite-14')">[14]</a></sup>。市場對耐用的咀嚼玩具、拾取類玩具和益智玩具有很高的需求。</li>
+                            <li>貓隻：貓隻市場規模較小但正在增長，其重點在於能激發狩獵本能的玩具（如逗貓棒、雷射筆、電子老鼠）<sup><a href="javascript:void(0)" onclick="showCitation('cite-45')">[45]</a></sup>。</li>
+                        </ul>
+                    </li>
+                </ul>
+                <p>市場中存在一個根本性的脫節，即飼主對自動化的渴望（他們購買的原因）與寵物對互動的渴望（牠們玩耍的方式）之間的矛盾。這種張力是智能玩具市場面臨的最大挑戰，同時也是最大的機遇。飼主購買智能玩具是為了解決寵物無聊、分離焦慮以及自身時間不足等問題；其核心動機往往是為了方便和減輕內疚感<sup><a href="javascript:void(0)" onclick="showCitation('cite-16')">[16]</a></sup>。然而，在Reddit上關於自動拋球機的大量消費者評論中，一個一致的主題是：犬隻常常拒絕獨自使用機器，而是將球帶給飼主，讓飼主將球放入機器中<sup><a href="javascript:void(0)" onclick="showCitation('cite-19')">[19]</a></sup>。犬隻將「拾取」視為與人類的「雙人遊戲」<sup><a href="javascript:void(0)" onclick="showCitation('cite-21')">[21]</a></sup>。同樣，對其他智能玩具的評論也顯示，寵物往往對設備感到警惕、害怕噪音，或者除非飼主積極鼓勵，否則根本不理會<sup><a href="javascript:void(0)" onclick="showCitation('cite-19')">[19]</a></sup>。因此，最成功的產品將不是那些試圖取代飼主的產品，而是那些能夠增強飼主與寵物之間玩耍時光，或提供真正引人入勝的獨自玩耍體驗的產品。市場營銷的重點應從「在你離開時讓寵物保持忙碌」轉變為「一種全新的、令人興奮的共同玩耍方式」或「當你絕對無法陪伴時，最能吸引牠的玩具」。產品設計應著重於減少令寵物害怕的噪音，並加入能逐步建立寵物信心的元素。</p>
+
+                <h2 id="section-5">第五章：消費者洞察：需求驅動力與觀念</h2>
+                <h3>5.1 購買的核心動機（需求驅動力）</h3>
+                <ul>
+                    <li>人性化大趨勢：這是市場的根本驅動力。絕大多數飼主（超過 85%）將他們的寵物視為家庭成員<sup><a href="javascript:void(0)" onclick="showCitation('cite-5')">[5]</a></sup>。這種心態使得為提升寵物福祉、快樂和健康的產品上的花費變得合理化<sup><a href="javascript:void(0)" onclick="showCitation('cite-17')">[17]</a></sup>。</li>
+                    <li>健康與保健------對抗肥胖：如第4.2節所述，寵物肥胖危機是一個強大的動機。飼主購買健身設備以確保他們的寵物獲得足夠的運動，尤其是在空間有限的城市環境或天氣不佳時<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。</li>
+                    <li>精神刺激與行為管理：這是互動玩具的主要驅動因素。飼主希望藉此緩解寵物的無聊（88% 的飼主）、提供精神刺激（70%）、減少分離焦慮（45%）以及分散其破壞性行為的注意力（44%）<sup><a href="javascript:void(0)" onclick="showCitation('cite-16')">[16]</a></sup>。</li>
+                    <li>便利性與遠程互動：現代生活方式意味著飼主忙碌或不在家工作。智能玩具、帶有零食分配器的攝像頭和自動餵食器等產品的購買，是為了提供遠程照顧和互動，以減輕飼主的內疚感<sup><a href="javascript:void(0)" onclick="showCitation('cite-17')">[17]</a></sup>。</li>
+                </ul>
+                <h3>5.2 飼主對寵物健身設備（跑步機與監測器）的看法</h3>
+                <ul>
+                    <li><b>正面反饋（承諾）：</b>
+                        <ul>
+                            <li>活動追踪與安心感：飼主們非常喜歡能夠監測寵物活動水平的功能，尤其是在他們外出或寵物由他人照顧時。這提供了數據驅動的保證，讓他們確信寵物是健康和活躍的<sup><a href="javascript:void(0)" onclick="showCitation('cite-51')">[51]</a></sup>。</li>
+                            <li>可控的全天候鍛煉：跑步機被譽為在極端炎熱或寒冷天氣下鍛煉犬隻的理想解決方案，也適用於身體有局限的飼主，或需要低衝擊運動以進行康復的犬隻<sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。</li>
+                            <li>能量管理：對於高能量犬種，跑步機被視為消耗多餘精力、預防行為問題的寶貴工具<sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。</li>
+                        </ul>
+                    </li>
+                    <li><b>負面反饋（現實）：</b>
+                        <ul>
+                            <li>寵物適應問題：一個顯著的障礙是寵物的恐懼或猶豫。訓練犬隻使用跑步機需要時間、耐心和正向強化；它並非一個即插即用的解決方案<sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。</li>
+                            <li>尺寸與設計缺陷：評論中經常提到跑步機對於犬隻的自然步幅來說太短，尤其是大型犬種。其他投訴包括組裝說明不清晰、零件脆弱（如有機玻璃）和剎車機制無效<sup><a href="javascript:void(0)" onclick="showCitation('cite-39')">[39]</a></sup>。</li>
+                            <li>成本與空間：寵物跑步機價格昂貴且體積龐大，對於許多家庭，特別是居住在較小城市公寓的家庭來說，是一項困難的購買決策<sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。</li>
+                        </ul>
+                    </li>
+                </ul>
+                <h3>5.3 飼主對寵物遊戲設備（拋球機與智能玩具）的看法</h3>
+                <ul>
+                    <li><b>正面反饋（承諾）：</b>
+                        <ul>
+                            <li>娛樂與互動：當這些玩具按預期工作時，它們可以提供數小時的娛樂和精神刺激，特別是對於「球痴」犬隻或好奇心強的貓隻<sup><a href="javascript:void(0)" onclick="showCitation('cite-20')">[20]</a></sup>。</li>
+                            <li>解放雙手的玩耍：對於忙碌、行動不便或在寵物精力耗盡前自己先累倒的飼主來說，這個概念極具吸引力<sup><a href="javascript:void(0)" onclick="showCitation('cite-50')">[50]</a></sup>。</li>
+                        </ul>
+                    </li>
+                    <li><b>負面反饋（現實）：</b>
+                        <ul>
+                            <li>「雙人遊戲」問題：如第5節的分析所述，許多犬隻將拾取視為與人類的互動遊戲，不會獨自與自動拋球機玩耍<sup><a href="javascript:void(0)" onclick="showCitation('cite-19')">[19]</a></sup>。</li>
+                            <li>恐懼與噪音：拋球機或自走玩具的機械聲可能會嚇到膽小的寵物，使得昂貴的玩具變得毫無用處<sup><a href="javascript:void(0)" onclick="showCitation('cite-19')">[19]</a></sup>。</li>
+                            <li>耐用性與機械問題：沾滿口水的網球會卡住拋球機<sup><a href="javascript:void(0)" onclick="showCitation('cite-21')">[21]</a></sup>。益智玩具的絨毛部件很容易被破壞<sup><a href="javascript:void(0)" onclick="showCitation('cite-56')">[56]</a></sup>。智能玩具的電池續航力令人失望，或在某些表面（如地毯）上表現不佳<sup><a href="javascript:void(0)" onclick="showCitation('cite-57')">[57]</a></sup>。</li>
+                            <li>強迫行為風險：訓練師和行為學家警告說，自動拋球機的重複性、自我強化的特性可能會在某些犬隻中培養不健康的、類似強迫症的行為<sup><a href="javascript:void(0)" onclick="showCitation('cite-19')">[19]</a></sup>。</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="page-data-list" class="page-content">
+            <h2>引用資料來源</h2>
+            <div class="data-list">
+                <ol>
+                    <li id="cite-1"><a href="https://www.fortunebusinessinsights.com/pet-care-market-104749" target="_blank" rel="noopener noreferrer">Pet Care Market Size, Share, Trends | Growth Analysis [2032] - Fortune Business Insights</a></li>
+                    <li id="cite-2"><a href="https://americanpetproducts.org/news/the-american-pet-products-association-appa-releases-2025-state-of-the-industry-report" target="_blank" rel="noopener noreferrer">The American Pet Products Association (APPA) Releases 2025 State of the Industry Report</a></li>
+                    <li id="cite-3"><a href="https://www.iii.org/fact-statistic/facts-statistics-pet-ownership-and-insurance" target="_blank" rel="noopener noreferrer">Facts + Statistics: Pet Ownership and Insurance | III</a></li>
+                    <li id="cite-4"><a href="https://www.petfoodindustry.com/pet-food-market/market-trends-and-reports/news/15741428/report-pet-ownership-expands-as-gen-z-shifts-trends" target="_blank" rel="noopener noreferrer">Report: Pet ownership expands as Gen Z shifts trends | PetfoodIndustry</a></li>
+                    <li id="cite-5"><a href="https://www.avma.org/news/pet-population-continues-increase-while-pet-spending-declines" target="_blank" rel="noopener noreferrer">Pet population continues to increase while pet spending declines</a></li>
+                    <li id="cite-6"><a href="https://www.grandviewresearch.com/industry-analysis/pet-accessories-market-report" target="_blank" rel="noopener noreferrer">Pet Accessories Market Size & Share | Industry Report, 2030 - Grand View Research</a></li>
+                    <li id="cite-7"><a href="https://www.gminsights.com/industry-analysis/pet-fitness-care-market" target="_blank" rel="noopener noreferrer">Pet Fitness Care Market Size & Share Report, 2024 - 2032</a></li>
+                    <li id="cite-8"><a href="https://www.grandviewresearch.com/horizon/outlook/pet-fitness-care-market-size/global" target="_blank" rel="noopener noreferrer">Global Pet Fitness Care Market Size & Outlook, 2024-2030</a></li>
+                    <li id="cite-9"><a href="https://www.researchnester.com/reports/pet-fitness-care-market/6894" target="_blank" rel="noopener noreferrer">Pet Fitness Care Market Size & Share | Forecast Report 2037</a></li>
+                    <li id="cite-10"><a href="https://www.grandviewresearch.com/industry-analysis/pet-fitness-care-market-report" target="_blank" rel="noopener noreferrer">Pet Fitness Care Market Size & Share | Industry Report 2030 - Grand View Research</a></li>
+                    <li id="cite-11"><a href="https://www.globalgrowthinsights.com/market-reports/pet-toys-market-108856" target="_blank" rel="noopener noreferrer">Pet Toys Market Size & Analysis, 2034 - Global Growth Insights</a></li>
+                    <li id="cite-12"><a href="https://www.fortunebusinessinsights.com/pet-toys-market-106259" target="_blank" rel="noopener noreferrer">Pet Toys Market Size, Share, Growth & Industry Trends, 2032</a></li>
+                    <li id="cite-13"><a href="https://www.stellarmr.com/report/Pet-Educational-Toys-Market/2184" target="_blank" rel="noopener noreferrer">Pet Educational Toys Market- Global Industry Analysis and Forecast (2025-2032)</a></li>
+                    <li id="cite-14"><a href="https://www.grandviewresearch.com/horizon/outlook/pet-toys-market/north-america" target="_blank" rel="noopener noreferrer">North America Pet Toys Market Size & Outlook, 2023-2030</a></li>
+                    <li id="cite-15"><a href="https://www.petobesityprevention.org/articlesandnews" target="_blank" rel="noopener noreferrer">Pet Obesity Articles & News - APOP</a></li>
+                    <li id="cite-16"><a href="https://globalpetindustry.com/article/new-data-unpacks-consumer-habits-in-pet-toys/" target="_blank" rel="noopener noreferrer">New data unpacks consumer habits in pet toys - GlobalPETS</a></li>
+                    <li id="cite-17"><a href="https://www.news.market.us/pet-toys-market-news/" target="_blank" rel="noopener noreferrer">Pet Toys Market to Reach USD 17.4 Billion by 2033</a></li>
+                    <li id="cite-18"><a href="https://www.reddit.com/r/dogs/comments/1fqc19j/thoughts_on_dogpacer_treadmill/" target="_blank" rel="noopener noreferrer">Thoughts on dogPACER treadmill : r/dogs - Reddit</a></li>
+                    <li id="cite-19"><a href="https://www.reddit.com/r/AustralianCattleDog/comments/1j3ar1c/automatic_ball_thrower_for_a_ball_is_life_themed/" target="_blank" rel="noopener noreferrer">Automatic ball thrower for a "ball is life" themed cattle dog? : r/AustralianCattleDog - Reddit</a></li>
+                    <li id="cite-20"><a href="https://www.reddit.com/r/Maltese/comments/1bng0m3/automatic_ball_launchers_thoughts/" target="_blank" rel="noopener noreferrer">Automatic ball launchers. Thoughts? : r/Maltese - Reddit</a></li>
+                    <li id="cite-21"><a href="https://www.reddit.com/r/dogs/comments/cwawam/discussion_the_search_for_an_automated_tennis/" target="_blank" rel="noopener noreferrer">[Discussion] The search for an automated tennis ball launcher : r/dogs - Reddit</a></li>
+                    <li id="cite-22"><a href="https://straitsresearch.com/report/pet-care-market" target="_blank" rel="noopener noreferrer">Pet Care Market Size, Share, Future Prospect & Forecast 2033 - Straits Research</a></li>
+                    <li id="cite-23"><a href="https://www.globenewswire.com/news-release/2024/08/20/2933003/0/en/Pet-Care-Market-Size-Expected-to-Reach-USD-597-51-Billion-by-2033.html" target="_blank" rel="noopener noreferrer">Pet Care Market Size Expected to Reach USD 597.51 Billion by 2033 - GlobeNewswire</a></li>
+                    <li id="cite-24"><a href="https://market.us/report/pet-care-market/" target="_blank" rel="noopener noreferrer">Pet Care Market Size, Share, Demand | CAGR of 6.4%</a></li>
+                    <li id="cite-25"><a href="https://www.petpackjournal.com/reports/pet-statistics-in-north-america" target="_blank" rel="noopener noreferrer">PetPack Journal Report - Pet Statistics in North America</a></li>
+                    <li id="cite-26"><a href="https://www.freedoniagroup.com/packaged-facts/us-pet-market-outlook" target="_blank" rel="noopener noreferrer">US Pet Market Outlook, 2025-2026 - Market Size, Market Trends | Packaged Facts</a></li>
+                    <li id="cite-27"><a href="https://www.grandviewresearch.com/horizon/outlook/pet-services-market/united-states" target="_blank" rel="noopener noreferrer">US Pet Services Market Size & Outlook, 2023-2030</a></li>
+                    <li id="cite-28"><a href="https://www.mordorintelligence.com/industry-reports/united-states-pet-market" target="_blank" rel="noopener noreferrer">US Pet Market Size, Growth, Trend Analysis & Competitive Landscape, 2030</a></li>
+                    <li id="cite-29"><a href="https://bsmpartners.net/insights/pets-in-2024-top-pet-trends-and-how-your-business-can-stay-ahead/" target="_blank" rel="noopener noreferrer">Pets in 2024: Top Pet Trends and How Your Business Can Stay Ahead - BSM Partners</a></li>
+                    <li id="cite-30"><a href="https://www.petfoodindustry.com/pet-ownership-statistics/article/15747936/chart-cats-and-dogs-lead-us-pet-ownership-growth-20232025" target="_blank" rel="noopener noreferrer">Chart: Cats and dogs lead US pet ownership growth 2023-2025 | PetfoodIndustry</a></li>
+                    <li id="cite-31"><a href="https://www.forbes.com/advisor/pet-insurance/pet-ownership-statistics/" target="_blank" rel="noopener noreferrer">Pet Ownership Statistics 2025 - Forbes Advisor</a></li>
+                    <li id="cite-32"><a href="https://www.avma.org/resources-tools/reports-statistics/us-pet-ownership-statistics" target="_blank" rel="noopener noreferrer">U.S. pet ownership statistics | American Veterinary Medical Association</a></li>
+                    <li id="cite-33"><a href="https://www.boston25news.com/news/americans-prefer-dogs-cats-pets-by-wide-margin-according-data/N5LQ3IYD3ZP4DKMS5K4Y36XMHM/" target="_blank" rel="noopener noreferrer">Americans prefer dogs to cats as pets by a wide margin, according to the data</a></li>
+                    <li id="cite-34"><a href="https://institute.bankofamerica.com/content/dam/economic-insights/us-pet-ownership.pdf" target="_blank" rel="noopener noreferrer">Best in show: US pet ownership | Bank of America Institute</a></li>
+                    <li id="cite-35"><a href="https://www.visualcapitalist.com/american-pet-ownership-in-2024/" target="_blank" rel="noopener noreferrer">Visualizing American Pet Ownership in 2024</a></li>
+                    <li id="cite-36"><a href="https://capitaloneshopping.com/research/pet-spending-statistics/" target="_blank" rel="noopener noreferrer">Pet Spending Statistics (2025): Total Amount Spent per Year - Capital One Shopping</a></li>
+                    <li id="cite-37"><a href="https://www.futuremarketinsights.com/reports/pet-fitness-care-market" target="_blank" rel="noopener noreferrer">Pet Fitness Care Market | Global Market Analysis Report - 2035</a></li>
+                    <li id="cite-38"><a href="https://www.metatechinsights.com/industry-insights/pet-fitness-market-1149" target="_blank" rel="noopener noreferrer">Pet Fitness Market Size, Market Share & Forecast 2025-2035 - Metatech Insights</a></li>
+                    <li id="cite-39"><a href="https://alexliggett.com/petsite-treadmill/" target="_blank" rel="noopener noreferrer">Petsite Treadmill Review - liggett dog training</a></li>
+                    <li id="cite-40"><a href="https://www.gminsights.com/industry-analysis/pet-educational-toys-market" target="_blank" rel="noopener noreferrer">Pet Educational Toys Market Size & Share Report, 2034</a></li>
+                    <li id="cite-41"><a href="https://www.marketresearch.com/Global-Industry-Analysts-v1039/Pet-Toys-41341762/" target="_blank" rel="noopener noreferrer">Pet Toys - MarketResearch.com</a></li>
+                    <li id="cite-42"><a href="https://dataintelo.com/report/global-smart-pet-toy-market" target="_blank" rel="noopener noreferrer">Smart Pet Toy Market Report | Global Forecast From 2025 To 2033 - Dataintelo</a></li>
+                    <li id="cite-43"><a href="https://www.industryarc.com/Research/smart-pet-toys-market-research-800499" target="_blank" rel="noopener noreferrer">Smart Pet Toys Market Size, Share, Industry Trend & Forecast 2030</a></li>
+                    <li id="cite-44"><a href="https://www.credenceresearch.com/report/pet-toys-market" target="_blank" rel="noopener noreferrer">Pet Toys Market Size, Share, Growth and Forecast 2032 - Credence Research</a></li>
+                    <li id="cite-45"><a href="https://market.us/report/pet-toys-market/" target="_blank" rel="noopener noreferrer">Pet Toys Market Size, Share | CAGR of 6.7%</a></li>
+                    <li id="cite-46"><a href="https://www.petproductmarketing.co.uk/news/is-your-selection-of-dog-toys-inspiring-customers/" target="_blank" rel="noopener noreferrer">Is your selection of dog toys inspiring customers? - Pet Product Marketing</a></li>
+                    <li id="cite-47"><a href="https://www.stacksocial.com/articles/pet-product-reviews" target="_blank" rel="noopener noreferrer">Review: Our Pet Parents Tried These Cat and Dog Products | StackSocial</a></li>
+                    <li id="cite-48"><a href="https://www.youtube.com/watch?v=TQqfk6QwH7I" target="_blank" rel="noopener noreferrer">Is this $150 Cat toy worth it? | Mousr Smart Cat Toy Review - YouTube</a></li>
+                    <li id="cite-49"><a href="https://doggearreview.com/review/maximumk9dogrunnertreadmill/" target="_blank" rel="noopener noreferrer">Maximum Canine Dog Runner Tracks Treadmill Review</a></li>
+                    <li id="cite-50"><a href="https://www.cnet.com/home/kitchen-and-household/8-gadgets-to-help-you-become-the-best-pet-parent/" target="_blank" rel="noopener noreferrer">8 Gadgets to Help You Become the Best Pet Parent - CNET</a></li>
+                    <li id="cite-51"><a href="https://www.bestbuy.com/site/reviews/fitbark-dog-activity-monitor-green/4598974?page=2" target="_blank" rel="noopener noreferrer">Customer Reviews: FitBark Dog Activity Monitor Green 60-3551-05-XP - Best Buy</a></li>
+                    <li id="cite-52"><a href="https://www.youtube.com/watch?v=MZud2HXzdsQ" target="_blank" rel="noopener noreferrer">BEST Pet Activity Monitors: Track Your Dog's Health & Never Lose Them Again! - YouTube</a></li>
+                    <li id="cite-53"><a href="https://www.thesprucepets.com/best-dog-treadmills-5296147" target="_blank" rel="noopener noreferrer">The 9 Best Treadmills for Dogs to Help With Recovery and Prevent Injury</a></li>
+                    <li id="cite-54"><a href="https://www.walmart.com/reviews/product/3564105663" target="_blank" rel="noopener noreferrer">Customer reviews for Syedee Dog Treadmill for Medium Dogs, Dog Slatmill for Healthy & Fit ... - Walmart</a></li>
+                    <li id="cite-55"><a href="https://www.reddit.com/r/Dogtraining/comments/v46ttw/those_who_have_automatic_ball_launchers_where_did/" target="_blank" rel="noopener noreferrer">Those who have automatic ball launchers, where did you get them? : r/Dogtraining - Reddit</a></li>
+                    <li id="cite-56"><a href="https://www.techgearlab.com/topics/home/best-dog-toy" target="_blank" rel="noopener noreferrer">The Best Dog Toy of 2025 | Tested & Rated - Tech Gear Lab</a></li>
+                    <li id="cite-57"><a href="https://www.youtube.com/watch?v=wf1MvFqFApw" target="_blank" rel="noopener noreferrer">Interactive Cat Toys: UGLY Truth TikTok Users Don't See - YouTube</a></li>
+                    <li id="cite-58"><a href="https://www.reddit.com/r/dogs/comments/1irtkgv/ball_launcher_recommendations/" target="_blank" rel="noopener noreferrer">Ball Launcher Recommendations? : r/dogs - Reddit</a></li>
+                    <li id="cite-59"><a href="https://www.reddit.com/r/dogs/comments/1lggpex/automatic_ball_thrower/" target="_blank" rel="noopener noreferrer">Automatic ball thrower : r/dogs - Reddit</a></li>
+                    <li id="cite-60"><a href="https://www.grandviewresearch.com/industry-analysis/us-pet-food-market-report" target="_blank" rel="noopener noreferrer">U.S. Pet Food Market Size & Share | Industry Report, 2030</a></li>
+                    <li id="cite-61"><a href="https://naphia.org/news/soi-report-2024/" target="_blank" rel="noopener noreferrer">Pet Health Insurance Industry Continued Exceptional Growth Rate In 2023 - NAPHIA</a></li>
+                    <li id="cite-62"><a href="https://www.kenresearch.com/industry-reports/usa-pet-market" target="_blank" rel="noopener noreferrer">USA Pet Market Growth Analysis & Market Segmentation to 2030 - Ken Research</a></li>
+                    <li id="cite-63"><a href="https://www.petobesityprevention.org/2024-survey" target="_blank" rel="noopener noreferrer">2024 Pet Obesity Survey Results</a></li>
+                    <li id="cite-64"><a href="https://zooinform.ru/wp-content/uploads/2025/04/2024petobesityopinionsurveysummary-1.pdf" target="_blank" rel="noopener noreferrer">2024 pet obesity and nutrition survey highlights</a></li>
+                    <li id="cite-65"><a href="https://americanpetproducts.org/news/latest-pet-ownership-and-spending-data-from-appa-reveals-continued-strength-of-national-pet-industry-in-the-face-of-economic-uncertainty" target="_blank" rel="noopener noreferrer">Latest Pet Ownership and Spending Data from APPA Reveals Continued Strength of National Pet Industry in the Face of Economic Uncertainty - American Pet Products Association</a></li>
+                    <li id="cite-66"><a href="https://americanpetproducts.org/research-insights" target="_blank" rel="noopener noreferrer">Pet Ownership Statistics, Pet Industry Trends & Pet Research by APPA - American Pet Products Association</a></li>
+                    <li id="cite-67"><a href="https://www.grandviewresearch.com/industry-analysis/north-america-pet-food-market-report" target="_blank" rel="noopener noreferrer">North America Pet Food Market Size | Industry Report, 2030 - Grand View Research</a></li>
+                    <li id="cite-68"><a href="https://store.mintel.com/report/us-americas-pet-owners-market-report" target="_blank" rel="noopener noreferrer">America's Pet Owners Consumer Report 2024 - Mintel Store</a></li>
+                    <li id="cite-69"><a href="https://www.econmarketresearch.com/industry-report/pet-fitness-care-market/" target="_blank" rel="noopener noreferrer">Pet Fitness Care Market Size, Share & Revenue by 2031 - Econ Market Research</a></li>
+                    <li id="cite-70"><a href="https://www.thebusinessresearchcompany.com/report/pet-toys-global-market-report" target="_blank" rel="noopener noreferrer">Pet Toys Global Market Report 2025 - The Business Research Company</a></li>
+                    <li id="cite-71"><a href="https://www.researchandmarkets.com/report/north-america-pet-toy-market" target="_blank" rel="noopener noreferrer">North America Pet Toys Market Size, Competitors & Forecast</a></li>
+                    <li id="cite-72"><a href="https://www.petfoodindustry.com/pet-obesity/news/15742436/pet-obesity-insights-what-owners-and-vets-arent-saying" target="_blank" rel="noopener noreferrer">Survey reveals gaps in pet obesity awareness, owner-vet communication - PetfoodIndustry</a></li>
+                    <li id="cite-73"><a href="https://www.petobesityprevention.org/" target="_blank" rel="noopener noreferrer">Association for Pet Obesity Prevention</a></li>
+                    <li id="cite-74"><a href="https://www.petobesityprevention.org/articlesandnews/7rgaffzvl03ypt9sbgted88yjnd6c2" target="_blank" rel="noopener noreferrer">2024 Survey Reveals Shifts in Pet Obesity Awareness—and Where We Still Fall Short - Press Release</a></li>
+                    <li id="cite-75"><a href="https://www.datamintelligence.com/research-report/pet-toys-market" target="_blank" rel="noopener noreferrer">Pet Toys Market Size, Sustainable Insights and Growth Report 2024-2031</a></li>
+                    <li id="cite-76"><a href="https://www.walmart.com/reviews/product/5161059496" target="_blank" rel="noopener noreferrer">Customer reviews for FYC Pet Dog Treadmill Portable Exercise Treadmill Running Machine for Small and Medium Dog Breeds | Walmart.com</a></li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="citation-backdrop" class="citation-backdrop"></div>
+<div id="citation-popup" class="citation-popup">
+    <div class="citation-popup-header">
+        <h4>引用資料來源</h4>
+        <button type="button" class="btn-close" aria-label="Close" onclick="hideCitation()"></button>
+    </div>
+    <div id="citation-popup-body" class="citation-popup-body">
+    </div>
+</div>
+<script>
+    /* --- 頁面內容切換 --- */
+    function showPage(pageId, anchor, element) {
+        document.querySelectorAll('.page-content').forEach(page => page.classList.remove('active'));
+        const pageToShow = document.getElementById(pageId);
+        if (pageToShow) pageToShow.classList.add('active');
+        
+        // 更新主導覽連結的 active 狀態
+        document.querySelectorAll('.main-nav-link').forEach(link => link.classList.remove('active-main-link'));
+        document.querySelector('.accordion-button').classList.remove('active-main-link');
+
+        if (element) {
+            if (element.classList.contains('main-nav-link')) {
+                element.classList.add('active-main-link');
+            } else if (pageId === 'page-report') {
+                document.querySelector('.accordion-button').classList.add('active-main-link');
+            }
+        }
+
+
+        const mainContent = document.getElementById('main-content');
+        if (anchor) {
+            setTimeout(() => {
+                const targetElement = document.querySelector(anchor);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    targetElement.style.transition = 'background-color 0.5s ease-in-out';
+                    targetElement.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+                    setTimeout(() => { targetElement.style.backgroundColor = ''; }, 1500);
+                }
+            }, 100);
+        } else {
+             mainContent.scrollTo(0, 0);
+        }
+    }
+    
+    /* --- 引用資料彈出視窗的 JavaScript 功能 --- */
+    const citationPopup = document.getElementById('citation-popup');
+    const citationBody = document.getElementById('citation-popup-body');
+    const citationBackdrop = document.getElementById('citation-backdrop');
+
+    function showCitation(citationId) {
+        const citationElement = document.getElementById(citationId);
+        if (citationElement) {
+            citationBody.innerHTML = `<b>編號 ${citationId.split('-')[1]}:</b> ${citationElement.innerHTML}`;
+            citationPopup.classList.add('active');
+            citationBackdrop.classList.add('active');
+        }
+    }
+
+    function hideCitation() {
+        citationPopup.classList.remove('active');
+        citationBackdrop.classList.remove('active');
+    }
+    citationBackdrop.addEventListener('click', hideCitation);
+
+    /* --- 圖表與滾動監聽初始化 --- */
+    window.onload = function() {
+        // Chart.js 全域設定
+        Chart.register(ChartDataLabels);
+        Chart.defaults.set('plugins.datalabels', {
+            font: { weight: 'normal' }, 
+            color: '#333'
+        });
+        
+        // Chart 1: Market Size
+        new Chart(document.getElementById('marketSizeChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['全球市場 (2024)', '北美市場 (2024)', '全球市場預測 (2032)'],
+                datasets: [{
+                    label: '市場規模 (億美元)',
+                    data: [2593.7, 871.8, 4277.5],
+                    backgroundColor: ['rgba(0, 86, 179, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(0, 86, 179, 1)'],
+                    borderColor: ['rgba(0, 86, 179, 1)', 'rgba(75, 192, 192, 1)', 'rgba(0, 86, 179, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '全球與北美寵物護理市場規模 (億美元)', font: { size: 16 } },
+                    datalabels: { anchor: 'end', align: 'top', formatter: (value) => '$' + value }
+                }
+            }
+        });
+
+        // Chart 2: CAGR
+        new Chart(document.getElementById('cagrChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['全球寵物護理', '寵物健身護理', '北美寵物玩具'],
+                datasets: [{
+                    label: '年均複合增長率(CAGR)',
+                    data: [6.6, 6.55, 8.7], // using average for fitness
+                    backgroundColor: ['rgba(255, 159, 64, 0.7)', 'rgba(255, 205, 86, 0.7)', 'rgba(54, 162, 235, 0.7)']
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                scales: { x: { beginAtZero: true, ticks: { callback: (value) => value + '%' } } },
+                plugins: {
+                    title: { display: true, text: '各市場年均複合增長率(CAGR)比較', font: { size: 16 } },
+                    legend: { display: false },
+                    datalabels: { display: true, anchor: 'center', align: 'center', color: '#000', formatter: (value) => value + '%' }
+                }
+            }
+        });
+
+        // Chart 3: Market Structure
+        new Chart(document.getElementById('marketStructureChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['北美市場 (33.6%)', '全球其他地區 (66.4%)'],
+                datasets: [{
+                    data: [33.61, 66.39],
+                    backgroundColor: ['#003366', '#E0E0E0']
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '北美市場佔全球寵物護理市場份額 (2024)', font: { size: 16 } },
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        formatter: (value) => value.toFixed(1) + '%',
+                        color: (context) => context.dataIndex == 0 ? '#fff' : '#333',
+                    }
+                }
+            }
+        });
+        
+        // Chart 4: Pet Obesity
+        new Chart(document.getElementById('petObesityChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['犬隻', '貓隻'],
+                datasets: [
+                    { label: '超重或肥胖比例', data: [59, 61], backgroundColor: ['rgba(255, 99, 132, 0.8)', 'rgba(255, 159, 64, 0.8)'] }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                 scales: { y: { max: 100, ticks: { callback: (value) => value + '%' } } },
+                plugins: {
+                    title: { display: true, text: '美國寵物肥胖問題統計', font: { size: 16 } },
+                    legend: { display: false },
+                    datalabels: { formatter: (value) => value + '%', color: 'white', anchor: 'center', align: 'center' }
+                }
+            }
+        });
+
+        // Chart 5: Pet Ownership
+        new Chart(document.getElementById('petOwnershipChart').getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: ['飼養犬隻家庭', '飼養貓隻家庭'],
+                datasets: [{
+                    label: '家庭數量 (百萬戶)',
+                    data: [68, 49],
+                    backgroundColor: ['#36A2EB', '#FFC107']
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '美國寵物飼養家庭結構 (百萬戶)', font: { size: 16 } },
+                    legend: { position: 'bottom' },
+                    datalabels: { formatter: (value) => value + ' M', color: '#fff' }
+                }
+            }
+        });
+        
+        // Chart 6: Niche Market Structure
+        new Chart(document.getElementById('nicheMarketChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['互動式玩具 (39.5%)', '其他玩具 (60.5%)'],
+                datasets: [{
+                    data: [39.5, 60.5],
+                    backgroundColor: ['#0056b3', '#E0E0E0']
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '互動玩具佔全球寵物玩具市場份額', font: { size: 16 } },
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        formatter: (value) => value.toFixed(1) + '%',
+                        color: (context) => context.dataIndex == 0 ? '#fff' : '#333',
+                    }
+                }
+            }
+        });
+
+        // --- 滾動監聽 (Scrollspy) 功能 ---
+        const mainContent = document.getElementById('main-content');
+        const sections = document.querySelectorAll('#page-report h2[id]');
+        const navLinks = document.querySelectorAll('.report-nav-link');
+        
+        mainContent.addEventListener('scroll', () => {
+            window.requestAnimationFrame(() => {
+                let currentSectionId = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - mainContent.offsetTop - 50; 
+                    if (mainContent.scrollTop >= sectionTop) {
+                        currentSectionId = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('active-link');
+                    const linkAnchor = link.getAttribute('onclick').match(/#section-\d+/);
+                    if (linkAnchor && linkAnchor[0] === '#' + currentSectionId) {
+                        link.classList.add('active-link');
+                    }
+                });
+            });
+        });
+    };
+</script>
+
+</body>
+</html>
