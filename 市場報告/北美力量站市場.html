@@ -425,7 +425,7 @@
         // Chart.js 全域設定
         Chart.register(ChartDataLabels);
         Chart.defaults.set('plugins.datalabels', {
-            font: { weight: 'bold' }, 
+            font: { weight: 'normal' }, 
             color: '#333'
         });
         
@@ -537,35 +537,46 @@
             }
         });
         
-        // Chart 6: User Segments
+        // Chart 6: User Segments (Pie Chart Version)
         new Chart(document.getElementById('userSegmentChart').getContext('2d'), {
-            type: 'bar',
+            type: 'pie', // <<<<<<<<<<<<<<<< 類型已更改
             data: {
                 labels: ['千禧世代 (25-40)', 'Z 世代 (<25)', 'X 世代 (41-56)', '高齡族群'],
                 datasets: [{
                     label: '市場重要性',
-                    data: [4, 3, 3.5, 2.5], // Qualitative representation
+                    data: [4, 3, 3.5, 2.5], // 原始數據用於計算比例
                     backgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
                 }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        display: false
-                    }
-                },
+                responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
-                    title: { display: true, text: '核心使用者群體分析', font: { size: 16 } },
-                    legend: { display: false },
+                    title: { 
+                        display: true, 
+                        text: '核心使用者群體分析', 
+                        font: { size: 16 } 
+                    },
+                    legend: { 
+                        display: true, // <<<<<<<<<<<<<<<< 開啟圖例
+                        position: 'bottom' 
+                    },
                     datalabels: {
-                        formatter: (value, context) => context.chart.data.labels[context.dataIndex],
-                        color: 'white', anchor: 'center', align: 'center'
+                        // <<<<<<<<<<<<<<<< 修改資料標籤以顯示百分比
+                        formatter: (value, context) => {
+                            const datapoints = context.chart.data.datasets[0].data;
+                            const total = datapoints.reduce((total, datapoint) => total + datapoint, 0);
+                            const percentage = value / total * 100;
+                            return percentage.toFixed(1) + "%"; // 顯示到小數點後一位
+                        },
+                        color: 'white',
+                        font: {
+                            weight: 'bold'
+                        }
                     }
                 }
             }
         });
-
         // --- 滾動監聽 (Scrollspy) 功能 ---
         const mainContent = document.getElementById('main-content');
         const sections = document.querySelectorAll('#page-report h2[id]');
