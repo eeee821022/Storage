@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<title>北美智慧力量訓練系統市場分析 - RWD互動式報告</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<style>
+    :root {
+        --primary-color: #003366;
+        --secondary-color: #0056b3;
+        --text-color: #333;
+        --sidebar-width: 280px; /* 側邊欄寬度 */
+        --bg-light: #f9f9f9;
+        --bg-white: #ffffff;
+        --border-color: #e9ecef;
+    }
+    body {
+        font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif;
+        background-color: var(--bg-light);
+        color: var(--text-color);
+    }
+    
+    /* --- START: 側邊欄與主內容區塊排版 --- */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: var(--sidebar-width);
+        background-color: var(--primary-color);
+        color: var(--bg-light);
+        padding: 1.5rem 0;
+        overflow-y: auto;
+        transition: width 0.3s ease;
+    }
+    #main-content {
+        margin-left: var(--sidebar-width);
+        padding: 20px;
+        height: 100vh;
+        overflow-y: auto;
+        transition: margin-left 0.3s ease;
+    }
+    /* 在窄螢幕上隱藏側邊欄，讓內容全寬 */
+    @media (max-width: 992px) {
+        :root { --sidebar-width: 0px; }
+        #sidebar { display: none; }
+        #main-content { margin-left: 0; }
+    }
+    /* --- END: 側邊欄與主內容區塊排版 --- */
+
+    .page-content { display: none; }
+    .page-content.active { display: block; }
+
+    h1, h2, h3, h4, h5 { color: var(--primary-color); }
+    h1 { font-size: 2.2em; margin-top: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+    h2 { font-size: 1.8em; margin-top: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; scroll-margin-top: 20px; }
+    h3 { font-size: 1.4em; margin-top: 25px; color: var(--secondary-color); border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;}
+    h4 { font-size: 1.2em; margin-top: 20px; color: var(--secondary-color); font-weight: bold;}
+    
+    .highlight {
+        background-color: #fffacd;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+    
+    /* --- START: 上標引用樣式 (優化版) --- */
+    sup {
+        font-size: 0.7em;
+        vertical-align: super;
+        margin-left: 2px;
+    }
+    sup a { 
+        text-decoration: none; 
+        color: #607D8B; /* 改為灰藍色 */
+        font-weight: bold; 
+        background-color: transparent; /* 移除背景色 */
+        padding: 2px 3px; 
+        border-radius: 4px; 
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    sup a:hover { 
+        color: var(--secondary-color);
+        text-decoration: underline; /* 滑鼠懸浮時改為底線 */
+    }
+    /* --- END: 上標引用樣式 (優化版) --- */
+
+    /* --- START: 側邊欄導覽樣式 --- */
+    #sidebar-header {
+        padding: 0 1.5rem 1rem 1.5rem;
+        border-bottom: 1px solid var(--secondary-color);
+    }
+    #sidebar-header h5 {
+        color: var(--bg-white);
+        margin: 0;
+    }
+    #sidebar .nav-link { 
+        color: #adb5bd; 
+        font-size: 1rem; 
+        padding: 0.7rem 1.5rem; 
+        border-left: 3px solid transparent;
+    }
+    #sidebar .nav-link:hover { 
+        color: var(--bg-white); 
+        background-color: var(--secondary-color);
+        border-left-color: #FFC107;
+    }
+    #sidebar .nav-link.active-main-link { /* 主要分頁啟用樣式 */
+        color: var(--bg-white);
+        font-weight: bold;
+        background-color: var(--secondary-color);
+    }
+    #sidebar .report-nav-link.active-link { /* 報告章節滾動啟用樣式 */
+        color: var(--bg-white);
+        font-weight: bold;
+    }
+
+    #sidebar .accordion-button { background-color: transparent !important; color: #adb5bd !important; font-size: 1rem; padding: 0.7rem 1.5rem; }
+    #sidebar .accordion-button:not(.collapsed) { box-shadow: none; color: var(--bg-white) !important; font-weight: bold; }
+    #sidebar .accordion-button:focus { box-shadow: none; }
+    #sidebar .accordion-button::after { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23adb5bd'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important; }
+    #sidebar .accordion-body { padding: 0; }
+    #sidebar .accordion-item { border: none; background-color: transparent; }
+    #sidebar .accordion-body .nav-link { padding-left: 2.5rem; }
+    /* --- END: 側邊欄導覽樣式 --- */
+
+    .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 20px; }
+    .chart-container { position: relative; height: 350px; width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-white); }
+
+    .citation-popup {
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 1055; background-color: white; border-top: 1px solid #ccc; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease-in-out; max-height: 40vh; display: flex; flex-direction: column;
+    }
+    .citation-popup.active { transform: translateY(0); }
+    .citation-popup-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+    .citation-popup-header h4 { margin: 0; font-size: 1.1rem; color: var(--primary-color); }
+    .citation-popup-body { padding: 1rem; overflow-y: auto; }
+    .citation-popup-body a { font-weight: 500; }
+    .citation-backdrop {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.4); z-index: 1054; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out;
+    }
+    .citation-backdrop.active { opacity: 1; visibility: visible; }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+    <div id="sidebar-header">
+        <h5>報告導覽</h5>
+    </div>
+    <div class="nav flex-column">
+        <a class="nav-link main-nav-link active-main-link" href="#" onclick="showPage('page-overview', null, this)">摘要：AI數據駕駛艙</a>
+        <div class="accordion accordion-flush" id="reportAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        原始報告
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#reportAccordion">
+                    <div class="accordion-body">
+                         <nav class="nav flex-column">
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-1')">第一章 市場概況與成長軌跡</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-2')">第二章 北美市場區隔分析</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-3')">第三章 北美使用者輪廓與購買誘因</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-4')">第四章 運動專業人士觀點</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-5')">第五章 北美主要參與者分析</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <a class="nav-link main-nav-link" href="#" onclick="showPage('page-data-list', null, this)">資料列表</a>
+    </div>
+</nav>
+
+<main id="main-content">
+    <div class="container-fluid pb-5">
+        <h1 id="top-title">北美智慧力量訓練系統市場報告</h1>
+
+        <div id="page-overview" class="page-content active">
+            <h2>AI 深度洞察：數據駕駛艙</h2>
+            
+            <h3>【摘要總覽】</h3>
+            <p>本報告旨在深入分析北美智慧力量訓練系統（俗稱「力量站」）市場。首先定義，「聯網健身器材」指可連接網路、與應用程式同步以追蹤數據、提供引導式課程的設備，主要分為「有氧訓練」與「力量訓練」兩大類別<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。</p>
+            <p>根據 Grand View Research 的數據，全球聯網健身器材市場在 2023 年的規模為 <span class="highlight">10.5 億美元</span>，並預計將以 <span class="highlight">31.3%</span> 的年均複合成長率（CAGR）在 2024 至 2030 年間持續擴張<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。北美地區為此市場的領導者，於 2023 年佔據全球 <span class="highlight">39.5%</span> 的市場份額，可推算出其市場規模約為 <span class="highlight">4.15 億美元</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。</p>
+            <p>為深入探討北美市場的內部結構，本報告引用另一份專門針對美國市場所做的報告，其數據顯示 2024 年美國聯網健身器材市場總規模為 <span class="highlight">11.7 億美元</span>，預計 2025 至 2033 年的整體市場 CAGR 為 <span class="highlight">19.3%</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。其中，有氧訓練器材佔據了 <span class="highlight">60.19%</span> 的營收份額，約為 <span class="highlight">7.04 億美元</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。雖然力量訓練器材只佔剩餘約40% 約4億美元，但其預期 CAGR 高達 <span class="highlight">22.6%</span>，顯著超越整體市場的成長速度，明確指出「力量站」是整個市場中成長最快的類別，也是未來的核心成長引擎<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。</p>
+            <p>市場主要可分為兩大類別：以 Tonal 和 Tempo 為代表的「固定式系統」，以及以 Vitruvian 為代表的「便攜式系統」。基於 Tonal 在 2021 年曾佔據高達 <span class="highlight">90%</span> 的市佔率，可推斷固定式系統目前在市場上仍佔據主導地位<sup><a href="javascript:void(0)" onclick="showCitation('cite-19')">[19]</a></sup>。其領導品牌已獲得大量資本挹注，Tonal 已累計募資 <span class="highlight">5.35 億美元</span>，最高估值曾達 19 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-4')">[4]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-5')">[5]</a></sup>。Tempo 則已募資 <span class="highlight">3.98 億美元</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。便攜式系統作為後起之秀，其代表 Vitruvian 已募資 <span class="highlight">5,140 萬美元</span><sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。</p>
+            <p>北美市場的核心使用者群體為熟悉數位科技的千禧世代（25-40 歲）和追求社群互動體驗的 Z 世代（25 歲以下）<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。然而，擁有較高可支配收入並專注於預防性健康管理的 X 世代（41-56 歲）則是貢獻營收的重要族群<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。購買誘因主要來自於個人化數據追蹤、即時動作回饋、課程內容的豐富性以及居家健身的便利性<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-6')">[6]</a></sup>。運動專業人士普遍肯定 AI 教練在指導正確姿勢與實現「漸進式超負荷」訓練原則方面的價值<sup><a href="javascript:void(0)" onclick="showCitation('cite-6')">[6]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。市場的商業模式正從一次性的硬體銷售轉向「健身即服務」（Fitness-as-a-Service, FaaS）的訂閱制模式，長期用戶留存率成為成功的關鍵。</p>
+            
+            <div class="chart-grid">
+                <div class="chart-container"><canvas id="marketSizeChart"></canvas></div>
+                <div class="chart-container"><canvas id="cagrChart"></canvas></div>
+                <div class="chart-container"><canvas id="marketStructureChart"></canvas></div>
+                <div class="chart-container"><canvas id="fundingChart"></canvas></div>
+                <div class="chart-container"><canvas id="systemTypeChart"></canvas></div>
+                <div class="chart-container"><canvas id="userSegmentChart"></canvas></div>
+            </div>
+        </div>
+
+        <div id="page-report" class="page-content">
+            <div id="report-content">
+                <h2 id="section-1">第一章：市場概況與成長軌跡</h2>
+                <h3>1.1 聯網健身器材的定義與分類</h3>
+                <p>為建立清晰的分析框架，首先需明確定義本報告的研究主體。「聯網健身器材」（Connected Fitness/Gym Equipment）指的是能夠連接到網際網路，並與應用程式、穿戴式裝置或線上平台同步，以追蹤數據、提供引導式課程和互動體驗的健身設備<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。</p>
+                <p>根據 Grand View Research 的市場報告，這個市場主要可以分為兩大核心類別<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>：</p>
+                <ul>
+                    <li><b>有氧訓練器材 (Cardiovascular Training Equipment)：</b>此類別包含傳統上主導居家健身市場的設備，如智慧跑步機、智慧健身車、划船機等。</li>
+                    <li><b>力量訓練器材 (Strength Training Equipment)：</b>此類別是本報告的分析重點，即市場通稱的「力量站」。其代表性產品包括 Tonal、Tempo、Vitruvian 等，它們透過數位阻力或 AI 視覺等技術，將專業的力量訓練體驗帶入家庭場景。</li>
+                </ul>
+                <h3>1.2 全球市場規模與成長預測</h3>
+                <p>根據 Grand View Research 的報告，全球聯網健身器材市場在 2023 年的規模已達到 10.5 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。展望未來，該報告預測，在 2024 年至 2030 年間，全球市場將以 31.3% 的驚人年均複合成長率（CAGR） 高速擴張<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。此一強勁的成長軌跡主要由人工智慧（AI）等先進技術的整合，以及全球消費者健康意識的普遍提升所驅動<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。</p>
+                <h3>1.3 北美市場的領導地位</h3>
+                <p>在這一全球趨勢中，北美市場扮演著無可爭議的領導者角色。同一份報告指出，北美地區在 2023 年佔據了全球市場 39.5% 的最大份額<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。基於全球 10.5 億美元的市場規模，可以推算出 2023 年北美市場的規模約為 4.15 億美元。該地區的市場成熟度、消費者對新科技的高接受度以及強大的家庭健身文化，共同鞏固了其市場領導地位。</p>
+                <h3>1.4 北美市場細部分析：力量站的崛起</h3>
+                <p>為了更深入地剖析北美市場的內部結構與未來趨勢，本節將引用另一份由 Grand View Research 專門針對美國市場所做的報告。這份報告提供了更詳細的分類數據，雖然其統計的市場總額與前述全球報告因統計口徑不同而略有差異，但它為我們提供了理解各分類佔比和成長潛力的最佳視角。</p>
+                <p>根據這份報告，2024 年美國聯網健身器材市場總規模為 11.7 億美元，並預計在 2025 年至 2033 年間，將以 19.3% 的整體市場 CAGR 穩定成長<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。</p>
+                <p>下表詳細呈現了該市場的內部構成與各類別的成長潛力：</p>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr><th>北美 (美國) 市場分類</th><th>2024 年營收佔比</th><th>2024 年市場規模 (估算)</th><th>年均複合成長率 (CAGR) (2025-2033)</th><th>分析與洞察</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>有氧訓練器材</td><td>60.19%<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup></td><td>約 7.04 億美元</td><td>16%</td><td>這是目前市場的營收主力，佔據超過一半的份額，但其成長動能相對平穩。</td></tr>
+                        <tr><td>力量訓練器材 (力量站)</td><td>39.81%</td><td>約 4 億美元</td><td>22.6%<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup></td><td>核心發現：雖然報告未提供力量訓練器材的確切營收佔比，但其 22.6% 的預期 CAGR 顯著高於整體市場的 19.3%，這明確指出力量站是整個北美聯網健身器材市場中成長最快的類別，也是未來的核心成長引擎。</td></tr>
+                    </tbody>
+                </table>
+                <p><b>總結與脈絡：</b></p>
+                <p>透過以上數據的嚴謹分層，我們可以得出一個非常清晰的結論：您所關注的「力量站」市場，雖然當前的營收規模小於傳統的有氧器材，但它卻是整個北美聯網健身器材領域中最具成長潛力的明星類別。其高達 22.6% 的預期年均複合成長率，預示著市場需求和資金正快速向此集中，未來幾年內其市場佔比有望大幅提升<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。</p>
+
+                <h2 id="section-2">第二章：北美市場區隔分析</h2>
+                <h3>2.1 智慧力量訓練系統分類</h3>
+                <p>北美智慧力量訓練系統市場根據其產品形態、核心技術與使用場景，已逐漸分化為兩個主要類別。這種分類不僅反映了產品設計的差異，也對應了不同的目標客群和價值主張。</p>
+                <h4>2.1.1 固定式系統 (Fixed Systems)</h4>
+                <p>固定式系統通常體積較大，需安裝在牆上或以獨立機櫃形式存在，旨在成為家庭健身房的核心。它們提供一體化的訓練體驗，是市場上最早出現且目前最成熟的產品類型。此類別內部又可根據其核心阻力技術進一步細分：</p>
+                <ul>
+                    <li><b>數位阻力系統 (Digital Resistance)：</b>此類系統以 Tonal 為代表，其核心技術是利用電磁引擎產生平滑、安靜且可精準控制的數位阻力<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-9')">[9]</a></sup>。Tonal 第二代產品可提供高達 250 磅（約 113 公斤）的阻力<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。這種技術的優勢在於能夠模擬多種傳統訓練模式，如「離心模式」（增加肌肉在伸展階段的負荷）、「鎖鏈模式」（模擬鎖鏈增加的動態阻力）和「智慧輔助模式」（在使用者力竭時自動減輕重量），提供傳統自由重量無法比擬的訓練多樣性與安全性。</li>
+                    <li><b>AI 視覺與自由重量系統 (AI Vision & Free Weights)：</b>此類系統以 Tempo 為代表，它將傳統的槓鈴、啞鈴等自由重量與先進的 3D 感測器及 AI 視覺技術相結合<sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-12')">[12]</a></sup>。系統透過鏡頭捕捉使用者的動作，即時分析其姿勢、動作範圍和重複次數，並在螢幕上提供回饋與糾正建議<sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>。這種模式的吸引力在於它保留了舉起實體重量的真實體感，對於偏好傳統重量訓練的「純粹主義者」來說尤其具有吸引力<sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>。</li>
+                </ul>
+                <h4>2.1.2 便攜式系統 (Portable Systems)</h4>
+                <p>便攜式系統是市場上較新的類別，專為解決空間限制問題而設計。這類產品通常是一個可收納於床下或衣櫃的緊湊型平台，為居住在公寓或空間有限的用戶提供了理想的解決方案。</p>
+                <ul>
+                    <li><b>平台式數位阻力系統 (Platform-Based Digital Resistance)：</b>此類系統以澳洲品牌 Vitruvian 為主要代表。其 Trainer+ 產品將類似於 Tonal 的電磁阻力技術整合到一個扁平的碳纖維平台上<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup>。使用者站在平台上，透過連接各種配件（如把手、槓鈴）的纜繩進行訓練。它雖然犧牲了固定式系統的某些一體化便利性（如內建大螢幕），但換來了極高的空間效率和便攜性，滿足了市場上一個重要的差異化需求。</li>
+                </ul>
+                <h3>2.2 各類別市場動態與成長潛力</h3>
+                <p>固定式系統與便攜式系統的出現，標誌著市場正在經歷一場深刻的二元分化，形成了兩條截然不同的戰略路徑，分別瞄準了不同的消費者生活型態。</p>
+                <p>固定式系統，特別是 Tonal 和 Tempo，是疫情期間居家健身熱潮的最大受益者，它們透過大量的早期融資和市場教育，成功建立了強大的品牌知名度<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。它們的市場定位是「完整健身房替代方案」，旨在說服消費者放棄傳統健身房會員，將所有健身需求集中在一個高價值的家庭設備上。以 Tonal 為例，其第一年的總成本超過 5,500 美元，這一定價策略明確指向那些願意為便利性、私密性和頂級科技體驗支付高額費用的高收入客群<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。</p>
+                <p>相對地，便攜式系統的出現並非旨在與固定式系統進行正面交鋒，而是為了開拓一個全新的市場區隔。它們的價值主張是「不犧牲居住空間的健身房級力量訓練」。這類產品的目標客群是那些因空間不足或居住不穩定（如租屋者）而被固定式系統排除在外的消費者。它們透過更低的進入門檻（無需專業安裝）和更高的靈活性，有效地擴大了智慧力量訓練的潛在市場總量（Total Addressable Market）。</p>
+                <p>因此，市場未來的成長動能將來自兩個方面：固定式系統將在高端市場繼續深化，透過不斷升級的內容和功能爭奪願意投入專用空間的用戶；而便攜式系統則有望在更廣泛的大眾市場中實現快速滲透，吸引那些過去因客觀條件限制而無法享受智慧健身的龐大消費群體。這預示著便攜式系統類別在未來幾年可能展現出更高的成長彈性。</p>
+
+                <h2 id="section-3">第三章：北美使用者輪廓與購買誘因</h2>
+                <h3>3.1 核心消費族群分析</h3>
+                <p>智慧力量訓練系統在北美市場的成功，得益於其精準地迎合了不同世代消費者的獨特需求和動機。市場的主要購買力來自以下幾個群體：</p>
+                <ul>
+                    <li><b>千禧世代 (Millennials, 25-40 歲)：</b>這是目前最大、最核心的消費群體<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。他們成長於數位時代，對科技產品有著天然的親和力，並將健身與健康視為生活方式中不可或缺的一部分。對他們而言，智慧力量訓練系統提供的個人化訓練計畫、詳盡的數據追蹤與進度分析，是驅使他們購買的關鍵。他們不僅僅是想運動，更希望透過數據來量化自己的努力與成果<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-13')">[13]</a></sup>。</li>
+                    <li><b>Z 世代 (Gen Z, 25 歲以下)：</b>作為數位原住民，Z 世代對產品的期望超越了功能本身，他們更看重體驗的「趣味性」和「社交性」。智慧健身系統中的遊戲化元素、線上排行榜、社群挑戰等功能，完美契合了他們的需求<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。他們將健身視為一種社交活動和自我表達的方式，能夠與朋友線上比拼或分享成就，是吸引他們的重要因素。</li>
+                    <li><b>X 世代 (Gen X, 41-56 歲)：</b>這一群體是市場上貢獻營收的重要力量<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。他們通常擁有更高的可支配收入和穩定的家庭生活。與年輕世代不同，X 世代的健身動機更側重於「預防性健康管理」和「對抗衰老」。他們追求的是便利、高效且安全的訓練方式，以維持身體機能、預防運動傷害。智慧系統提供的引導式訓練和安全功能（如 Tonal 的智慧輔助模式）對他們極具吸引力<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。</li>
+                    <li><b>高齡族群 (Older Adults)：</b>這是一個潛力巨大的新興市場區隔。隨著數位健康科技的普及，越來越多的高齡者開始使用穿戴式裝置和遠距健康服務來管理自身健康<sup><a href="javascript:void(0)" onclick="showCitation('cite-14')">[14]</a></sup>。一項針對高齡者居家視訊運動計畫的統合分析研究顯示，在有指導監督且時長低於 60 分鐘的課程中，參與者的出席率高達 ，持續參與率（retention rate）更是達到 91.1%<sup><a href="javascript:void(0)" onclick="showCitation('cite-15')">[15]</a></sup>。這證明了只要產品設計得當（安全、易用、有指導），高齡族群不僅願意並且能夠高度投入此類活動。智慧力量訓練系統提供的可控阻力、標準化動作指導和進度監測，使其在應用於高齡者的肌力維持與復健訓練方面具有廣闊前景。</li>
+                </ul>
+                <h3>3.2 關鍵購買驅動因素</h3>
+                <p>綜合分析不同使用者群體的需求，可以歸納出幾個共通的關鍵購買驅動因素。這些因素共同塑造了智慧力量訓練系統的價值主張，並解釋了其高昂價格為何能被市場所接受。</p>
+                <p>首要因素是便利性與效率。居家健身免去了往返健身房的時間成本和交通不便，讓使用者可以隨時進行高效的訓練<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。其次是個人化與數據化。系統能根據使用者的體能水平和目標，自動生成個人化的訓練計畫，並透過持續的數據追蹤來調整訓練強度，確保使用者遵循「漸進式超負荷」這一肌力成長的核心原則<sup><a href="javascript:void(0)" onclick="showCitation('cite-6')">[6]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-16')">[16]</a></sup>。</p>
+                <p>即時回饋與安全性是另一個核心驅動因素。AI 視覺或內建感測器能夠提供即時的動作姿勢指導，大幅降低了因姿勢不當而導致受傷的風險，這對於健身新手或獨自訓練者尤為重要<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。最後，豐富的內容生態系統是維持用戶黏性的關鍵。高品質、多樣化的線上課程，包括直播課和預錄點播課，以及由專業教練帶領的訓練計畫，將單純的硬體設備轉化為一個持續提供價值的服務平台<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-9')">[9]</a></sup>。</p>
+                <p>深入探討這些驅動因素可以發現，這些公司的商業模式正在發生根本性的轉變。它們不再是傳統的硬體製造商，而更像是「健身即服務」（Fitness-as-a-Service, FaaS）的平台供應商。高昂的硬體售價只是用戶進入其生態系統的門檻，而真正支撐其長期估值的是強制性的月費訂閱服務<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>。這種模式將公司的收入來源從一次性的交易轉變為穩定、可預測的經常性收入。這也意味著，這些公司的長期成功與否，將不僅取決於賣出多少台機器，更取決於它們能否持續提供有吸引力的內容和服務，以維持高用戶留存率並降低流失率。從這個角度看，它們的真正競爭對手不僅是其他設備品牌，還包括傳統健身房、Peloton 等內容平台以及私人教練。</p>
+
+                <h2 id="section-4">第四章：運動專業人士觀點</h2>
+                <h3>4.1 AI 教練與即時回饋的價值</h3>
+                <p>運動科學與健身領域的專業人士普遍對智慧力量訓練系統的核心技術------AI 教練與即時回饋------給予了正面評價。專業評測媒體如 PCMag 將 Tonal 和 Tempo 的指導功能描述為「有意義的姿勢指導」和「精密的動作追蹤軟體」<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>。其價值主要體現在以下幾個方面：</p>
+                <p>首先，確保訓練的有效性。力量訓練的核心原則是「漸進式超負荷」（Progressive Overload），即身體必須持續承受比以往更大的刺激，肌肉才會增長<sup><a href="javascript:void(0)" onclick="showCitation('cite-6')">[6]</a></sup>。這本質上是一個數據管理問題：需要系統性地增加重量、次數或組數。智慧系統透過自動記錄每一次的訓練表現，並在適當時機建議使用者增加負荷，完美地解決了這一難題，確保訓練始終具有挑戰性，避免使用者陷入平台期<sup><a href="javascript:void(0)" onclick="showCitation('cite-6')">[6]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-16')">[16]</a></sup>。</p>
+                <p>其次，提升訓練的安全性。正確的動作姿勢是預防運動傷害的基石。對於許多缺乏專業指導的居家健身者而言，這是一個巨大的挑戰。AI 教練透過 3D 鏡頭或內建感測器，能夠即時偵測使用者的動作是否標準，並提供語音或視覺提示進行糾正<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。這項功能在很大程度上取代了真人教練的監督角色，讓使用者能夠更自信、更安全地進行訓練。</p>
+                <p>最後，增強使用者的動機與投入度。透過清晰的數據視覺化圖表、進度里程碑的達成慶祝以及個人紀錄的刷新，系統為使用者提供了強烈的正向回饋循環<sup><a href="javascript:void(0)" onclick="showCitation('cite-6')">[6]</a></sup>。這種持續的成就感是維持長期訓練習慣的關鍵心理因素。</p>
+                <h3>4.2 數位阻力 vs. 傳統自由重量：有效性與體驗比較</h3>
+                <p>市場上兩大主流技術路線------Tonal 的數位阻力與 Tempo 的 AI 追蹤自由重量------引發了關於何者更優的討論。從運動科學的角度來看，兩者都能有效地對肌肉施加張力，從而刺激肌肉生長。目前尚無權威的長期研究明確指出哪一種阻力形式在增肌效果（Hypertrophy）上具有絕對優勢。因此，專業人士的分析更多地集中在兩者帶來的「訓練體驗」和「特定優勢」上。</p>
+                <ul>
+                    <li><b>數位阻力 (Tonal)：</b>其優勢在於控制的精準性與多樣性。電磁阻力可以在毫秒間進行調整，實現了傳統重量無法達成的特殊訓練模式，例如在動作的離心階段增加阻力，這被認為對肌肉生長特別有效。此外，其阻力平滑、一致，不受慣性影響，能讓肌肉在整個運動範圍內都受到穩定的張力<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-9')">[9]</a></sup>。</li>
+                    <li><b>傳統自由重量 (Tempo)：</b>其核心優勢在於真實的物理反饋與對穩定肌群的挑戰。舉起實體重量需要身體徵召更多的穩定肌群來控制平衡，這對於發展功能性力量和身體協調性至關重要。對於許多經驗豐富的訓練者來說，這種與重力直接對抗的「真實感」是數位阻力難以完全複製的<sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>。</li>
+                </ul>
+                <p>分析顯示，這兩種技術路線的選擇，更多地反映了使用者的心理偏好而非生理效果的優劣。追求尖端科技、數據化體驗和訓練模式多樣性的用戶，可能會被 Tonal 的「未來感」所吸引。而那些重視傳統訓練體感、希望在 AI 輔助下完善自由重量技巧的用戶，則會傾向於 Tempo。市場能夠同時容納這兩種技術，正說明它們各自滿足了不同使用者群體的訓練哲學與身份認同。</p>
+                <h3>4.3 在特殊族群與復健領域的應用潛力</h3>
+                <p>智慧力量訓練系統在一般消費市場之外，於特殊族群與醫療復健領域展現出巨大的應用潛力。這是一個尚未被充分開發的藍海市場。</p>
+                <p>一項針對高齡族群居家視訊運動的統合分析研究為此提供了有力的證據。研究發現，在有專業人士遠端監督的情況下，高齡者的運動計畫出席率和持續參與率都非常高，並且在平衡感和肌力方面取得了顯著的改善<sup><a href="javascript:void(0)" onclick="showCitation('cite-15')">[15]</a></sup>。該研究的結論是，有監督的居家運動是幫助高齡者維持活力的一種「合適且可持續的」模式<sup><a href="javascript:void(0)" onclick="showCitation('cite-15')">[15]</a></sup>。智慧力量訓練系統的特性------可控的阻力、標準化的動作庫、即時安全回饋和詳盡的進度報告------使其成為執行此類計畫的理想工具<sup><a href="javascript:void(0)" onclick="showCitation('cite-15')">[15]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-17')">[17]</a></sup>。</p>
+                <p>這揭示了一個重要的 B2B（企業對企業）或 B2B2C（企業對企業對消費者）的市場機會。根據市場報告，聯網健身器材在 B2B 領域的預期 CAGR 高達 25.4%，遠高於 B2C 市場<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。智慧力量訓練系統的供應商可以開發針對專業市場的商業級產品，與物理治療診所、高階飯店、企業健康計畫和高齡者社區等機構合作<sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup>。在這些場景中，設備不僅是健身工具，更是數據收集和治療監測的平台。治療師可以為患者設定精準的復健計畫，遠端追蹤其進度，並根據數據調整方案。這不僅能提升治療效率，也能為設備供應商開創一個穩定且高利潤的收入來源，使其業務不過度依賴波動性較大的消費者。</p>
+
+                <h2 id="section-5">第五章：北美主要參與者分析</h2>
+                <p>北美智慧力量訓練系統市場目前由幾家資金雄厚的領導者主導，同時也存在一些專注於利基市場的挑戰者。各公司的融資規模、技術路線和市場策略，清晰地勾勒出當前的競爭格局。</p>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr><th>公司 (Company)</th><th>旗艦產品 (Flagship Product)</th><th>系統類型 (System Type)</th><th>核心技術 (Core Technology)</th><th>總募資額 (Total Funding)</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Tonal</td><td>Tonal 2</td><td>固定式 (Fixed)</td><td>數位阻力 (Digital Resistance)</td><td>5.35 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-5')">[5]</a></sup></td></tr>
+                        <tr><td>Tempo</td><td>Tempo Studio</td><td>固定式 (Fixed)</td><td>AI 視覺 + 自由重量 (AI Vision + Free Weights)</td><td>3.98 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup></td></tr>
+                        <tr><td>Vitruvian</td><td>Trainer+</td><td>便攜式 (Portable)</td><td>平台式數位阻力 (Platform Digital Resistance)</td><td>5,140 萬美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup></td></tr>
+                        <tr><td>Speediance</td><td>Gym Monster</td><td>固定式 (Fixed)</td><td>數位阻力 (Digital Resistance)</td><td>158 萬美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup></td></tr>
+                        <tr><td>OxeFit</td><td>XS1</td><td>固定式 (Fixed)</td><td>數位阻力 + AI 視覺 (Digital Resistance + AI Vision)</td><td>7,000 萬美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup></td></tr>
+                    </tbody>
+                </table>
+                <h3>5.1 固定式系統領導者</h3>
+                <h4>5.1.1 Tonal</h4>
+                <ul>
+                    <li><b>公司簡介：</b>Tonal 成立於 2015 年，總部位於舊金山，是智慧力量訓練市場的開創者和領導者<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。其產品 Tonal 是一款壁掛式設備，以其創新的電磁數位阻力技術和豐富的課程內容而聞名，被 PCMag 評為該領域的「編輯選擇獎」<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。</li>
+                    <li><b>融資與估值：</b>Tonal 是資本市場的寵兒，已累計完成 5 輪融資，總額達 5.35 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-5')">[5]</a></sup>。其最大一輪融資是在 2021 年 3 月完成的 2.5 億美元 E 輪融資，當時公司估值達到 16 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。2022 年的一輪融資更將其估值推高至 19 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-4')">[4]</a></sup>。然而，隨著市場環境變化和後疫情時代的挑戰，公司在 2023 年 4 月進行了新一輪融資，估值下調至 4.89 億美元，這是一次明顯的「流血輪」（down-round），反映了市場對其盈利能力的擔憂<sup><a href="javascript:void(0)" onclick="showCitation('cite-4')">[4]</a></sup>。</li>
+                    <li><b>投資者：</b>Tonal 的投資者陣容星光熠熠，除了頂級私募股權基金 L Catterton、Dragoneer Investment Group 和 Sapphire Ventures 外，還吸引了包括 LeBron James、Serena Williams、Stephen Curry 和 Mike Tyson 在內的眾多體育明星投資，這些明星的背書成為其品牌行銷的重要資產<sup><a href="javascript:void(0)" onclick="showCitation('cite-9')">[9]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。</li>
+                    <li><b>策略分析：</b>Tonal 的核心策略是成為「力量訓練界的 Peloton」。它透過巨額融資建立了強大的品牌護城河和高品質的內容庫。然而，高昂的售價和持續的市場教育成本使其面臨巨大的盈利壓力。近期的估值下調表明，投資者要求公司證明其訂閱模式能夠帶來可持續的長期利潤。Tonal 未來的挑戰在於如何在維持高端品牌形象的同時，擴大用戶基礎並實現盈利。</li>
+                </ul>
+                <h4>5.1.2 Tempo</h4>
+                <ul>
+                    <li><b>公司簡介：</b>Tempo 同樣成立於 2015 年，總部位於舊金山，是 Tonal 最主要的競爭對手<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。其產品的核心差異化在於使用 3D 感測器和 AI 技術來追蹤使用者進行傳統自由重量訓練的動作，為偏好實體重量感的用戶提供了獨特的價值<sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-12')">[12]</a></sup>。</li>
+                    <li><b>融資與估值：</b>Tempo 已累計募資 3.98 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。其最重要的一筆融資是在 2021 年 4 月由軟銀願景基金（SoftBank Vision Fund）領投的 2.2 億美元 C 輪融資<sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup>。</li>
+                    <li><b>投資者：</b>除了軟銀，其主要投資者還包括 Norwest Venture Partners、General Catalyst 和 Khosla Ventures 等知名創投機構<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup>。</li>
+                    <li><b>策略分析：</b>Tempo 的策略是透過技術創新來「完善」而非「取代」傳統力量訓練。獲得軟銀的投資，表明其具備大規模擴張的潛力。除了高階的 Tempo Studio，公司還推出了更小巧、更平價的 Tempo Move 版本，該版本利用 iPhone 的鏡頭進行動作追蹤，連接到電視螢幕上使用<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>。這一舉措顯示 Tempo 正在採取多產品線策略，試圖向下滲透到更廣泛的價格敏感型消費市場，以應對 Tonal 的競爭。</li>
+                </ul>
+                <h3>5.2 便攜式系統挑戰者</h3>
+                <h4>5.2.1 Vitruvian</h4>
+                <ul>
+                    <li><b>公司簡介：</b>Vitruvian 是一家來自澳洲的新興挑戰者，成立於 2018 年<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。其旗艦產品 Trainer+ 是一款便攜式平台，將數位阻力技術濃縮在一個輕薄的機身中，主打空間效率和靈活性<sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup>。</li>
+                    <li><b>融資與估值：</b>相較於 Tonal 和 Tempo，Vitruvian 的融資規模要小得多，目前已累計募資 5,140 萬美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。其關鍵的 A 輪融資於 2022 年 4 月完成，金額為 4,040 萬美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。截至 2023 年底，其估值約在 5,600 萬至 8,500 萬美元之間<sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup>。</li>
+                    <li><b>投資者：</b>其投資者主要為澳洲本地的創投基金，如 Larsen Ventures、TEN13 和 First Avenue Ventures<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。</li>
+                    <li><b>策略分析：</b>Vitruvian 採取了高度差異化的競爭策略。它沒有與財力雄厚的 Tonal 和 Tempo 進行正面對抗，而是選擇了一個被巨頭們忽視的利基市場------空間受限的用戶。其資本效率較高的運營模式（capital-efficient）使其能夠在相對較低的融資水平下生存和發展。Vitruvian 的成功將取決於它能否在便攜式這一細分領域建立起強大的品牌認知度，並在北美市場有效觸及目標客群。</li>
+                </ul>
+                <h3>5.3 其他值得關注的競爭者</h3>
+                <ul>
+                    <li><b>Speediance：</b>來自中國的品牌，其產品 Gym Monster 在設計和功能上與 Tonal 類似，但在價格上可能更具競爭力。目前仍處於早期種子輪階段，募資額為 158 萬美元，其在北美市場的影響力有待觀察<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。</li>
+                    <li><b>OxeFit：</b>這家位於德州的公司提供了一款名為 XS1 的高階系統，它結合了數位阻力、AI 視覺和普拉提等多種功能，定位於更全面的訓練解決方案。公司已完成 A 輪融資，總額達 7,000 萬美元，顯示其具備一定的技術實力和市場野心<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。</li>
+                    <li><b>FORME：</b>前身為 Forme Life，是一家提供智慧健身鏡的上市公司，已募資 1.09 億美元<sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup>。雖然其產品形態是健身鏡，但它同樣瞄準追求高科技、設計感和課程體驗的居家高端用戶，與 Tonal 和 Tempo 在目標客群上有部分重疊<sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup>。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="page-data-list" class="page-content">
+            <h2>引用資料來源</h2>
+            <div class="data-list">
+                <ol>
+                    <li id="cite-1"><a href="https://www.grandviewresearch.com/industry-analysis/connected-gym-equipment-market" target="_blank" rel="noopener noreferrer">Grand View Research. (n.d.). Connected Gym Equipment Market Size, Share & Trends Analysis Report.</a></li>
+                    <li id="cite-2"><a href="https://www.grandviewresearch.com/industry-analysis/us-connected-fitness-equipment-market-report" target="_blank" rel="noopener noreferrer">Grand View Research. (n.d.). U.S. Connected Fitness Equipment Market Size, Share & Trends Report.</a></li>
+                    <li id="cite-3"><a href="https://tracxn.com/d/companies/tonal/___p-UUL3nfko8029Wr8MSGd0mFrFb-_4eJssdx9aKCOw" target="_blank" rel="noopener noreferrer">Tracxn. (2023). Tonal Company Profile.</a></li>
+                    <li id="cite-4"><a href="https://forgeglobal.com/tonal-systems_ipo/" target="_blank" rel="noopener noreferrer">Forge Global. (n.d.). Tonal Systems Stock.</a></li>
+                    <li id="cite-5"><a href="https://tracxn.com/d/companies/tonal/___p-UUL3nfko8029Wr8MSGd0mFrFb-_4eJssdx9aKCOw/funding-and-investors" target="_blank" rel="noopener noreferrer">Tracxn. (n.d.). Tonal - Funding & Investors.</a></li>
+                    <li id="cite-6"><a href="https://strengthlab360.com/blogs/reviews-and-tests/ultimate-guide-to-progressive-overload-apps" target="_blank" rel="noopener noreferrer">StrengthLab360. (n.d.). Ultimate Guide to Progressive Overload Apps.</a></li>
+                    <li id="cite-7"><a href="https://www.pcmag.com/reviews/tonal-2" target="_blank" rel="noopener noreferrer">PCMag. (n.d.). The Tonal 2 Is the Best AI Personal Trainer I've Used.</a></li>
+                    <li id="cite-8"><a href="https://strengthchangesevertyhing.libsyn.com/rss" target="_blank" rel="noopener noreferrer">Strength Changes Everything Podcast. (n.d.). Podcast Feed.</a></li>
+                    <li id="cite-9"><a href="https://athletechnews.com/wp-content/uploads/2022/03/ATN-Insiders-Outlook_March-2022.pdf" target="_blank" rel="noopener noreferrer">Athletech News. (2022). ATN Insiders Outlook, March 2022.</a></li>
+                    <li id="cite-10"><a href="https://www.pcmag.com/picks/the-best-smart-strength-training-equipment" target="_blank" rel="noopener noreferrer">PCMag. (n.d.). The Best Smart Strength Training Equipment.</a></li>
+                    <li id="cite-11"><a href="https://research.contrary.com/company/tonal" target="_blank" rel="noopener noreferrer">Contrary Research. (2023). Tonal Company Profile.</a></li>
+                    <li id="cite-12"><a href="https://thegreatentrepreneurs.com/the-top-25-companies-of-san-francisco-for-2023/" target="_blank" rel="noopener noreferrer">The Great Entrepreneurs. (2023). The Top 25 Companies of San Francisco for 2023.</a></li>
+                    <li id="cite-13"><a href="https://scoop.market.us/edtech-statistics/" target="_blank" rel="noopener noreferrer">Market.us. (n.d.). EdTech Statistics.</a></li>
+                    <li id="cite-14"><a href="https://www.businessresearchinsights.com/market-reports/seniors-health-and-wellness-market-118636" target="_blank" rel="noopener noreferrer">Business Research Insights. (n.d.). Seniors Health and Wellness Market Overview.</a></li>
+                    <li id="cite-15"><a href="https://www.researchgate.net/publication/382656310_Adherence_and_Retention_Rates_to_Home-Based_Video_Exercise_Programs_in_Older_Adults-Systematic_Review_and_Meta-Analysis" target="_blank" rel="noopener noreferrer">ResearchGate. (2024). Adherence and Retention Rates to Home-Based Video Exercise Programs in Older Adults-Systematic Review and Meta-Analysis.</a></li>
+                    <li id="cite-16"><a href="https://dailyburn.com/life/health/home-fitness-streaming-setup/" target="_blank" rel="noopener noreferrer">DailyBurn. (n.d.). Your Ultimate Guide to the Best Home Fitness Streaming Setup.</a></li>
+                    <li id="cite-17"><a href="https://www.researchgate.net/publication/317291602_Social-cognitive_factors_of_long-term_physical_exercise_7_years_after_orthopedic_treatment" target="_blank" rel="noopener noreferrer">ResearchGate. (2024). Mechanisms of Behavior Change for a Digital Resistance Training Intervention.</a></li>
+                    <li id="cite-18"><a href="https://pitchbook.com/profiles/company/454373-74" target="_blank" rel="noopener noreferrer">PitchBook. (n.d.). Vitruvian Company Profile.</a></li>
+                    <li id="cite-19"><a href="https://fitt.co/insider/connected-fitness-equipment/" target="_blank" rel="noopener noreferrer">Fitt Insider. (n.d.). Guide to Connected Fitness Equipment.</a></li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="citation-backdrop" class="citation-backdrop"></div>
+<div id="citation-popup" class="citation-popup">
+    <div class="citation-popup-header">
+        <h4>引用資料來源</h4>
+        <button type="button" class="btn-close" aria-label="Close" onclick="hideCitation()"></button>
+    </div>
+    <div id="citation-popup-body" class="citation-popup-body">
+        </div>
+</div>
+<script>
+    /* --- 頁面內容切換 --- */
+    function showPage(pageId, anchor, element) {
+        document.querySelectorAll('.page-content').forEach(page => page.classList.remove('active'));
+        const pageToShow = document.getElementById(pageId);
+        if (pageToShow) pageToShow.classList.add('active');
+        
+        // 更新主導覽連結的 active 狀態
+        document.querySelectorAll('.main-nav-link').forEach(link => link.classList.remove('active-main-link'));
+        if (element && element.classList.contains('main-nav-link')) {
+            element.classList.add('active-main-link');
+        } else if (pageId === 'page-report') {
+            document.querySelector('.accordion-button').classList.add('active-main-link');
+        }
+
+        const mainContent = document.getElementById('main-content');
+        if (anchor) {
+            setTimeout(() => {
+                const targetElement = document.querySelector(anchor);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    targetElement.style.transition = 'background-color 0.5s ease-in-out';
+                    targetElement.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+                    setTimeout(() => { targetElement.style.backgroundColor = ''; }, 1500);
+                }
+            }, 100);
+        } else {
+             mainContent.scrollTo(0, 0);
+        }
+    }
+    
+    /* --- 引用資料彈出視窗的 JavaScript 功能 --- */
+    const citationPopup = document.getElementById('citation-popup');
+    const citationBody = document.getElementById('citation-popup-body');
+    const citationBackdrop = document.getElementById('citation-backdrop');
+
+    function showCitation(citationId) {
+        const citationElement = document.getElementById(citationId);
+        if (citationElement) {
+            citationBody.innerHTML = `<b>編號 ${citationId.split('-')[1]}:</b> ${citationElement.innerHTML}`;
+            citationPopup.classList.add('active');
+            citationBackdrop.classList.add('active');
+        }
+    }
+
+    function hideCitation() {
+        citationPopup.classList.remove('active');
+        citationBackdrop.classList.remove('active');
+    }
+    citationBackdrop.addEventListener('click', hideCitation);
+
+    /* --- 圖表與滾動監聽初始化 --- */
+    window.onload = function() {
+        // Chart.js 全域設定
+        Chart.register(ChartDataLabels);
+        Chart.defaults.set('plugins.datalabels', {
+            font: { weight: 'bold' }, 
+            color: '#333'
+        });
+        
+        // Chart 1: Market Size
+        new Chart(document.getElementById('marketSizeChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['全球市場 (2023)', '北美市場 (2023)', '美國市場 (2024)'],
+                datasets: [{
+                    label: '市場規模 (億美元)',
+                    data: [10.5, 4.15, 11.7],
+                    backgroundColor: ['rgba(0, 86, 179, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(255, 159, 64, 0.7)'],
+                    borderColor: ['rgba(0, 86, 179, 1)', 'rgba(75, 192, 192, 1)', 'rgba(255, 159, 64, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '全球與北美市場規模 (億美元)', font: { size: 16 } },
+                    datalabels: { anchor: 'end', align: 'top', formatter: (value) => '$' + value + ' 億' }
+                }
+            }
+        });
+
+        // Chart 2: CAGR Comparison
+        new Chart(document.getElementById('cagrChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['全球市場 (2024-30)', '美國整體市場 (2025-33)', '美國力量站市場 (2025-33)'],
+                datasets: [{
+                    label: '年均複合增長率(CAGR)',
+                    data: [31.3, 19.3, 22.6],
+                    backgroundColor: ['#003366', '#0056b3', '#FF6384']
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { callback: (value) => value + '%' } } },
+                plugins: {
+                    title: { display: true, text: '市場年均複合增長率(CAGR)比較', font: { size: 16 } },
+                    datalabels: { display: true, anchor: 'center', align: 'center', color: '#fff', formatter: (value) => value + '%' }
+                }
+            }
+        });
+
+        // Chart 3: Market Structure (US 2024)
+        new Chart(document.getElementById('marketStructureChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['有氧訓練器材', '力量訓練器材 (力量站)'],
+                datasets: [{
+                    data: [60.19, 39.81],
+                    backgroundColor: ['#36A2EB', '#FFC107']
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '美國市場結構分析 (2024營收佔比)', font: { size: 16 } },
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        formatter: (value) => value + '%',
+                        color: '#fff',
+                    }
+                }
+            }
+        });
+        
+        // Chart 4: Major Player Funding
+        new Chart(document.getElementById('fundingChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Tonal', 'Tempo', 'Vitruvian', 'OxeFit'],
+                datasets: [
+                    { label: '總募資額 (百萬美元)', data: [535, 398, 51.4, 70], backgroundColor: 'rgba(75, 192, 192, 0.8)' },
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '主要參與者總募資額 (百萬美元)', font: { size: 16 } },
+                    datalabels: { formatter: (value) => '$' + value + 'M', color: 'white', anchor: 'center', align: 'center' }
+                }
+            }
+        });
+        
+        // Chart 5: System Type Dominance
+        new Chart(document.getElementById('systemTypeChart').getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: ['固定式系統 (Tonal, Tempo etc.)', '便攜式系統 (Vitruvian etc.)'],
+                datasets: [{
+                    data: [90, 10], // Based on Tonal's 2021 market share
+                    backgroundColor: ['#003366', '#FF6384']
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '市場系統類型主導地位 (推估)', font: { size: 16 } },
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        formatter: (value) => value + '%',
+                        color: '#fff',
+                    }
+                }
+            }
+        });
+        
+        // Chart 6: User Segments
+        new Chart(document.getElementById('userSegmentChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['千禧世代 (25-40)', 'Z 世代 (<25)', 'X 世代 (41-56)', '高齡族群'],
+                datasets: [{
+                    label: '市場重要性',
+                    data: [4, 3, 3.5, 2.5], // Qualitative representation
+                    backgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        display: false
+                    }
+                },
+                plugins: {
+                    title: { display: true, text: '核心使用者群體分析', font: { size: 16 } },
+                    legend: { display: false },
+                    datalabels: {
+                        formatter: (value, context) => context.chart.data.labels[context.dataIndex],
+                        color: 'white', anchor: 'center', align: 'center'
+                    }
+                }
+            }
+        });
+
+        // --- 滾動監聽 (Scrollspy) 功能 ---
+        const mainContent = document.getElementById('main-content');
+        const sections = document.querySelectorAll('#page-report h2[id]');
+        const navLinks = document.querySelectorAll('.report-nav-link');
+        
+        mainContent.addEventListener('scroll', () => {
+            window.requestAnimationFrame(() => {
+                let currentSectionId = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - mainContent.offsetTop - 50; 
+                    if (mainContent.scrollTop >= sectionTop) {
+                        currentSectionId = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('active-link');
+                    const linkAnchor = link.getAttribute('onclick').match(/#section-\d+/);
+                    if (linkAnchor && linkAnchor[0] === '#' + currentSectionId) {
+                        link.classList.add('active-link');
+                    }
+                });
+            });
+        });
+    };
+</script>
+
+</body>
+</html>
