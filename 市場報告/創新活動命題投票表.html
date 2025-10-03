@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>市場數據分析與投票</title>
+    <title>創新活動命題投票表</title>
     <!-- 引入 Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -46,6 +46,19 @@
             body {
                 background-color: white;
             }
+            /* 讓列印時的數字垂直置中 */
+            .print-center-td {
+                vertical-align: middle;
+            }
+            /* 修正：強制保留黃色背景和邊框，使用 !important 確保覆蓋 */
+            .bg-yellow-100 {
+                background-color: #fef3c7 !important; /* Tailwind yellow-100 color */
+                -webkit-print-color-adjust: exact; /* 確保打印機使用確切顏色 */
+                color-adjust: exact;
+            }
+            .border-yellow-300 {
+                border-color: #fcd34d !important; /* Tailwind yellow-300 color */
+            }
         }
     </style>
 </head>
@@ -53,7 +66,7 @@
 
     <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-2xl p-4 sm:p-6">
         <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-800 mb-6 border-b-4 border-yellow-500 pb-2">
-            市場數據分析與投票
+            創新活動命題投票表
         </h1>
         <p class="text-lg text-gray-600 mb-4">
             點擊「不合適」或「想要」欄位旁的 <span class="text-green-500 font-bold">+</span> 或 <span class="text-red-500 font-bold">-</span> 按鈕，請勾選所有您認為不合適的項目, 對您看好的2項類別進行投票。
@@ -70,14 +83,15 @@
             <table id="data-table" class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-800 text-white header-row">
                     <tr>
-                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider w-1/4">類別</th>
-                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球規模</th>
-                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球CAGR</th>
-                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美規模</th>
-                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美CAGR</th>
+                        <!-- 修正 padding: py-1 改為 py-2 -->
+                        <th class="px-2 py-2 text-left text-sm sm:text-base font-semibold uppercase tracking-wider w-1/4">類別</th>
+                        <th class="px-2 py-2 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球規模</th>
+                        <th class="px-2 py-2 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球CAGR</th>
+                        <th class="px-2 py-2 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美規模</th>
+                        <th class="px-2 py-2 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美CAGR</th>
                         <!-- 標題保留 (無 no-print) -->
-                        <th class="px-3 py-4 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">不合適</th>
-                        <th class="px-3 py-4 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">想要</th>
+                        <th class="px-2 py-2 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">不合適</th>
+                        <th class="px-2 py-2 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">想要</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -172,7 +186,9 @@
             tableBody.innerHTML = '';
 
             tableData.forEach((row, index) => {
-                // 決定行樣式：標題行使用不同背景和加粗字體
+                // 決定行樣式：
+                // 1. 標題行使用黃色背景和加粗字體
+                // 2. 修正：添加 border-b-2 border-yellow-300 以確保所有產業行都有底部線
                 const rowClass = row.isHeader
                     ? 'bg-yellow-100 font-semibold border-b-2 border-yellow-300'
                     : 'bg-white hover:bg-gray-50';
@@ -184,6 +200,7 @@
                 // 檢查是否有連結，如果有則生成連結按鈕
                 const linkUrl = linkMap[row.category];
                 const linkButtonHtml = linkUrl ? 
+                    // 修正 padding: px-0.3 py-0.5 改為 px-2 py-0.5
                     `<a href="${linkUrl}" target="_blank" class="ml-2 flex-shrink-0 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition duration-150">
                         連結
                         <!-- 外部連結圖示 -->
@@ -195,64 +212,74 @@
                 const desiredVotesDisplay = row.desiredVotes > 0 ? row.desiredVotes : '';
 
 
-                const suitableControl = `
-                    <!-- 網頁顯示時的控制元件 (no-print 隱藏所有控制項和數字) -->
-                    <div class="flex items-center justify-center space-x-2 no-print">
-                        <!-- 投票數 (text-xl 保持不變，因為已經夠大) -->
-                        <span id="vote-count-suitable-${index}" class="text-xl font-extrabold min-w-8 text-center">
+                let suitableControl, desiredControl;
+
+                if (row.isHeader) {
+                    // 對於四大產業的標題行，投票欄位留空
+                    suitableControl = ``;
+                    desiredControl = ``;
+                } else {
+                    // 對於子類別行，顯示投票控制項和數字
+                    suitableControl = `
+                        <!-- 網頁顯示時的控制元件 (no-print 隱藏所有控制項) -->
+                        <div class="flex items-center justify-center space-x-2 no-print">
+                            <!-- 投票數 (text-xl 保持不變，因為已經夠大) -->
+                            <span id="vote-count-suitable-${index}" class="text-xl font-extrabold min-w-8 text-center">
+                                ${suitableVotesDisplay}
+                            </span>
+                            <!-- + / - 按鈕 (垂直排列) -->
+                            <div class="flex flex-col space-y-1">
+                                <button onclick="vote(${index}, 1, 'suitable')" class="vote-btn btn-plus" aria-label="增加不合適投票">+</button>
+                                <button onclick="vote(${index}, -1, 'suitable')" class="vote-btn btn-minus" aria-label="減少不合適投票">-</button>
+                            </div>
+                        </div>
+                        <!-- 列印專用數字: 隱藏在網頁上，但列印時顯示 (沒有 +- 按鈕) -->
+                        <span id="print-vote-count-suitable-${index}" class="hidden print:inline-block text-sm font-semibold">
                             ${suitableVotesDisplay}
                         </span>
-                        <!-- + / - 按鈕 (垂直排列) -->
-                        <div class="flex flex-col space-y-1">
-                            <button onclick="vote(${index}, 1, 'suitable')" class="vote-btn btn-plus" aria-label="增加不合適投票">+</button>
-                            <button onclick="vote(${index}, -1, 'suitable')" class="vote-btn btn-minus" aria-label="減少不合適投票">-</button>
-                        </div>
-                    </div>
-                    <!-- 列印專用數字: 隱藏在網頁上，但列印時顯示 (沒有 +- 按鈕) -->
-                    <span id="print-vote-count-suitable-${index}" class="hidden print:inline-block text-sm font-semibold">
-                        ${suitableVotesDisplay}
-                    </span>
-                `;
+                    `;
 
-                const desiredControl = `
-                    <!-- 網頁顯示時的控制元件 (no-print 隱藏所有控制項和數字) -->
-                    <div class="flex items-center justify-center space-x-2 no-print">
-                        <!-- 投票數 (text-xl 保持不變，因為已經夠大) -->
-                        <span id="vote-count-desired-${index}" class="text-xl font-extrabold min-w-8 text-center">
+                    desiredControl = `
+                        <!-- 網頁顯示時的控制元件 (no-print 隱藏所有控制項和數字) -->
+                        <div class="flex items-center justify-center space-x-2 no-print">
+                            <!-- 投票數 (text-xl 保持不變，因為已經夠大) -->
+                            <span id="vote-count-desired-${index}" class="text-xl font-extrabold min-w-8 text-center">
+                                ${desiredVotesDisplay}
+                            </span>
+                            <!-- + / - 按鈕 (垂直排列) -->
+                            <div class="flex flex-col space-y-1">
+                                <button onclick="vote(${index}, 1, 'desired')" class="vote-btn btn-plus" aria-label="增加想要投票">+</button>
+                                <button onclick="vote(${index}, -1, 'desired')" class="vote-btn btn-minus" aria-label="減少想要投票">-</button>
+                            </div>
+                        </div>
+                        <!-- 列印專用數字: 隱藏在網頁上，但列印時顯示 (沒有 +- 按鈕) -->
+                        <span id="print-vote-count-desired-${index}" class="hidden print:inline-block text-sm font-semibold">
                             ${desiredVotesDisplay}
                         </span>
-                        <!-- + / - 按鈕 (垂直排列) -->
-                        <div class="flex flex-col space-y-1">
-                            <button onclick="vote(${index}, 1, 'desired')" class="vote-btn btn-plus" aria-label="增加想要投票">+</button>
-                            <button onclick="vote(${index}, -1, 'desired')" class="vote-btn btn-minus" aria-label="減少想要投票">-</button>
-                        </div>
-                    </div>
-                    <!-- 列印專用數字: 隱藏在網頁上，但列印時顯示 (沒有 +- 按鈕) -->
-                    <span id="print-vote-count-desired-${index}" class="hidden print:inline-block text-sm font-semibold">
-                        ${desiredVotesDisplay}
-                    </span>
-                `;
+                    `;
+                }
 
-                // 組合所有欄位
+
+                // 組合所有欄位 (修正 TD 上的 padding 類別為 px-2 py-2)
                 tr.innerHTML = `
-                    <td class="px-3 py-4 ${row.isHeader ? 'font-bold' : ''} whitespace-nowrap">
+                    <td class="px-2 py-2 ${row.isHeader ? 'font-bold' : ''} whitespace-nowrap">
                         <div class="flex items-center h-full">
                             ${row.category}
                             ${linkButtonHtml}
                         </div>
                     </td>
-                    <td class="px-3 py-4 whitespace-nowrap"><div class="flex items-center h-full">${row.globalScale}</div></td>
-                    <td class="px-3 py-4 whitespace-nowrap"><div class="flex items-center h-full">${row.globalCAGR}</div></td>
-                    <td class="px-3 py-4 whitespace-nowrap"><div class="flex items-center h-full">${row.naScale}</div></td>
-                    <td class="px-3 py-4 whitespace-nowrap"><div class="flex items-center h-full">${row.naCAGR}</div></td>
+                    <td class="px-2 py-2 whitespace-nowrap"><div class="flex items-center h-full">${row.globalScale}</div></td>
+                    <td class="px-2 py-2 whitespace-nowrap"><div class="flex items-center h-full">${row.globalCAGR}</div></td>
+                    <td class="px-2 py-2 whitespace-nowrap"><div class="flex items-center h-full">${row.naScale}</div></td>
+                    <td class="px-2 py-2 whitespace-nowrap"><div class="flex items-center h-full">${row.naCAGR}</div></td>
                     
-                    <!-- 不合適投票欄位: 包含互動控制項 (no-print) 和列印數字 (print:inline-block) -->
-                    <td class="px-3 py-4 text-center">
+                    <!-- 不合適投票欄位 -->
+                    <td class="px-2 py-2 text-center ${row.isHeader ? '' : 'print-center-td'}">
                         ${suitableControl}
                     </td>
 
-                    <!-- 想要投票欄位: 包含互動控制項 (no-print) 和列印數字 (print:inline-block) -->
-                    <td class="px-3 py-4 text-center">
+                    <!-- 想要投票欄位 -->
+                    <td class="px-2 py-2 text-center ${row.isHeader ? '' : 'print-center-td'}">
                         ${desiredControl}
                     </td>
                 `;
