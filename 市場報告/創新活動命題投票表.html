@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>市場數據投票表格</title>
+    <title>市場數據分析與投票</title>
     <!-- 引入 Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -56,29 +56,28 @@
             市場數據分析與投票
         </h1>
         <p class="text-lg text-gray-600 mb-4">
-            點擊「合適」或「想要」欄位旁的 <span class="text-green-500 font-bold">+</span> 或 <span class="text-red-500 font-bold">-</span> 按鈕，對您看好的類別進行投票。
+            點擊「不合適」或「想要」欄位旁的 <span class="text-green-500 font-bold">+</span> 或 <span class="text-red-500 font-bold">-</span> 按鈕，請勾選所有您認為不合適的項目, 對您看好的2項類別進行投票。
         </p>
 
         <!-- 列印按鈕 -->
-        <button onclick="printPage()" class="no-print mb-6 px-6 py-0.5 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-150 ease-in-out flex items-center">
+        <button onclick="printPage()" class="no-print mb-6 px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-150 ease-in-out flex items-center">
             <!-- 使用 SVG 圖示模擬印表機 -->
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m4 0v-4a3 3 0 013-3h2m0 0V9a2 2 0 00-2-2m2 2l-2-2h-4l-2 2"></path></svg>
-            列印此頁面
+            投票完成
         </button>
 
         <div class="table-container rounded-lg border border-gray-200">
             <table id="data-table" class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-800 text-white header-row">
                     <tr>
-                        <!-- 標題欄位已經是垂直置中了 (th 預設通常是) -->
-                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider w-1/4">類別</th>
-                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球規模</th>
-                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球CAGR</th>
-                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美規模</th>
-                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美CAGR</th>
-                        <!-- 拆分的投票欄位 -->
-                        <th class="px-3 py-0.5 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">合適</th>
-                        <th class="px-3 py-0.5 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">想要</th>
+                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider w-1/4">類別</th>
+                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球規模</th>
+                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球CAGR</th>
+                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美規模</th>
+                        <th class="px-3 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美CAGR</th>
+                        <!-- 標題保留 (無 no-print) -->
+                        <th class="px-3 py-4 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">不合適</th>
+                        <th class="px-3 py-4 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">想要</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -89,7 +88,7 @@
     </div>
 
     <script>
-        // 將連結數據整合到表格數據中
+        // 修正 linkMap: 只保留四個主要產業的連結
         const linkMap = {
             '產業-寵物': 'https://eeee821022.github.io/Storage/%E5%B8%82%E5%A0%B4%E5%A0%B1%E5%91%8A/%E5%8C%97%E7%BE%8E%E5%AF%B5%E7%89%A9%E5%81%A5%E8%BA%AB%E9%81%8A%E6%88%B2%E6%A9%9F%E5%B8%82%E5%A0%B4.html',
             '產業-老人復健': 'https://eeee821022.github.io/Storage/%E5%B8%82%E5%A0%B4%E5%A0%B1%E5%91%8A/%E5%8C%97%E7%BE%8E%E9%AB%98%E9%BD%A1%E8%80%85%E5%BE%A9%E5%81%A5%E5%99%A8%E6%9D%90%E5%B8%82%E5%A0%B4.html',
@@ -97,7 +96,7 @@
             '產業-生活推車': 'https://eeee821022.github.io/Storage/%E5%B8%82%E5%A0%B4%E5%A0%B1%E5%91%8A/%E5%8C%97%E7%BE%8E%E7%94%9F%E6%B4%BB%E6%8E%A8%E8%BB%8A%E5%B8%82%E5%A0%B4.html',
         };
 
-        // 表格數據 (suitableVotes: 合適投票數, desiredVotes: 想要投票數)
+        // 表格數據 (恢復投票數屬性)
         const initialData = [
             { category: '產業-寵物', isHeader: true, globalScale: '2593.7 億美元', globalCAGR: '6.6%', naScale: '871.8 億美元', naCAGR: '8.6%', suitableVotes: 0, desiredVotes: 0 },
             { category: '寵物健康管理 ★ ★', isHeader: false, globalScale: '66 億美元', globalCAGR: '6.7%', naScale: '26.4 億美元', naCAGR: '9.0%', suitableVotes: 0, desiredVotes: 0 },
@@ -132,14 +131,12 @@
          * 處理投票操作，更新數據和 DOM
          * @param {number} index - 數據數組中的索引
          * @param {number} change - 投票數的變化量 (+1 或 -1)
-         * @param {string} type - 投票類型: 'suitable' (合適) 或 'desired' (想要)
+         * @param {string} type - 投票類型: 'suitable' (不合適) 或 'desired' (想要)
          */
         window.vote = function(index, change, type) {
             if (index >= 0 && index < tableData.length) {
-                // 根據 type 決定要更新哪個鍵值
                 const voteKey = type === 'suitable' ? 'suitableVotes' : 'desiredVotes';
                 
-                // 更新數據
                 tableData[index][voteKey] += change;
 
                 // 確保投票數不低於零
@@ -147,10 +144,19 @@
                     tableData[index][voteKey] = 0;
                 }
 
-                // 直接更新 DOM 中對應的計數器
+                // 決定顯示的數值 (0時為空字串)
+                const displayValue = tableData[index][voteKey] > 0 ? tableData[index][voteKey] : '';
+
+                // 1. 更新網頁互動顯示 (有 +- 按鈕)
                 const voteCountElement = document.getElementById(`vote-count-${type}-${index}`);
                 if (voteCountElement) {
-                    voteCountElement.textContent = tableData[index][voteKey];
+                    voteCountElement.textContent = displayValue;
+                }
+
+                // 2. 更新列印顯示 (無 +- 按鈕)
+                const printVoteCountElement = document.getElementById(`print-vote-count-${type}-${index}`);
+                if (printVoteCountElement) {
+                    printVoteCountElement.textContent = displayValue;
                 }
             }
         };
@@ -175,43 +181,45 @@
                 const tr = document.createElement('tr');
                 tr.className = rowClass;
                 
-                // 數據單元格的基礎樣式: 
-                // py-0.5: 垂直間距 (行高)
-                // text-sm sm:text-base: 字體大小
-                // flex items-center: 確保內容垂直置中 (新增)
-                const baseTdClass = 'px-3 py-0.5 text-sm sm:text-base text-gray-800 flex items-center';
-                
                 // 檢查是否有連結，如果有則生成連結按鈕
                 const linkUrl = linkMap[row.category];
                 const linkButtonHtml = linkUrl ? 
-                    `<a href="${linkUrl}" target="_blank" class="no-print ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition duration-150">
+                    `<a href="${linkUrl}" target="_blank" class="ml-2 flex-shrink-0 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition duration-150">
                         連結
                         <!-- 外部連結圖示 -->
                         <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                     </a>` : '';
 
-                // 垂直排列的投票控制元件的 HTML 樣板
+                // 決定初始顯示的數值 (0時為空字串)
+                const suitableVotesDisplay = row.suitableVotes > 0 ? row.suitableVotes : '';
+                const desiredVotesDisplay = row.desiredVotes > 0 ? row.desiredVotes : '';
+
+
                 const suitableControl = `
+                    <!-- 網頁顯示時的控制元件 (no-print 隱藏所有控制項和數字) -->
                     <div class="flex items-center justify-center space-x-2 no-print">
                         <!-- 投票數 (text-xl 保持不變，因為已經夠大) -->
                         <span id="vote-count-suitable-${index}" class="text-xl font-extrabold min-w-8 text-center">
-                            ${row.suitableVotes}
+                            ${suitableVotesDisplay}
                         </span>
                         <!-- + / - 按鈕 (垂直排列) -->
                         <div class="flex flex-col space-y-1">
-                            <button onclick="vote(${index}, 1, 'suitable')" class="vote-btn btn-plus" aria-label="增加合適投票">+</button>
-                            <button onclick="vote(${index}, -1, 'suitable')" class="vote-btn btn-minus" aria-label="減少合適投票">-</button>
+                            <button onclick="vote(${index}, 1, 'suitable')" class="vote-btn btn-plus" aria-label="增加不合適投票">+</button>
+                            <button onclick="vote(${index}, -1, 'suitable')" class="vote-btn btn-minus" aria-label="減少不合適投票">-</button>
                         </div>
                     </div>
-                    <!-- 列印時只顯示計數 -->
-                    <span class="hidden print:inline">${row.suitableVotes}</span>
+                    <!-- 列印專用數字: 隱藏在網頁上，但列印時顯示 (沒有 +- 按鈕) -->
+                    <span id="print-vote-count-suitable-${index}" class="hidden print:inline-block text-sm font-semibold">
+                        ${suitableVotesDisplay}
+                    </span>
                 `;
 
                 const desiredControl = `
+                    <!-- 網頁顯示時的控制元件 (no-print 隱藏所有控制項和數字) -->
                     <div class="flex items-center justify-center space-x-2 no-print">
                         <!-- 投票數 (text-xl 保持不變，因為已經夠大) -->
                         <span id="vote-count-desired-${index}" class="text-xl font-extrabold min-w-8 text-center">
-                            ${row.desiredVotes}
+                            ${desiredVotesDisplay}
                         </span>
                         <!-- + / - 按鈕 (垂直排列) -->
                         <div class="flex flex-col space-y-1">
@@ -219,30 +227,32 @@
                             <button onclick="vote(${index}, -1, 'desired')" class="vote-btn btn-minus" aria-label="減少想要投票">-</button>
                         </div>
                     </div>
-                    <!-- 列印時只顯示計數 -->
-                    <span class="hidden print:inline">${row.desiredVotes}</span>
+                    <!-- 列印專用數字: 隱藏在網頁上，但列印時顯示 (沒有 +- 按鈕) -->
+                    <span id="print-vote-count-desired-${index}" class="hidden print:inline-block text-sm font-semibold">
+                        ${desiredVotesDisplay}
+                    </span>
                 `;
 
-                // 由於 TD 已經設定 flex items-center, 內部的內容需要包裝以確保正確的佈局
+                // 組合所有欄位
                 tr.innerHTML = `
-                    <td class="px-3 py-0.5 ${row.isHeader ? 'font-bold' : ''} whitespace-nowrap">
-                        <div class="flex items-center">
+                    <td class="px-3 py-4 ${row.isHeader ? 'font-bold' : ''} whitespace-nowrap">
+                        <div class="flex items-center h-full">
                             ${row.category}
                             ${linkButtonHtml}
                         </div>
                     </td>
-                    <td class="px-3 py-0.5 whitespace-nowrap"><div class="flex items-center h-full">${row.globalScale}</div></td>
-                    <td class="px-3 py-0.5 whitespace-nowrap"><div class="flex items-center h-full">${row.globalCAGR}</div></td>
-                    <td class="px-3 py-0.5 whitespace-nowrap"><div class="flex items-center h-full">${row.naScale}</div></td>
-                    <td class="px-3 py-0.5 whitespace-nowrap"><div class="flex items-center h-full">${row.naCAGR}</div></td>
+                    <td class="px-3 py-4 whitespace-nowrap"><div class="flex items-center h-full">${row.globalScale}</div></td>
+                    <td class="px-3 py-4 whitespace-nowrap"><div class="flex items-center h-full">${row.globalCAGR}</div></td>
+                    <td class="px-3 py-4 whitespace-nowrap"><div class="flex items-center h-full">${row.naScale}</div></td>
+                    <td class="px-3 py-4 whitespace-nowrap"><div class="flex items-center h-full">${row.naCAGR}</div></td>
                     
-                    <!-- 合適投票欄位 -->
-                    <td class="px-3 py-0.5 text-center">
+                    <!-- 不合適投票欄位: 包含互動控制項 (no-print) 和列印數字 (print:inline-block) -->
+                    <td class="px-3 py-4 text-center">
                         ${suitableControl}
                     </td>
 
-                    <!-- 想要投票欄位 -->
-                    <td class="px-3 py-0.5 text-center">
+                    <!-- 想要投票欄位: 包含互動控制項 (no-print) 和列印數字 (print:inline-block) -->
+                    <td class="px-3 py-4 text-center">
                         ${desiredControl}
                     </td>
                 `;
