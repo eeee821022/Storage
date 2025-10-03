@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>市場數據投票表格</title>
+    <!-- 引入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 設定基本字體和背景 */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* 輕微灰色背景 */
+        }
+        /* 確保表格容器在小螢幕上可以橫向滾動 */
+        .table-container {
+            overflow-x: auto;
+        }
+        /* 定義投票按鈕的樣式 */
+        .vote-btn {
+            /* 調整 padding 讓按鈕在垂直排列時更緊湊 */
+            @apply p-1 mx-0.5 rounded-full text-white font-bold transition duration-150 ease-in-out shadow-md;
+            min-width: 28px; /* 確保按鈕有足夠的點擊區域 */
+        }
+        .vote-btn:hover {
+            @apply shadow-lg transform scale-105;
+        }
+        .btn-plus {
+            @apply bg-green-500 hover:bg-green-600;
+        }
+        .btn-minus {
+            @apply bg-red-500 hover:bg-red-600;
+        }
+        /* 標題行的底部邊框樣式 */
+        .header-row {
+            border-bottom: 3px solid #f59e0b; /* 橙色粗底線 */
+        }
+        /* 隱藏列印時的按鈕和非必要元素 */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .table-container {
+                overflow-x: visible; /* 列印時不需要滾動 */
+            }
+            body {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-2xl p-4 sm:p-6">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-800 mb-6 border-b-4 border-yellow-500 pb-2">
+            市場數據分析與投票
+        </h1>
+        <p class="text-lg text-gray-600 mb-4">
+            點擊「合適」或「想要」欄位旁的 <span class="text-green-500 font-bold">+</span> 或 <span class="text-red-500 font-bold">-</span> 按鈕，對您看好的類別進行投票。
+        </p>
+
+        <!-- 列印按鈕 -->
+        <button onclick="printPage()" class="no-print mb-6 px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-150 ease-in-out flex items-center">
+            <!-- 使用 SVG 圖示模擬印表機 -->
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m4 0v-4a3 3 0 013-3h2m0 0V9a2 2 0 00-2-2m2 2l-2-2h-4l-2 2"></path></svg>
+            列印此頁面
+        </button>
+
+        <div class="table-container rounded-lg border border-gray-200">
+            <table id="data-table" class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-800 text-white header-row">
+                    <tr>
+                        <!-- 標題字體放大 -->
+                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider w-1/4">類別</th>
+                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球規模</th>
+                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球CAGR</th>
+                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美規模</th>
+                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美CAGR</th>
+                        <!-- 拆分的投票欄位 -->
+                        <th class="px-3 py-3 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">合適</th>
+                        <th class="px-3 py-3 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">想要</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <!-- Table rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 將連結數據整合到表格數據中
+        const linkMap = {
+            '產業-寵物': 'https://eeee821022.github.io/Storage/%E5%B8%82%E5%A0%B4%E5%A0%B1%E5%91%8A/%E5%8C%97%E7%BE%8E%E5%AF%B5%E7%89%A9%E5%81%A5%E8%BA%AB%E9%81%8A%E6%88%B2%E6%A9%9F%E5%B8%82%E5%A0%B4.html',
+            '產業-老人復健': 'https://eeee821022.github.io/Storage/%E5%B8%82%E5%A0%B4%E5%A0%B1%E5%91%8A/%E5%8C%97%E7%BE%8E%E9%AB%98%E9%BD%A1%E8%80%85%E5%BE%A9%E5%81%A5%E5%99%A8%E6%9D%90%E5%B8%82%E5%A0%B4.html',
+            '產業-聯網健身器材': 'https://eeee821022.github.io/Storage/%E5%B8%82%E5%A0%B4%E5%A0%B1%E5%91%8A/%E5%8C%97%E7%BE%8E%E5%8A%9B%E9%87%8F%E7%AB%99%E5%B8%82%E5%A0%B4.html',
+            '產業-生活推車': 'https://eeee821022.github.io/Storage/%E5%B8%82%E5%A0%B4%E5%A0%B1%E5%91%8A/%E5%8C%97%E7%BE%8E%E7%94%9F%E6%B4%BB%E6%8E%A8%E8%BB%8A%E5%B8%82%E5%A0%B4.html',
+        };
+
+        // 表格數據 (suitableVotes: 合適投票數, desiredVotes: 想要投票數)
+        const initialData = [
+            { category: '產業-寵物', isHeader: true, globalScale: '2593.7 億美元', globalCAGR: '6.6%', naScale: '871.8 億美元', naCAGR: '8.6%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '寵物健康管理', isHeader: false, globalScale: '66 億美元', globalCAGR: '6.7%', naScale: '26.4 億美元', naCAGR: '9.0%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '寵物遊戲', isHeader: false, globalScale: '90 億美元', globalCAGR: '6.8%', naScale: '28.7 億美元', naCAGR: '8.7%', suitableVotes: 0, desiredVotes: 0 },
+
+            { category: '產業-老人復健', isHeader: true, globalScale: '155 億美元', globalCAGR: '8.3%', naScale: '49.2 億美元', naCAGR: '5.8%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '老人復健器材', isHeader: false, globalScale: '12~25 億美元', globalCAGR: '4.0%', naScale: '4~8.5 億美元', naCAGR: '5.8%', suitableVotes: 0, desiredVotes: 0 },
+
+            { category: '產業-聯網健身器材', isHeader: true, globalScale: '31 億美元', globalCAGR: '17.0%', naScale: '11.7 億美元', naCAGR: '19.3%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '力量站', isHeader: false, globalScale: '12 億美元', globalCAGR: '20.0%', naScale: '4 億美元', naCAGR: '22.6%', suitableVotes: 0, desiredVotes: 0 },
+
+            { category: '產業-生活推車', isHeader: true, globalScale: '80 億美元', globalCAGR: '11.6%', naScale: '25.71 億美元', naCAGR: '13.6%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '嬰兒推車', isHeader: false, globalScale: '30.3 億美元', globalCAGR: '4.0%', naScale: '10.1 億美元', naCAGR: '6.1%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '嬰兒推車(智能)', isHeader: false, globalScale: '0.43 億美元', globalCAGR: '25.5%', naScale: '0.15 億美元', naCAGR: '27.0%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '購物推車', isHeader: false, globalScale: '0.75 億美元', globalCAGR: '1.9%', naScale: '0.25 億美元', naCAGR: '4.0%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '購物推車(智能)', isHeader: false, globalScale: '17 億美元', globalCAGR: '24.7%', naScale: '5 億美元', naCAGR: '26.0%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '寵物推車', isHeader: false, globalScale: '13 億美元', globalCAGR: '8.0%', naScale: '4.7 億美元', naCAGR: '10.6%', suitableVotes: 0, desiredVotes: 0 },
+            { category: '通用摺疊推車', isHeader: false, globalScale: '18.6 億美元', globalCAGR: '5.9%', naScale: '5.51 億美元', naCAGR: '8.0%', suitableVotes: 0, desiredVotes: 0 },
+        ];
+
+        // 使用一個響應式狀態來儲存數據
+        let tableData = [...initialData];
+
+        /**
+         * 觸發瀏覽器的列印對話框
+         */
+        window.printPage = function() {
+            window.print();
+        };
+
+        /**
+         * 處理投票操作，更新數據和 DOM
+         * @param {number} index - 數據數組中的索引
+         * @param {number} change - 投票數的變化量 (+1 或 -1)
+         * @param {string} type - 投票類型: 'suitable' (合適) 或 'desired' (想要)
+         */
+        window.vote = function(index, change, type) {
+            if (index >= 0 && index < tableData.length) {
+                // 根據 type 決定要更新哪個鍵值
+                const voteKey = type === 'suitable' ? 'suitableVotes' : 'desiredVotes';
+                
+                // 更新數據
+                tableData[index][voteKey] += change;
+
+                // 確保投票數不低於零
+                if (tableData[index][voteKey] < 0) {
+                    tableData[index][voteKey] = 0;
+                }
+
+                // 直接更新 DOM 中對應的計數器
+                const voteCountElement = document.getElementById(`vote-count-${type}-${index}`);
+                if (voteCountElement) {
+                    voteCountElement.textContent = tableData[index][voteKey];
+                }
+            }
+        };
+
+        /**
+         * 渲染表格
+         */
+        function renderTable() {
+            const tableBody = document.querySelector('#data-table tbody');
+            if (!tableBody) return;
+
+            // 清空舊內容
+            tableBody.innerHTML = '';
+
+            tableData.forEach((row, index) => {
+                // 決定行樣式：標題行使用不同背景和加粗字體
+                const rowClass = row.isHeader
+                    ? 'bg-yellow-100 font-semibold border-b-2 border-yellow-300'
+                    : 'bg-white hover:bg-gray-50';
+                
+                // 創建表格行
+                const tr = document.createElement('tr');
+                tr.className = rowClass;
+                
+                // 數據單元格的基礎樣式 (text-sm sm:text-base - 內文放大一級)
+                const baseTdClass = 'px-3 py-3 text-sm sm:text-base text-gray-800';
+                
+                // 檢查是否有連結，如果有則生成連結按鈕
+                const linkUrl = linkMap[row.category];
+                const linkButtonHtml = linkUrl ? 
+                    `<a href="${linkUrl}" target="_blank" class="no-print ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition duration-150">
+                        連結
+                        <!-- 外部連結圖示 -->
+                        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>` : '';
+
+                // 垂直排列的投票控制元件的 HTML 樣板
+                const suitableControl = `
+                    <div class="flex items-center justify-center space-x-2 no-print">
+                        <!-- 投票數 (text-xl 保持不變，因為已經夠大) -->
+                        <span id="vote-count-suitable-${index}" class="text-xl font-extrabold min-w-8 text-center">
+                            ${row.suitableVotes}
+                        </span>
+                        <!-- + / - 按鈕 (垂直排列) -->
+                        <div class="flex flex-col space-y-1">
+                            <button onclick="vote(${index}, 1, 'suitable')" class="vote-btn btn-plus" aria-label="增加合適投票">+</button>
+                            <button onclick="vote(${index}, -1, 'suitable')" class="vote-btn btn-minus" aria-label="減少合適投票">-</button>
+                        </div>
+                    </div>
+                    <!-- 列印時只顯示計數 -->
+                    <span class="hidden print:inline">${row.suitableVotes}</span>
+                `;
+
+                const desiredControl = `
+                    <div class="flex items-center justify-center space-x-2 no-print">
+                        <!-- 投票數 (text-xl 保持不變，因為已經夠大) -->
+                        <span id="vote-count-desired-${index}" class="text-xl font-extrabold min-w-8 text-center">
+                            ${row.desiredVotes}
+                        </span>
+                        <!-- + / - 按鈕 (垂直排列) -->
+                        <div class="flex flex-col space-y-1">
+                            <button onclick="vote(${index}, 1, 'desired')" class="vote-btn btn-plus" aria-label="增加想要投票">+</button>
+                            <button onclick="vote(${index}, -1, 'desired')" class="vote-btn btn-minus" aria-label="減少想要投票">-</button>
+                        </div>
+                    </div>
+                    <!-- 列印時只顯示計數 -->
+                    <span class="hidden print:inline">${row.desiredVotes}</span>
+                `;
+
+
+                tr.innerHTML = `
+                    <td class="${baseTdClass} ${row.isHeader ? 'font-bold' : ''} whitespace-nowrap flex items-center py-3">
+                        ${row.category}
+                        ${linkButtonHtml}
+                    </td>
+                    <td class="${baseTdClass} whitespace-nowrap">${row.globalScale}</td>
+                    <td class="${baseTdClass} whitespace-nowrap">${row.globalCAGR}</td>
+                    <td class="${baseTdClass} whitespace-nowrap">${row.naScale}</td>
+                    <td class="${baseTdClass} whitespace-nowrap">${row.naCAGR}</td>
+                    
+                    <!-- 合適投票欄位 -->
+                    <td class="${baseTdClass} text-center">
+                        ${suitableControl}
+                    </td>
+
+                    <!-- 想要投票欄位 -->
+                    <td class="${baseTdClass} text-center">
+                        ${desiredControl}
+                    </td>
+                `;
+
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // 頁面載入完成後渲染表格
+        window.onload = renderTable;
+    </script>
+
+</body>
+</html>
