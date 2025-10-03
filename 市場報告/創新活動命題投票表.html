@@ -60,7 +60,7 @@
         </p>
 
         <!-- 列印按鈕 -->
-        <button onclick="printPage()" class="no-print mb-6 px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-150 ease-in-out flex items-center">
+        <button onclick="printPage()" class="no-print mb-6 px-6 py-0.5 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-150 ease-in-out flex items-center">
             <!-- 使用 SVG 圖示模擬印表機 -->
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m4 0v-4a3 3 0 013-3h2m0 0V9a2 2 0 00-2-2m2 2l-2-2h-4l-2 2"></path></svg>
             列印此頁面
@@ -70,15 +70,15 @@
             <table id="data-table" class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-800 text-white header-row">
                     <tr>
-                        <!-- 標題字體放大 -->
-                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider w-1/4">類別</th>
-                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球規模</th>
-                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球CAGR</th>
-                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美規模</th>
-                        <th class="px-3 py-3 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美CAGR</th>
+                        <!-- 標題欄位已經是垂直置中了 (th 預設通常是) -->
+                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider w-1/4">類別</th>
+                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球規模</th>
+                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">全球CAGR</th>
+                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美規模</th>
+                        <th class="px-3 py-0.5 text-left text-sm sm:text-base font-semibold uppercase tracking-wider">北美CAGR</th>
                         <!-- 拆分的投票欄位 -->
-                        <th class="px-3 py-3 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">合適</th>
-                        <th class="px-3 py-3 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">想要</th>
+                        <th class="px-3 py-0.5 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">合適</th>
+                        <th class="px-3 py-0.5 text-center text-sm sm:text-base font-semibold uppercase tracking-wider w-1/12">想要</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -175,8 +175,11 @@
                 const tr = document.createElement('tr');
                 tr.className = rowClass;
                 
-                // 數據單元格的基礎樣式 (text-sm sm:text-base - 內文放大一級)
-                const baseTdClass = 'px-3 py-3 text-sm sm:text-base text-gray-800';
+                // 數據單元格的基礎樣式: 
+                // py-0.5: 垂直間距 (行高)
+                // text-sm sm:text-base: 字體大小
+                // flex items-center: 確保內容垂直置中 (新增)
+                const baseTdClass = 'px-3 py-0.5 text-sm sm:text-base text-gray-800 flex items-center';
                 
                 // 檢查是否有連結，如果有則生成連結按鈕
                 const linkUrl = linkMap[row.category];
@@ -220,24 +223,26 @@
                     <span class="hidden print:inline">${row.desiredVotes}</span>
                 `;
 
-
+                // 由於 TD 已經設定 flex items-center, 內部的內容需要包裝以確保正確的佈局
                 tr.innerHTML = `
-                    <td class="${baseTdClass} ${row.isHeader ? 'font-bold' : ''} whitespace-nowrap flex items-center py-3">
-                        ${row.category}
-                        ${linkButtonHtml}
+                    <td class="px-3 py-0.5 ${row.isHeader ? 'font-bold' : ''} whitespace-nowrap">
+                        <div class="flex items-center">
+                            ${row.category}
+                            ${linkButtonHtml}
+                        </div>
                     </td>
-                    <td class="${baseTdClass} whitespace-nowrap">${row.globalScale}</td>
-                    <td class="${baseTdClass} whitespace-nowrap">${row.globalCAGR}</td>
-                    <td class="${baseTdClass} whitespace-nowrap">${row.naScale}</td>
-                    <td class="${baseTdClass} whitespace-nowrap">${row.naCAGR}</td>
+                    <td class="px-3 py-0.5 whitespace-nowrap"><div class="flex items-center h-full">${row.globalScale}</div></td>
+                    <td class="px-3 py-0.5 whitespace-nowrap"><div class="flex items-center h-full">${row.globalCAGR}</div></td>
+                    <td class="px-3 py-0.5 whitespace-nowrap"><div class="flex items-center h-full">${row.naScale}</div></td>
+                    <td class="px-3 py-0.5 whitespace-nowrap"><div class="flex items-center h-full">${row.naCAGR}</div></td>
                     
                     <!-- 合適投票欄位 -->
-                    <td class="${baseTdClass} text-center">
+                    <td class="px-3 py-0.5 text-center">
                         ${suitableControl}
                     </td>
 
                     <!-- 想要投票欄位 -->
-                    <td class="${baseTdClass} text-center">
+                    <td class="px-3 py-0.5 text-center">
                         ${desiredControl}
                     </td>
                 `;
