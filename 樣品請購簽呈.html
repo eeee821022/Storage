@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>樣品購買簽呈</title>
-    <!-- 載入 Tailwind CSS CDN -->
+    <title>樣品請購簽呈</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -73,48 +72,38 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-6 sm:p-10">
-        <!-- 表單標題 -->
         <header class="mb-8 border-b pb-4">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">樣品購買簽呈</h1>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">樣品請購簽呈</h1>
             <p class="text-gray-500">請填寫詳細的樣品資訊、目的與使用計畫。</p>
         </header>
 
         <form id="purchaseForm" class="space-y-6">
 
-            <!-- 簽呈說明 (原樣品基本資訊) -->
             <section class="border-b pb-6">
                 <h2 class="text-xl font-semibold text-indigo-600 mb-4">一、簽呈說明</h2>
                 
-                <!-- 主旨 (樣品名稱/型號) -->
                 <div>
                     <label for="sampleName" class="block text-sm font-medium text-gray-700 mb-1">主旨 (樣品名稱/型號) <span class="text-red-500">*</span></label>
                     <input type="text" id="sampleName" name="sampleName" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition duration-150 ease-in-out" placeholder="例如：申請購買 [供應商] 的 [產品名稱] 樣品">
                 </div>
 
-                <!-- 目的 -->
                 <div>
                     <label for="purpose" class="block text-sm font-medium text-gray-700 mb-1">目的 (為何需要購買此樣品？) <span class="text-red-500">*</span></label>
-                    <textarea id="purpose" name="purpose" rows="3" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm resize-none" placeholder="例如：用於競品拆解分析，研究其散熱結構與材料，以確定產品方向。"></textarea>
+                    <textarea id="purpose" name="purpose" rows="4" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm resize-y" placeholder="例如：用於競品拆解分析，研究其散熱結構與材料，以確定產品方向。"></textarea>
                 </div>
 
-                <!-- 使用計畫動態列表 -->
                 <div class="mt-6">
                     <h3 class="block text-sm font-medium text-gray-700 mb-2">使用計畫 (請依步驟列出) <span class="text-red-500">*</span></h3>
                     
-                    <!-- Headers -->
                     <div class="grid grid-cols-12 gap-2 text-xs md:text-sm font-semibold text-gray-600 mb-1">
                         <div class="col-span-9">計畫/內容 </div>
                         <div class="col-span-2">負責人 </div>
                         <div class="col-span-1"></div>
                     </div>
                     
-                    <!-- Dynamic container for plan rows -->
                     <div id="usagePlanContainer" class="space-y-2">
-                        <!-- Initial Plan Row -->
                         <div class="planRow flex space-x-2 items-center">
-                            <!-- 使用計畫  -->
                             <input type="text" name="planDetails" required class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition duration-150 ease-in-out" placeholder="例如：功能測試與性能評估">
-                            <!-- 負責人  -->
                             <input type="text" name="planResponsible" required class="w-1/5 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="姓名">
                             <button type="button" class="removePlanRowBtn text-red-500 hover:text-red-700 p-1 rounded-full" aria-label="移除計畫">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -122,7 +111,6 @@
                         </div>
                     </div>
                     
-                    <!-- Add Button -->
                     <button type="button" id="addPlanRowBtn" class="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center">
                         <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         新增使用計畫項目
@@ -130,11 +118,9 @@
                 </div>
             </section>
 
-            <!-- 預計花費 (動態品項列表) -->
             <section class="pb-6">
-                <h2 class="text-xl font-semibold text-indigo-600 mb-4">二、預計花費</h2>
+                <h2 class="text-xl font-semibold text-indigo-600 mb-4">二、請購清單</h2>
 
-                <!-- Headers for the dynamic budget table (UPDATED: Added 連結) -->
                 <div class="grid grid-cols-12 gap-4 text-xs md:text-sm font-semibold text-gray-600 mb-2">
                     <div class="col-span-4">品項/型號 <span class="text-red-500">*</span></div>
                     <div class="col-span-4">連結</div>
@@ -143,18 +129,13 @@
                     <div class="col-span-1"></div>
                 </div>
                 
-                <!-- Dynamic container for budget rows -->
                 <div id="budgetItemsContainer" class="space-y-3">
-                    <!-- Initial Budget Item Row (UPDATED: Link input replaced by Link button/display) -->
                     <div class="budgetItemRow grid grid-cols-12 gap-4 items-center">
                         <input type="text" name="itemName" required class="col-span-4 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="產品名稱或型號">
                         
-                        <!-- Link Button/Display Container -->
-                        <div class="col-span-4 flex items-center h-full link-container" data-link="">
-                            <button type="button" class="insertLinkBtn w-full py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 transition duration-150">插入連結</button>
-                            <!-- Hidden input to store URL value -->
+                        <div class="col-span-4 flex items-center h-full link-container">
                             <input type="hidden" name="itemLink" value="">
-                        </div>
+                            </div>
 
                         <input type="number" name="itemPrice" required min="0" step="1" class="itemPrice col-span-2 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="單價">
                         <input type="number" name="itemQuantity" required min="1" class="itemQuantity col-span-1 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" value="1">
@@ -164,13 +145,11 @@
                     </div>
                 </div>
                 
-                <!-- Add Button -->
                 <button type="button" id="addBudgetItemBtn" class="mt-4 text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center">
                     <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     新增品項
                 </button>
 
-                <!-- Total Amount Display -->
                 <div class="flex justify-end pt-4 mt-6 border-t border-gray-200">
                     <div class="text-right">
                         <p class="text-sm font-medium text-gray-700">總金額 (新台幣)</p>
@@ -179,7 +158,6 @@
                 </div>
             </section>
 
-            <!-- 提交按鈕 (UPDATED: Added '轉文字說明' button) -->
             <div class="pt-4 flex justify-end space-x-4">
                 <button type="button" id="convertToTextBtn" class="w-full sm:w-auto px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-opacity-50 transition duration-150 ease-in-out transform hover:scale-[1.02]">
                     轉文字說明
@@ -189,7 +167,6 @@
                 </button>
             </div>
             
-            <!-- 訊息框 (用於顯示提交成功) -->
             <div id="messageBox" class="hidden mt-6 p-4 rounded-lg bg-green-100 border border-green-300 text-green-700" role="alert">
                 <p class="font-medium">✅ 簽呈已整理完成！</p>
                 <p id="submissionDetails" class="text-sm mt-1"></p>
@@ -199,10 +176,8 @@
         </form>
     </div>
     
-    <!-- 隱藏的列印內容容器 -->
     <div id="documentToPrint" class="documentToPrint bg-white p-8"></div>
     
-    <!-- 文本輸出彈窗 (Modal) -->
     <div id="textModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center p-4 z-50 transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl p-6">
             <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">簽呈文字說明 (可複製)</h3>
@@ -219,7 +194,6 @@
         </div>
     </div>
 
-    <!-- 新增：測試資料填充按鈕 -->
     <button id="fillTestDataBtn" class="rounded-full bg-red-500 text-white hover:bg-red-600 transition duration-150">
         T
     </button>
@@ -229,7 +203,7 @@
         // 幫助數字格式化成千分位 (移除小數點)
         const formatNumber = (num) => {
             // 確保數字四捨五入到整數，並使用千分位格式化
-            return Math.round(parseFloat(num)).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            return Math.round(parseFloat(num) || 0).toLocaleString('en-US');
         };
         
         document.addEventListener('DOMContentLoaded', () => {
@@ -241,14 +215,14 @@
             const usagePlanContainer = document.getElementById('usagePlanContainer');
             const documentToPrint = document.getElementById('documentToPrint');
             
-            // New Modal Elements
+            // Modal Elements
             const convertToTextBtn = document.getElementById('convertToTextBtn');
             const textModal = document.getElementById('textModal');
             const textOutputArea = document.getElementById('textOutputArea');
             const closeTextModalBtn = document.getElementById('closeTextModalBtn');
             const copyTextBtn = document.getElementById('copyTextBtn');
 
-            // New Test Button Element
+            // Test Button Element
             const fillTestDataBtn = document.getElementById('fillTestDataBtn');
 
 
@@ -262,23 +236,20 @@
                     const quantity = parseInt(quantityInput ? quantityInput.value : 0, 10) || 0;
                     total += price * quantity;
                 });
-                // 更新：格式化總金額顯示
                 totalAmountDisplay.textContent = formatNumber(total);
             };
 
             // --- 2. 預計花費品項操作 ---
-
-            // 更新：創建新的品項行，包含新的連結按鈕/顯示邏輯
+            
+            // 建立一個新的品項 HTML 結構
             const createBudgetItemRow = (name = '', price = '', quantity = 1, link = '') => {
                 const newItemRow = document.createElement('div');
                 newItemRow.className = 'budgetItemRow grid grid-cols-12 gap-4 items-center';
                 newItemRow.innerHTML = `
                     <input type="text" name="itemName" required class="col-span-4 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="產品名稱或型號" value="${name}">
                     
-                    <!-- Link Button/Display Container -->
-                    <div class="col-span-4 flex items-center h-full link-container" data-link="">
-                        <button type="button" class="insertLinkBtn w-full py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 transition duration-150">插入連結</button>
-                        <input type="hidden" name="itemLink" value="${link}">
+                    <div class="col-span-4 flex items-center h-full link-container">
+                         <input type="hidden" name="itemLink" value="${link}">
                     </div>
 
                     <input type="number" name="itemPrice" required min="0" step="1" class="itemPrice col-span-2 p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="單價" value="${price}">
@@ -289,85 +260,42 @@
                 `;
                 return newItemRow;
             };
-
-            // 處理連結的插入和顯示邏輯
+            
+            // 【已修正】僅負責更新連結按鈕區塊的顯示樣式
             const handleLinkInsertion = (container) => {
                 const hiddenInput = container.querySelector('[name="itemLink"]');
-                let currentLink = hiddenInput.value;
+                const currentLink = hiddenInput ? hiddenInput.value.trim() : '';
 
-                // 移除現有的按鈕或連結顯示
+                // 清空容器，只留下隱藏的 input 標籤
                 container.innerHTML = `<input type="hidden" name="itemLink" value="${currentLink}">`;
-
-                const linkDisplay = document.createElement('div');
-                linkDisplay.className = 'w-full h-full flex items-center justify-between text-sm cursor-pointer';
-
+                
+                let displayHTML = '';
                 if (currentLink) {
-                    // 如果有連結，顯示「➤ 連結」和編輯按鈕
-                    linkDisplay.innerHTML = `
-                        <a href="${currentLink}" target="_blank" class="text-indigo-600 font-medium truncate py-2 hover:underline">
-                            ➤ 連結
-                        </a>
-                        <button type="button" class="editLinkBtn text-gray-500 hover:text-gray-700 p-1" aria-label="編輯連結">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
+                    // 如果有連結，顯示可點擊的連結圖示和編輯按鈕
+                    displayHTML = `
+                        <div class="w-full h-full flex items-center justify-between text-sm">
+                            <a href="${currentLink}" target="_blank" class="text-indigo-600 font-medium truncate py-2 hover:underline" title="點擊以在新分頁開啟：${currentLink}">
+                                ➤ 檢視連結
+                            </a>
+                            <button type="button" class="editLinkBtn text-gray-500 hover:text-gray-700 p-1" aria-label="編輯連結">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                        </div>
                     `;
                 } else {
                     // 如果沒有連結，顯示「插入連結」按鈕
-                    linkDisplay.innerHTML = `
+                    displayHTML = `
                         <button type="button" class="insertLinkBtn w-full py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 transition duration-150">插入連結</button>
                     `;
                 }
-
-                container.appendChild(linkDisplay);
-                
-                // 重新掛載事件監聽器
-                const newInsertBtn = container.querySelector('.insertLinkBtn');
-                const newEditBtn = container.querySelector('.editLinkBtn');
-
-                const promptAndSetLink = (initialValue = '') => {
-                    const newLink = prompt('請輸入選購連結 (URL):', initialValue);
-                    if (newLink !== null) {
-                        hiddenInput.value = newLink.trim();
-                        handleLinkInsertion(container); // 重新渲染顯示狀態
-                    }
-                };
-
-                if (newInsertBtn) {
-                    newInsertBtn.addEventListener('click', () => promptAndSetLink());
-                }
-                if (newEditBtn) {
-                    newEditBtn.addEventListener('click', () => promptAndSetLink(currentLink));
-                }
+                container.insertAdjacentHTML('beforeend', displayHTML);
             };
-            
-            // 由於連結按鈕是動態生成的，我們需要使用事件委派來處理點擊事件
-            budgetItemsContainer.addEventListener('click', (event) => {
-                const container = event.target.closest('.link-container');
-                if (!container) return;
-                
-                const hiddenInput = container.querySelector('[name="itemLink"]');
 
-                if (event.target.classList.contains('insertLinkBtn')) {
-                    const newLink = prompt('請輸入選購連結 (URL):');
-                    if (newLink !== null) {
-                        hiddenInput.value = newLink.trim();
-                        handleLinkInsertion(container); // 重新渲染顯示狀態
-                    }
-                } else if (event.target.closest('.editLinkBtn')) {
-                    const currentLink = hiddenInput.value;
-                    const newLink = prompt('請輸入選購連結 (URL):', currentLink);
-                    if (newLink !== null) {
-                        hiddenInput.value = newLink.trim();
-                        handleLinkInsertion(container); // 重新渲染顯示狀態
-                    }
-                }
-            });
-
-
+            // 【已還原】新增品項的函式
             const addBudgetItem = (name, price, quantity, link) => {
                 const newRow = createBudgetItemRow(name, price, quantity, link);
                 budgetItemsContainer.appendChild(newRow);
-                // 確保新行中的連結顯示正確 (初始為「插入連結」按鈕)
+                // 確保新行中的連結顯示正確
                 const newLinkContainer = newRow.querySelector('.link-container');
                 if (newLinkContainer) {
                     handleLinkInsertion(newLinkContainer);
@@ -375,30 +303,59 @@
                 calculateTotal();
             };
 
+            // 【已還原】移除品項的函式
             const removeBudgetItem = (button) => {
+                // 確保至少保留一個品項
                 if (budgetItemsContainer.children.length > 1) {
                     button.closest('.budgetItemRow').remove();
                     calculateTotal();
                 } else {
-                    console.error('至少需要保留一個品項。');
+                    alert('至少需要保留一個品項。');
                 }
             };
             
+            // 【已還原】「新增品項」按鈕的事件監聽
             document.getElementById('addBudgetItemBtn').addEventListener('click', () => addBudgetItem());
 
+            // 【已修正】使用單一事件委派監聽器處理所有「預計花費」區塊內的點擊事件
+            budgetItemsContainer.addEventListener('click', (event) => {
+                const target = event.target;
+
+                // 情況 1：點擊了「移除品項」按鈕
+                const removeBtn = target.closest('.removeBudgetItemBtn');
+                if (removeBtn) {
+                    removeBudgetItem(removeBtn);
+                    return; // 結束，避免執行後續邏輯
+                }
+
+                // 情況 2：點擊了連結容器內的「插入」或「編輯」按鈕
+                const linkContainer = target.closest('.link-container');
+                if (linkContainer) {
+                    const hiddenInput = linkContainer.querySelector('[name="itemLink"]');
+                    const isInsert = target.closest('.insertLinkBtn');
+                    const isEdit = target.closest('.editLinkBtn');
+                    
+                    if (isInsert || isEdit) {
+                        const currentLink = hiddenInput.value || '';
+                        // 提示使用者輸入連結，並將現有連結作為預設值 (方便編輯)
+                        const newLink = prompt('請貼上或輸入選購連結 (URL):', currentLink);
+
+                        // 只有當使用者按下「確認」(newLink 不是 null) 時才更新
+                        if (newLink !== null) {
+                            hiddenInput.value = newLink.trim();
+                            handleLinkInsertion(linkContainer); // 更新UI顯示
+                        }
+                    }
+                }
+            });
+
+            // 【已還原】監聽單價或數量的變化以即時更新總金額
             budgetItemsContainer.addEventListener('input', (event) => {
                 if (event.target.classList.contains('itemPrice') || event.target.classList.contains('itemQuantity')) {
                     calculateTotal();
                 }
             });
 
-            budgetItemsContainer.addEventListener('click', (event) => {
-                const removeBtn = event.target.closest('.removeBudgetItemBtn');
-                if (removeBtn) {
-                    removeBudgetItem(removeBtn);
-                }
-            });
-            
             // --- 3. 使用計畫項目操作 ---
             
             const createPlanRow = (details = '', responsible = '') => {
@@ -438,36 +395,30 @@
             // --- 4. 測試資料填充邏輯 ---
             
             const clearDynamicRows = () => {
-                // 清空所有品項，並保留一空行
+                // 清空所有品項
                 while (budgetItemsContainer.children.length > 0) {
                     budgetItemsContainer.children[0].remove();
                 }
                 
-                // 清空所有計畫，並保留一空行
+                // 清空所有計畫
                 while (usagePlanContainer.children.length > 0) {
                     usagePlanContainer.children[0].remove();
                 }
             };
 
             const fillTestData = () => {
-                // 1. 清除所有動態行
                 clearDynamicRows();
-
-                // 2. 填充基本資訊 (更新為模擬真實數據)
                 document.getElementById('sampleName').value = '申請購買 Apple M3 Max 晶片樣品機 (MacBook Pro 16")';
                 document.getElementById('purpose').value = '為評估競品在高效能運算 (HPC) 與人工智慧模型推論方面的實際表現。主要用於 GPU 性能對比測試、能耗分析，以及散熱結構拆解研究，作為我們下一代 AI 筆記型電腦產品設計的關鍵參考依據。';
                 
-                // 3. 填充使用計畫 (更新為模擬真實數據)
                 addPlanRow('針對 M3 Max 進行 GeekBench 與 CineBench 跑分測試，記錄 CPU/GPU 滿載性能數據。', '王小明 (研發)');
                 addPlanRow('執行熱像儀分析，記錄長時間負載下的功耗與表面溫度分佈。', '李大華 (散熱)');
                 addPlanRow('購買第二台用於拆機分析，撰寫結構與元件詳細報告。', '陳美麗 (結構)');
                 
-                // 4. 填充預計花費品項 (更新為模擬真實數據)
                 addBudgetItem('MacBook Pro 16" (M3 Max)', '120000', '2', 'https://www.apple.com/macbook-pro/');
                 addBudgetItem('Tear Down 專用工具組', '3500', '1', 'https://www.ifixit.com/store/kits');
-                addBudgetItem('M.2 NVMe SSD 512GB (用於數據傳輸)', '1500', '4', ''); // 品項 3 不填寫連結
+                addBudgetItem('M.2 NVMe SSD 512GB (用於數據傳輸)', '1500', '4', '');
 
-                // 5. 確保總金額更新
                 calculateTotal();
             };
 
@@ -476,31 +427,26 @@
 
             // --- 5. 初始設置與狀態檢查 ---
 
-            // 確保初始時至少有一行，並初始化連結顯示
+            // 確保初始時至少有一行品項，並初始化連結顯示
             if (budgetItemsContainer.children.length === 0) {
-                budgetItemsContainer.appendChild(createBudgetItemRow());
+                addBudgetItem();
             } else {
-                // 如果已經有初始行 (從 HTML 加載)，也要初始化它的連結顯示
                 document.querySelectorAll('#budgetItemsContainer .link-container').forEach(handleLinkInsertion);
             }
             if (usagePlanContainer.children.length === 0) {
                 usagePlanContainer.appendChild(createPlanRow());
             }
 
-            // 初始計算
             calculateTotal();
 
 
             // --- 6. 表單提交與 PDF 轉換模擬 ---
 
-            // 格式化數據為列印用的 HTML 結構
             const formatForPrint = (data, budgetItems, usagePlans, totalAmount) => {
-                // 預計花費表格
                 const budgetTableRows = budgetItems.map(item => {
                     const linkDisplay = item.link 
                         ? `<a href="${item.link}" target="_blank" style="text-decoration: underline; color: blue;">➤ 連結</a>` 
                         : '';
-                    // 更新：格式化價格和小計
                     const formattedPrice = formatNumber(item.price);
                     const formattedSubtotal = formatNumber(item.subtotal);
 
@@ -515,7 +461,6 @@
                     `;
                 }).join('');
 
-                // 使用計畫表格
                 const planTableRows = usagePlans.map((plan, index) => `
                     <tr>
                         <td width="5%">${index + 1}.</td>
@@ -527,7 +472,7 @@
 
                 return `
                     <div class="print-header text-center mb-6">
-                        <h1 class="text-xl font-bold">樣品購買簽呈</h1>
+                        <h1 class="text-xl font-bold">樣品請購簽呈</h1>
                         <p class="text-sm mt-1">文件產生日期: ${new Date().toLocaleDateString('zh-TW')}</p>
                     </div>
 
@@ -572,9 +517,6 @@
                             </tr>
                         </tfoot>
                     </table>
-                    
-                    <!-- 移除簽核欄 -->
-                    
                 `;
             };
 
@@ -582,22 +524,18 @@
             form.addEventListener('submit', (event) => {
                 event.preventDefault(); 
                 
-                // 獲取表單數據
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
                 
-                // 檢查表單完整性
                 if (budgetItemsContainer.children.length === 0 || usagePlanContainer.children.length === 0) {
                     console.error('表單提交失敗：請至少填寫一個預計花費品項和一個使用計畫。');
                     return; 
                 }
 
-                // 收集動態數據
                 const budgetItems = [];
                 document.querySelectorAll('#budgetItemsContainer .budgetItemRow').forEach(row => {
                     const price = row.querySelector('.itemPrice').value;
                     const quantity = row.querySelector('.itemQuantity').value;
-                    // 從 hidden input 獲取連結值
                     const link = row.querySelector('[name="itemLink"]').value; 
                     
                     budgetItems.push({
@@ -605,8 +543,7 @@
                         link: link,
                         price: price,
                         quantity: quantity,
-                        // 更新：計算小計時四捨五入到整數
-                        subtotal: Math.round(parseFloat(price) * parseInt(quantity))
+                        subtotal: Math.round(parseFloat(price || 0) * parseInt(quantity || 0))
                     });
                 });
 
@@ -620,15 +557,12 @@
 
                 const totalAmount = totalAmountDisplay.textContent;
 
-                // 1. 產生列印用的 HTML 內容
                 const printableHTML = formatForPrint(data, budgetItems, usagePlans, totalAmount);
                 documentToPrint.innerHTML = printableHTML;
                 
-                // 2. 顯示成功訊息
                 messageBox.classList.remove('hidden');
                 submissionDetails.innerHTML = `<p>簽呈主旨：「${data.sampleName}」，總金額 NT$${totalAmount}。請檢查下方資訊並列印。</p>`;
 
-                // 3. 觸發瀏覽器的列印對話框
                 setTimeout(() => {
                     window.print();
                 }, 100); 
@@ -638,23 +572,20 @@
 
             // --- 7. Generate Text Summary ---
             const generateTextSummary = () => {
-                // 1. Gather Form Data
                 const data = {
                     sampleName: document.getElementById('sampleName').value || '未填寫',
                     purpose: document.getElementById('purpose').value || '未填寫',
                     totalAmount: totalAmountDisplay.textContent
                 };
 
-                // Gather dynamic budget items
                 const budgetItems = [];
                 document.querySelectorAll('#budgetItemsContainer .budgetItemRow').forEach((row) => {
                     const name = row.querySelector('[name="itemName"]').value || '未命名品項';
-                    const price = row.querySelector('.itemPrice').value || '0.00';
+                    const price = row.querySelector('.itemPrice').value || '0';
                     const quantity = row.querySelector('.itemQuantity').value || '0';
                     budgetItems.push({ name, price, quantity });
                 });
 
-                // Gather dynamic usage plans
                 const usagePlans = [];
                 document.querySelectorAll('#usagePlanContainer .planRow').forEach((row) => {
                     const plan = row.querySelector('[name="planDetails"]').value || '未填寫計畫';
@@ -662,14 +593,10 @@
                     usagePlans.push({ plan, responsible });
                 });
 
-                // 2. Format the Text Summary based on user request
                 let summary = '';
-
-                // A. 主旨 / 目的
                 summary += `主旨 (樣品名稱/型號)：\n${data.sampleName}\n`;
                 summary += `目的：\n${data.purpose}\n`;
 
-                // B. 計畫
                 for (let i = 0; i < usagePlans.length; i++) {
                     const plan = usagePlans[i];
                     summary += `---\n`;
@@ -677,11 +604,9 @@
                     summary += `使用計畫${i + 1}：${plan.plan}\n`;
                 }
                 
-                // C. 預計花費
                 summary += `---\n預計花費：\n`;
                 if (budgetItems.length > 0) {
                     budgetItems.forEach((item, index) => {
-                        // 更新：格式化金額
                         const formattedPrice = formatNumber(item.price);
                         summary += `${index + 1}. ${item.name}_NT$${formattedPrice}_數量${item.quantity}\n`;
                     });
@@ -689,7 +614,6 @@
                     summary += "無預計花費項目。\n";
                 }
 
-                // D. 總額
                 summary += `---\n總額花費：NT$${data.totalAmount}元`;
 
                 return summary;
@@ -697,28 +621,29 @@
 
             // --- 8. Modal Event Listeners ---
             
-            // Show modal and generate text
             convertToTextBtn.addEventListener('click', () => {
                 const textSummary = generateTextSummary();
                 textOutputArea.value = textSummary;
                 textModal.classList.remove('hidden');
-                // Ensure the textarea is focused and content is selected for easy copy
                 setTimeout(() => {
                     textOutputArea.select();
                 }, 50);
             });
 
-            // Close modal
             closeTextModalBtn.addEventListener('click', () => {
                 textModal.classList.add('hidden');
             });
 
-            // Copy text
             copyTextBtn.addEventListener('click', () => {
                 textOutputArea.select();
-                document.execCommand('copy');
+                try {
+                    // Modern way to copy
+                    navigator.clipboard.writeText(textOutputArea.value);
+                } catch (err) {
+                    // Fallback for older browsers
+                    document.execCommand('copy');
+                }
                 
-                // Show a temporary success message on the button
                 copyTextBtn.textContent = '已複製！';
                 setTimeout(() => {
                     copyTextBtn.textContent = '複製文字';
