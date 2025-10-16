@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>產品數據分析儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+        .chart-container { position: relative; width: 100%; transition: height 0.3s ease-in-out; }
+        .filter-dropdown summary {
+            cursor: pointer; padding: 0.5rem 1rem; border: 1px solid #d1d5db;
+            border-radius: 0.375rem; background-color: white; transition: background-color 0.2s;
+        }
+        .filter-dropdown summary:hover { background-color: #f9fafb; }
+        .filter-dropdown[open] summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .filter-dropdown .filter-panel {
+            max-height: 200px; overflow-y: auto; border: 1px solid #d1d5db; border-top: none;
+            padding: 0.75rem; background-color: white; z-index: 10; position: absolute;
+            width: 100%; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem;
+        }
+        .filter-dropdown { position: relative; }
+        /* 隱藏 Chart.js 預設的提示框 */
+        .chartjs-tooltip {
+            opacity: 0 !important;
+        }
+        /* 自訂的圖片提示框樣式 */
+        #custom-tooltip {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            pointer-events: none;
+            position: absolute;
+            z-index: 1000;
+            transition: all 0.1s ease;
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
+            max-width: 300px;
+        }
+        #custom-tooltip p {
+            font-size: 0.875rem;
+            color: #4b5563;
+            margin-bottom: 0.25rem;
+        }
+        #custom-tooltip img {
+            width: 120px;
+            height: auto;
+            margin-top: 0.5rem;
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-800">產品數據分析儀表板</h1>
+            <p class="text-gray-600 mt-2">Makita & Kyocera 產品分析</p>
+        </header>
+
+        <div id="setupInstructions" class="max-w-4xl mx-auto mb-8 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg">
+            <h2 class="text-xl font-bold text-blue-800 mb-4">📋 設定步驟 (一次性設定)</h2>
+            <p class="mb-4">由於瀏覽器的 CORS 限制,需要建立一個 Google Apps Script 來讀取資料:</p>
+            
+            <div class="bg-white p-4 rounded border border-blue-300 mb-4">
+                <h3 class="font-bold mb-2">步驟 1: 建立 Apps Script</h3>
+                <ol class="list-decimal list-inside space-y-2 text-sm">
+                    <li>開啟你的 Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1FPtr7FMECRs3Pk_ONl60KKmrWFPWD6tlmN-HpD4Nx7U/edit" class="text-blue-600 underline" target="_blank">點此開啟</a></li>
+                    <li>點選 <strong>擴充功能 → Apps Script</strong></li>
+                    <li>刪除預設程式碼,貼上以下程式碼:</li>
+                </ol>
+                
+                <div class="mt-3 bg-gray-900 text-green-400 p-3 rounded text-xs overflow-x-auto">
+<pre>function doGet(e) {
+  const ss = SpreadsheetApp.openById('1FPtr7FMECRs3Pk_ONl60KKmrWFPWD6tlmN-HpD4Nx7U');
+  const gid = e.parameter.gid || '272605958';
+  
+  const sheets = ss.getSheets();
+  let targetSheet = null;
+  
+  for (let sheet of sheets) {
+    if (sheet.getSheetId().toString() === gid) {
+      targetSheet = sheet;
+      break;
+    }
+  }
+  
+  if (!targetSheet) {
+    return ContentService.createTextOutput(JSON.stringify({error: 'Sheet not found'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const data = targetSheet.getDataRange().getValues();
+  const headers = data[0];
+  const rows = data.slice(1);
+  
+  const jsonData = rows.map(row => {
+    const obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = row[index];
+    });
+    return obj;
+  });
+  
+  return ContentService.createTextOutput(JSON.stringify(jsonData))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded border border-blue-300 mb-4">
+                <h3 class="font-bold mb-2">步驟 2: 部署為網路應用程式</h3>
+                <ol class="list-decimal list-inside space-y-2 text-sm">
+                    <li>點選右上角 <strong>部署 → 新增部署作業</strong></li>
+                    <li>類型選擇 <strong>網路應用程式</strong></li>
+                    <li>執行身分:選擇 <strong>我</strong></li>
+                    <li>具有存取權的使用者:選擇 <strong>任何人</strong></li>
+                    <li>點選 <strong>部署</strong></li>
+                    <li>複製 <strong>網路應用程式 URL</strong> (類似: https://script.google.com/macros/s/...../exec)</li>
+                </ol>
+            </div>
+
+            <div class="bg-white p-4 rounded border border-blue-300">
+                <h3 class="font-bold mb-2">步驟 3: 貼上你的 Apps Script URL</h3>
+                <input type="text" id="scriptUrl" placeholder="貼上 Apps Script URL (https://script.google.com/...)" 
+                    class="w-full p-2 border border-gray-300 rounded mb-2">
+                <button id="startBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 font-bold">
+                    開始載入資料
+                </button>
+            </div>
+        </div>
+
+        <div id="loading" class="hidden text-center p-8">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="mt-4 text-lg" id="loadingMessage">正在載入資料，請稍候...</p>
+            <div id="debugInfo" class="mt-4 text-sm text-gray-600 max-w-4xl mx-auto text-left bg-white p-4 rounded shadow"></div>
+        </div>
+
+        <main id="dashboard" class="hidden">
+            <div class="space-y-4 mb-6">
+                <div class="p-4 bg-white rounded-lg shadow-md">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="xAxisSelect" class="block text-sm font-medium text-gray-700">X 軸 (數值)</label>
+                            <select id="xAxisSelect" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                        </div>
+                        <div>
+                            <label for="yAxisSelect" class="block text-sm font-medium text-gray-700">Y 軸 (分類)</label>
+                            <select id="yAxisSelect" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">智慧篩選 (可複選)</label>
+                        <label class="flex items-center text-sm text-gray-600">
+                            <input type="checkbox" id="autoCloseFilters" class="mr-2 h-4 w-4 rounded border-gray-300" checked>
+                            點選後自動收合
+                        </label>
+                    </div>
+                    <div id="filtersContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+                <div class="mb-4 flex items-center gap-4">
+                    <label class="text-sm font-medium text-gray-700">依顏色區分:</label>
+                    <select id="colorBySelect" class="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="none">不區分 (單一顏色)</option>
+                    </select>
+                    <div id="colorLegend" class="flex flex-wrap gap-2 ml-4"></div>
+                </div>
+                <div class="chart-container" style="height: 65vh;">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold text-blue-700 mb-4">專業分析建議</h2>
+                <div id="analysisText" class="space-y-3 text-gray-700"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="custom-tooltip" class="hidden"></div>
+
+    <script>
+        const SHEETS_CONFIG = [
+            { name: '目錄_Makita', gid: '272605958' },
+            { name: '目錄_Kyocera', gid: '393225108' }
+        ];
+
+        const NUMERIC_VARS = {
+            rating: { label: '評分', prefix: '', suffix: '' },
+            reviews: { label: '評論數量', prefix: '', suffix: '' },
+            price_usd: { label: '美金', prefix: '$', suffix: '' },
+            price_jpy: { label: '日幣', prefix: '¥', suffix: '' }
+        };
+
+        const CATEGORICAL_VARS = { 
+            brand: { label: '品牌' },
+            category: { label: '類別' }, 
+            operation: { label: '操作' }, 
+            model: { label: '機型' }, 
+            material: { label: '料件' }, 
+            voltage: { label: '電壓' },
+            current: { label: '電流' }
+        };
+        const CATEGORICAL_KEYS = Object.keys(CATEGORICAL_VARS);
+
+        // 顏色配置
+        const COLOR_PALETTE = [
+            '#1e40af', '#dc2626', '#16a34a', '#ea580c', '#9333ea', '#0891b2', '#ca8a04', '#db2777',
+            '#65a30d', '#7c3aed', '#0d9488', '#c026d3',
+        ];
+
+        let colorByKey = 'none';
+        let colorMap = {};
+        let chart;
+        let rawData = [];
+        let controls = {};
+        let isUpdatingFilters = false;
+
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            const scriptUrl = document.getElementById('scriptUrl').value.trim();
+            
+            if (!scriptUrl || !scriptUrl.includes('script.google.com')) {
+                alert('請輸入有效的 Google Apps Script URL');
+                return;
+            }
+            
+            localStorage.setItem('appsScriptUrl', scriptUrl);
+            
+            document.getElementById('setupInstructions').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            
+            await initDashboard(scriptUrl);
+        });
+
+        // 檢查是否已有儲存的 URL
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUrl = localStorage.getItem('appsScriptUrl');
+            if (savedUrl) {
+                document.getElementById('scriptUrl').value = savedUrl;
+            }
+        });
+
+        // 新增點擊空白處收折篩選器的事件監聽
+        document.addEventListener('click', (e) => {
+            const openFilters = document.querySelectorAll('.filter-dropdown[open]');
+            openFilters.forEach(filter => {
+                // 如果點擊的目標不在篩選器內部，就收折它
+                if (!filter.contains(e.target)) {
+                    filter.open = false;
+                }
+            });
+        });
+
+        async function loadData(scriptUrl) {
+            const debugInfo = document.getElementById('debugInfo');
+            const loadingMessage = document.getElementById('loadingMessage');
+            
+            try {
+                let allData = [];
+                debugInfo.innerHTML = '<p class="font-bold text-blue-700">開始載入資料...</p>';
+                
+                for (const sheet of SHEETS_CONFIG) {
+                    loadingMessage.textContent = `正在載入 ${sheet.name}...`;
+                    debugInfo.innerHTML += `<p class="mt-2">📥 載入: <strong>${sheet.name}</strong></p>`;
+                    
+                    try {
+                        const url = `${scriptUrl}?gid=${sheet.gid}`;
+                        const response = await fetch(url);
+                        
+                        if (!response.ok) {
+                            debugInfo.innerHTML += `<p class="text-red-600 ml-4">❌ HTTP ${response.status}</p>`;
+                            continue;
+                        }
+                        
+                        const jsonData = await response.json();
+                        debugInfo.innerHTML += `<p class="text-green-600 ml-4">✅ 找到 ${jsonData.length} 筆資料</p>`;
+                        
+                        let validCount = 0;
+                        jsonData.forEach(row => {
+                            const priceUsdString = String(row['美金'] || '0');
+                            const priceJpyString = String(row['日幣'] || '0');
+                            const cleanedPriceUsd = priceUsdString.replace(/[$,]/g, '');
+                            const cleanedPriceJpy = priceJpyString.replace(/[¥,]/g, '');
+                            const price_usd = parseFloat(cleanedPriceUsd) || 0;
+                            const price_jpy = parseFloat(cleanedPriceJpy) || 0;
+
+                            if ((price_usd > 0 || price_jpy > 0) && row['產品標題']) {
+                                allData.push({
+                                    name: row['產品標題'],
+                                    brand: row['品牌'] || 'N/A',
+                                    category: row['類別'] || 'N/A',
+                                    operation: row['操作'] || 'N/A',
+                                    model: row['機型'] || 'N/A',
+                                    material: row['料件'] || 'N/A',
+                                    voltage: row['電壓'] || 'N/A',
+                                    current: row['電流'] || 'N/A',
+                                    rating: parseFloat(row['評分']) || 0,
+                                    reviews: parseInt(String(row['評論數量'] || '0').replace(/,/g, '')) || 0,
+                                    price_usd: price_usd,
+                                    price_jpy: price_jpy,
+                                    photo: row['產品照片'] || null
+                                });
+                                validCount++;
+                            }
+                        });
+                        
+                        debugInfo.innerHTML += `<p class="text-blue-600 ml-4">✓ 有效產品: ${validCount} 筆</p>`;
+                        
+                    } catch (error) {
+                        debugInfo.innerHTML += `<p class="text-red-600 ml-4">❌ 錯誤: ${error.message}</p>`;
+                    }
+                }
+                
+                debugInfo.innerHTML += `<p class="mt-4 text-lg font-bold text-green-700">🎉 總共 ${allData.length} 筆產品</p>`;
+                
+                if (allData.length === 0) {
+                    throw new Error('沒有找到任何有效資料');
+                }
+                
+                return allData;
+                
+            } catch (error) {
+                document.getElementById('loading').innerHTML = `
+                    <div class="max-w-2xl mx-auto p-6 bg-red-50 border-2 border-red-200 rounded-lg">
+                        <h3 class="text-xl font-bold text-red-800 mb-3">❌ 載入失敗</h3>
+                        <p class="text-red-700">${error.message}</p>
+                        <p class="mt-4 text-sm">請檢查 Apps Script URL 是否正確,並確保已正確部署。</p>
+                        <button onclick="location.reload()" class="mt-4 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                            重新設定
+                        </button>
+                    </div>
+                `;
+                return [];
+            }
+        }
+
+        async function initDashboard(scriptUrl) {
+            rawData = await loadData(scriptUrl);
+            
+            if (rawData.length > 0) {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                setupControls();
+                createChart();
+                updateChart();
+            }
+        }
+
+        function setupControls() {
+            controls.xAxisSelect = document.getElementById('xAxisSelect');
+            controls.yAxisSelect = document.getElementById('yAxisSelect');
+            controls.colorBySelect = document.getElementById('colorBySelect');
+
+            Object.keys(NUMERIC_VARS).forEach(key => {
+                controls.xAxisSelect.innerHTML += `<option value="${key}">${NUMERIC_VARS[key].label}</option>`;
+            });
+            CATEGORICAL_KEYS.forEach(key => {
+                controls.yAxisSelect.innerHTML += `<option value="${key}">${CATEGORICAL_VARS[key].label}</option>`;
+                controls.colorBySelect.innerHTML += `<option value="${key}">${CATEGORICAL_VARS[key].label}</option>`;
+            });
+
+            const filtersContainer = document.getElementById('filtersContainer');
+            CATEGORICAL_KEYS.forEach(catKey => {
+                const details = document.createElement('details');
+                details.className = 'filter-dropdown';
+                details.innerHTML = `
+                    <summary class="text-sm font-medium">${CATEGORICAL_VARS[catKey].label}</summary>
+                    <div class="filter-panel space-y-2" id="filter-${catKey}-panel"></div>
+                `;
+                filtersContainer.appendChild(details);
+            });
+            
+            controls.xAxisSelect.addEventListener('change', updateChart);
+            controls.yAxisSelect.addEventListener('change', updateChart);
+            controls.colorBySelect.addEventListener('change', () => {
+                colorByKey = controls.colorBySelect.value;
+                updateChart();
+            });
+            
+            updateFilterOptions(true);
+        }
+
+        function updateFilterOptions(isInitial = false) {
+            if (isUpdatingFilters) return;
+            
+            const selections = {};
+            CATEGORICAL_KEYS.forEach(key => {
+                const panel = document.getElementById(`filter-${key}-panel`);
+                if (panel) {
+                    const checked = panel.querySelectorAll('input:checked');
+                    selections[key] = Array.from(checked).map(cb => cb.value);
+                }
+            });
+
+            CATEGORICAL_KEYS.forEach(targetKey => {
+                const availableValues = [...new Set(rawData.map(d => d[targetKey]))].sort();
+                const panel = document.getElementById(`filter-${targetKey}-panel`);
+                if (!panel) return;
+                
+                const currentSelections = selections[targetKey] || [];
+                
+                panel.innerHTML = '';
+
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'flex gap-2 mb-2';
+                buttonsDiv.innerHTML = `
+                    <button class="select-all-btn text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">全選</button>
+                    <button class="deselect-all-btn text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">清除</button>
+                `;
+                panel.appendChild(buttonsDiv);
+
+                availableValues.forEach(val => {
+                    const checkboxId = `cb-${targetKey}-${val.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                    const isChecked = isInitial || currentSelections.includes(val);
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'flex items-center';
+                    itemDiv.innerHTML = `
+                        <input type="checkbox" id="${checkboxId}" value="${val}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 filter-checkbox" ${isChecked ? 'checked' : ''}>
+                        <label for="${checkboxId}" class="ml-2 block text-sm text-gray-900">${val}</label>
+                    `;
+                    panel.appendChild(itemDiv);
+                });
+
+                panel.querySelector('.select-all-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    panel.querySelectorAll('input').forEach(cb => cb.checked = true);
+                    updateChartOnly();
+                });
+                panel.querySelector('.deselect-all-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    panel.querySelectorAll('input').forEach(cb => cb.checked = false);
+                    updateChartOnly();
+                });
+                panel.querySelectorAll('.filter-checkbox').forEach(cb => {
+                    cb.addEventListener('change', () => {
+                        updateChartOnly();
+                    });
+                });
+            });
+        }
+
+        function updateChartOnly() {
+            if (!chart) return;
+            
+            isUpdatingFilters = true;
+            
+            const yCategoryKey = controls.yAxisSelect.value;
+            const xCategoryKey = controls.xAxisSelect.value;
+            const xConfig = NUMERIC_VARS[xCategoryKey];
+
+            const activeFilters = {};
+            CATEGORICAL_KEYS.forEach(catKey => {
+                const panel = document.getElementById(`filter-${catKey}-panel`);
+                if (panel) {
+                    const checkedCbs = panel.querySelectorAll('input:checked');
+                    activeFilters[catKey] = Array.from(checkedCbs).map(cb => cb.value);
+                }
+            });
+
+            let filteredData = rawData.filter(d => {
+                return CATEGORICAL_KEYS.every(key => {
+                    return activeFilters[key].length === 0 || activeFilters[key].includes(d[key]);
+                });
+            });
+            
+            const yLabels = [...new Set(filteredData.map(d => d[yCategoryKey]))].sort();
+            
+            const chartContainer = document.querySelector('.chart-container');
+            const baseHeight = 150; 
+            const heightPerLabel = 35; 
+            const newHeight = baseHeight + yLabels.length * heightPerLabel;
+            const finalHeight = Math.min(Math.max(newHeight, 400), 5000); 
+            chartContainer.style.height = `${finalHeight}px`;
+            
+            if (chart) chart.resize();
+
+            if (colorByKey !== 'none') {
+                const uniqueValues = [...new Set(filteredData.map(d => d[colorByKey]))].sort();
+                colorMap = {};
+                uniqueValues.forEach((val, idx) => {
+                    colorMap[val] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
+                });
+                
+                const legendEl = document.getElementById('colorLegend');
+                legendEl.innerHTML = uniqueValues.map(val => `
+                    <div class="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded">
+                        <div style="width: 12px; height: 12px; background-color: ${colorMap[val]}; border-radius: 2px;"></div>
+                        <span class="text-xs">${val}</span>
+                    </div>
+                `).join('');
+                
+                chart.data.datasets = uniqueValues.map(val => {
+                    const dataForValue = filteredData.filter(d => d[colorByKey] === val).map(d => ({
+                        x: d[xCategoryKey],
+                        y: d[yCategoryKey],
+                        ...d // 將所有原始數據都帶入
+                    }));
+                    
+                    return {
+                        label: val,
+                        data: dataForValue,
+                        backgroundColor: colorMap[val] + 'AA',
+                        borderColor: colorMap[val],
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                    };
+                });
+            } else {
+                document.getElementById('colorLegend').innerHTML = '';
+                const chartData = filteredData.map(d => ({
+                    x: d[xCategoryKey],
+                    y: d[yCategoryKey],
+                    ...d // 將所有原始數據都帶入
+                }));
+                
+                chart.data.datasets = [{
+                    label: '產品',
+                    data: chartData,
+                    backgroundColor: 'rgba(30, 64, 175, 0.6)',
+                    borderColor: 'rgba(30, 64, 175, 1)',
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                }];
+            }
+            
+            chart.options.scales.y.labels = yLabels;
+            chart.options.scales.y.title.text = CATEGORICAL_VARS[yCategoryKey].label;
+            chart.options.scales.x.title.text = xConfig.label;
+            
+            chart.update('none');
+            updateAnalysisText(yCategoryKey, xCategoryKey);
+            
+            isUpdatingFilters = false;
+        }
+
+        function updateChart() {
+            updateChartOnly();
+        }
+        
+        function updateAnalysisText(yCategoryKey, xCategoryKey) {
+            const analysisTextEl = document.getElementById('analysisText');
+            const yCategoryName = CATEGORICAL_VARS[yCategoryKey].label;
+            const xCategoryName = NUMERIC_VARS[xCategoryKey].label;
+            analysisTextEl.innerHTML = `
+                <p><strong><i class="fas fa-chart-line"></i> 圖表解讀 (X軸: ${xCategoryName}, Y軸: ${yCategoryName})</strong></p>
+                <p>這張圖將產品依「${yCategoryName}」分類,並展示其「${xCategoryName}」的分佈。</p>
+                <ul class="list-disc list-inside space-y-2 mt-2">
+                    <li><strong>觀察集中趨勢：</strong>注意每個分類中點最密集的區域</li>
+                    <li><strong>比較分佈範圍：</strong>線條越長代表數值範圍越廣</li>
+                    <li><strong>識別極端值：</strong>最右側是高數值產品,最左側是低數值產品</li>
+                    <li><strong>活用篩選器：</strong>組合使用多重篩選器觀察細分市場</li>
+                </ul>
+            `;
+        }
+        
+        // 圖片提示框邏輯
+        function createChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            const customTooltip = document.getElementById('custom-tooltip');
+            
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '產品',
+                        data: [],
+                        backgroundColor: 'rgba(30, 64, 175, 0.6)',
+                        borderColor: 'rgba(30, 64, 175, 1)',
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: { display: true, text: 'X軸', font: { size: 16 } }
+                        },
+                        y: {
+                            type: 'category',
+                            title: { display: true, text: 'Y軸', font: { size: 16 } },
+                            offset: true
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            // 禁用 Chart.js 內建的提示框，改用我們自訂的
+                            enabled: false, 
+                            external: function(context) {
+                                // 隱藏自訂提示框
+                                const tooltipModel = context.tooltip;
+                                if (tooltipModel.opacity === 0) {
+                                    customTooltip.classList.add('hidden');
+                                    return;
+                                }
+
+                                // 顯示自訂提示框並更新位置
+                                customTooltip.classList.remove('hidden');
+                                const position = context.chart.canvas.getBoundingClientRect();
+                                const x = position.left + window.scrollX + tooltipModel.caretX;
+                                const y = position.top + window.scrollY + tooltipModel.caretY;
+                                customTooltip.style.left = `${x}px`;
+                                customTooltip.style.top = `${y}px`;
+
+                                // 取得數據
+                                const dataPoint = context.tooltip.dataPoints[0].raw;
+                                
+                                // 建立提示框內容
+                                let tooltipContent = `
+                                    <p class="font-bold">${dataPoint.name}</p>
+                                    <p>品牌: ${dataPoint.brand}</p>
+                                    <p>類別: ${dataPoint.category}</p>
+                                    <p>日幣: ¥${dataPoint.price_jpy.toLocaleString()}</p>
+                                    <p>美金: ${dataPoint.price_usd.toLocaleString()}</p>
+                                    <p>評分: ${dataPoint.rating}</p>
+                                    <p>評論數: ${dataPoint.reviews.toLocaleString()}</p>
+                                `;
+
+                                // 如果有圖片網址，就加上圖片
+                                if (dataPoint.photo && dataPoint.photo.endsWith('.jpg')) {
+                                    tooltipContent += `<img src="${dataPoint.photo}" alt="產品圖片">`;
+                                }
+
+                                customTooltip.innerHTML = tooltipContent;
+                            }
+                        },
+                        legend: { 
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
