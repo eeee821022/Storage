@@ -63,15 +63,14 @@
         </header>
 
         <div id="setupInstructions" class="max-w-4xl mx-auto mb-8 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg">
-            <h2 class="text-xl font-bold text-blue-800 mb-4">📋 設定步驟 (一次性設定)</h2>
-            <p class="mb-4">由於瀏覽器的 CORS 限制,需要建立一個 Google Apps Script 來讀取資料:</p>
+            <h2 class="text-xl font-bold text-blue-800 mb-4">📋 設定步驟 (自動載入中...)</h2>
+            <p class="mb-4">程式碼已設定為自動使用硬編碼的 Apps Script URL 載入資料。</p>
             
             <div class="bg-white p-4 rounded border border-blue-300 mb-4">
-                <h3 class="font-bold mb-2">步驟 1: 建立 Apps Script</h3>
+                <h3 class="font-bold mb-2">Apps Script 程式碼</h3>
                 <ol class="list-decimal list-inside space-y-2 text-sm">
-                    <li>開啟你的 Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1FPtr7FMECRs3Pk_ONl60KKmrWFPWD6tlmN-HpD4Nx7U/edit" class="text-blue-600 underline" target="_blank">點此開啟</a></li>
-                    <li>點選 <strong>擴充功能 → Apps Script</strong></li>
-                    <li>刪除預設程式碼,貼上以下程式碼:</li>
+                    <li>Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1FPtr7FMECRs3Pk_ONl60KKmrWFPWD6tlmN-HpD4Nx7U/edit" class="text-blue-600 underline" target="_blank">點此開啟</a></li>
+                    <li>請確認以下程式碼已正確部署為「網路應用程式」並允許「任何人」存取：</li>
                 </ol>
                 
                 <div class="mt-3 bg-gray-900 text-green-400 p-3 rounded text-xs overflow-x-auto">
@@ -112,28 +111,11 @@
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded border border-blue-300 mb-4">
-                <h3 class="font-bold mb-2">步驟 2: 部署為網路應用程式</h3>
-                <ol class="list-decimal list-inside space-y-2 text-sm">
-                    <li>點選右上角 <strong>部署 → 新增部署作業</strong></li>
-                    <li>類型選擇 <strong>網路應用程式</strong></li>
-                    <li>執行身分:選擇 <strong>我</strong></li>
-                    <li>具有存取權的使用者:選擇 <strong>任何人</strong></li>
-                    <li>點選 <strong>部署</strong></li>
-                    <li>複製 <strong>網路應用程式 URL</strong> (類似: https://script.google.com/macros/s/...../exec)</li>
-                </ol>
-            </div>
-
             <div class="bg-white p-4 rounded border border-blue-300">
-                <h3 class="font-bold mb-2">步驟 3: 貼上你的 Apps Script URL</h3>
-                <input type="text" id="scriptUrl" placeholder="貼上 Apps Script URL (https://script.google.com/...)" 
-                    class="w-full p-2 border border-gray-300 rounded mb-2">
-                <button id="startBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 font-bold">
-                    開始載入資料
-                </button>
+                <h3 class="font-bold mb-2">已使用的 Apps Script URL</h3>
+                <p class="text-sm break-all text-blue-700">https://script.google.com/macros/s/AKfycbyOIAyXbxXBatI8D4Z1Ir1L79fxAZIHmeXpAZ8VNWaShLiMz2I5_IXKw0tWIpj24lzA/exec</p>
             </div>
         </div>
-
         <div id="loading" class="hidden text-center p-8">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             <p class="mt-4 text-lg" id="loadingMessage">正在載入資料，請稍候...</p>
@@ -188,6 +170,9 @@
     <div id="custom-tooltip" class="hidden"></div>
 
     <script>
+        // 硬編碼你的 Apps Script URL
+        const HARDCODED_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOIAyXbxXBatI8D4Z1Ir1L79fxAZIHmeXpAZ8VNWaShLiMz2I5_IXKw0tWIpj24lzA/exec';
+
         const SHEETS_CONFIG = [
             { name: '目錄_Makita', gid: '272605958' },
             { name: '目錄_Kyocera', gid: '393225108' }
@@ -224,31 +209,26 @@
         let controls = {};
         let isUpdatingFilters = false;
 
-        document.getElementById('startBtn').addEventListener('click', async () => {
-            const scriptUrl = document.getElementById('scriptUrl').value.trim();
-            
-            if (!scriptUrl || !scriptUrl.includes('script.google.com')) {
-                alert('請輸入有效的 Google Apps Script URL');
-                return;
-            }
-            
-            localStorage.setItem('appsScriptUrl', scriptUrl);
-            
-            document.getElementById('setupInstructions').classList.add('hidden');
-            document.getElementById('loading').classList.remove('hidden');
-            
-            await initDashboard(scriptUrl);
-        });
-
-        // 檢查是否已有儲存的 URL
+        // 頁面載入時自動執行
         window.addEventListener('DOMContentLoaded', () => {
-            const savedUrl = localStorage.getItem('appsScriptUrl');
-            if (savedUrl) {
-                document.getElementById('scriptUrl').value = savedUrl;
+            const setupInstructions = document.getElementById('setupInstructions');
+            const loading = document.getElementById('loading');
+            
+            // 立即隱藏設定區塊
+            if (setupInstructions) {
+                setupInstructions.classList.add('hidden');
             }
+            
+            // 立即顯示載入區塊
+            if (loading) {
+                loading.classList.remove('hidden');
+            }
+            
+            // 直接開始載入資料
+            initDashboard(HARDCODED_SCRIPT_URL);
         });
 
-        // 新增點擊空白處收折篩選器的事件監聽
+        // 點擊空白處收折篩選器的事件監聽 (保留上次的修復)
         document.addEventListener('click', (e) => {
             const openFilters = document.querySelectorAll('.filter-dropdown[open]');
             openFilters.forEach(filter => {
@@ -328,14 +308,14 @@
                 return allData;
                 
             } catch (error) {
-                document.getElementById('loading').innerHTML = `
-                    <div class="max-w-2xl mx-auto p-6 bg-red-50 border-2 border-red-200 rounded-lg">
+                // 載入失敗時，重新顯示設定步驟區塊供使用者檢查問題
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('setupInstructions').classList.remove('hidden');
+                document.getElementById('setupInstructions').innerHTML = `
+                    <div class="max-w-4xl mx-auto p-6 bg-red-50 border-2 border-red-200 rounded-lg">
                         <h3 class="text-xl font-bold text-red-800 mb-3">❌ 載入失敗</h3>
                         <p class="text-red-700">${error.message}</p>
-                        <p class="mt-4 text-sm">請檢查 Apps Script URL 是否正確,並確保已正確部署。</p>
-                        <button onclick="location.reload()" class="mt-4 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
-                            重新設定
-                        </button>
+                        <p class="mt-4 text-sm">請檢查 Apps Script 是否已正確部署，並且權限設定為「任何人」。</p>
                     </div>
                 `;
                 return [];
@@ -501,7 +481,7 @@
                     const dataForValue = filteredData.filter(d => d[colorByKey] === val).map(d => ({
                         x: d[xCategoryKey],
                         y: d[yCategoryKey],
-                        ...d // 將所有原始數據都帶入
+                        ...d
                     }));
                     
                     return {
@@ -518,7 +498,7 @@
                 const chartData = filteredData.map(d => ({
                     x: d[xCategoryKey],
                     y: d[yCategoryKey],
-                    ...d // 將所有原始數據都帶入
+                    ...d
                 }));
                 
                 chart.data.datasets = [{
