@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寵物飼主健康管理與娛樂需求調查</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.css">
+    
+    <style>
+        /* [您的 CSS 樣式... (省略未變更的 CSS)] */
+        html { font-size: 106.25%; }
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #f7fafc; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #60a5fa; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+        .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+        .quiz-card { background-color: white; border-radius: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); max-width: 800px; width: 100%; overflow: hidden; transition: all 0.3s ease-in-out; }
+        .progress-bar-inner { background-color: #3b82f6; transition: width 0.5s ease-in-out; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border-radius: 9999px; font-weight: 500; padding: 0.75rem 1.5rem; font-size: 1rem; transition: all 0.2s ease-in-out; border: 2px solid transparent; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .btn-primary { background-color: #3b82f6; color: white; }
+        .btn-primary:hover { background-color: #2563eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .btn-secondary { background-color: #e2e8f0; color: #1f2937; }
+        .btn-secondary:hover { background-color: #cbd5e1; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        .radio-option { display: block; width: 100%; padding: 1rem 1.5rem; border: 2px solid #e2e8f0; border-radius: 0.75rem; text-align: left; font-size: 1rem; font-weight: 500; color: #374151; background-color: white; transition: all 0.2s ease-in-out; cursor: pointer; }
+        .radio-option:hover { border-color: #93c5fd; background-color: #eff6ff; }
+        .radio-option.selected { border-color: #3b82f6; background-color: #dbeafe; color: #1e3a8a; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06); }
+        .radio-option input { display: none; }
+        .pet-choice { border: 4px solid transparent; transition: all 0.2s ease-in-out; border-radius: 1rem; }
+        .pet-choice.selected { border-color: #3b82f6; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2), 0 4px 6px -2px rgba(59, 130, 246, 0.1); }
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #d1d5db; border-radius: 9999px; outline: none; opacity: 0.9; transition: opacity 0.2s; }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        .likert-table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
+        .likert-table th, .likert-table td { padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #e5e7eb; font-size: 0.875rem; }
+        .likert-table th:first-child, .likert-table td:first-child { text-align: left; min-width: 200px; font-weight: 500; }
+        .likert-table th { background-color: #f9fafb; font-weight: 600; white-space: nowrap; }
+        .likert-table label { display: block; width: 20px; height: 20px; margin: 0 auto; border-radius: 50%; border: 2px solid #cbd5e1; cursor: pointer; transition: all 0.2s ease; }
+        .likert-table input:checked + label { background-color: #3b82f6; border-color: #3b82f6; }
+        .likert-table input { display: none; }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="quiz-card">
+        <!-- 應用程式內容將由 JavaScript 動態渲染 -->
+    </div>
+
+    <!-- 快速測試按鈕 (保留) -->
+    <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
+        <i class="fas fa-bolt"></i>
+    </button>
+
+
+    <script>
+        // --- *** 新增：獲取或設定唯一識別碼 *** ---
+        function getOrSetUniqueID() {
+            // 使用一個新的 key (v2) 來儲存，避免與舊版問卷衝突
+            let id = localStorage.getItem('petSurveyUniqueID_v2');
+            if (!id) {
+                // 如果不存在，創建一個結合時間戳和隨機數的 ID
+                id = 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('petSurveyUniqueID_v2', id);
+            }
+            return id;
+        }
+
+        // --- *** 修改：應用程式狀態 *** ---
+        let state = {
+            page: 'start', // 'start', 'survey', 'end'
+            currentStep: 0, // 0-indexed step
+            answers: {},
+            submissionStatus: 'idle', // 'idle', 'submitting', 'success', 'error'
+            startTime: null, // 【新增】問卷開始時間
+            uniqueID: getOrSetUniqueID() // 【新增】唯一識別碼
+        };
+
+        // --- 問卷結構 (維持不變) ---
+        const TOTAL_STEPS = 6;
+        const REQUIRED_QUESTIONS_BY_STEP = [
+            ['1.1_寵物類型', '1.2_飼養数量', '1.4_居住型態'], // Step 1
+            ['2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題'], // Step 2
+            ['3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴', '3.4_專心時間'], // Step 3
+            ['4.1_食品保健花費', '4.2_玩具娛樂花費', '4.3_科技用品數量', '4.4_最高產品金額'], // Step 4
+            ['5.1_開心使用', '5.1_安全使用', '5.1_節省時間', '5.1_持久耐用', '5.1_容易清潔', '5.2_不好經驗'], // Step 5
+            ['6.1_性別', '6.2_年齡', '6.3_婚姻家庭', '6.4_學歷', '6.6_月收入'] // Step 6
+        ];
+
+
+        // --- 渲染主要應用程式 (維持不變) ---
+        function render() {
+            const app = document.getElementById('app');
+            app.innerHTML = ''; // 清空內容
+
+            switch (state.page) {
+                case 'start':
+                    app.innerHTML = renderStartPage();
+                    attachStartListeners();
+                    break;
+                case 'survey':
+                    app.innerHTML = renderSurveyPage();
+                    attachSurveyListeners();
+                    break;
+                case 'end':
+                    app.innerHTML = renderEndPage();
+                    attachEndListeners();
+                    break;
+            }
+            
+            updateDOMState();
+        }
+
+        // --- 頁面渲染函數 (維持不變) ---
+        function renderStartPage() {
+            return `
+                <div class="p-8 md:p-12 text-center space-y-6">
+                    <i class="fas fa-paw text-6xl text-blue-500"></i>
+                    <h1 class="text-3xl font-bold text-gray-800">台灣寵物飼主健康管理與娛樂需求之市場調查</h1>
+                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                        您好！誠摯地邀請您參與這份關於「寵物健康管理與娛樂互動」的市場調查問卷。
+                        本問卷全程採匿名方式進行，預計花費您 5-8 分鐘的時間。
+                    </p>
+                    <p class="text-sm text-gray-500">(僅限目前正在台灣飼養犬、貓的飼主填寫)</p>
+                    <button id="startButton" class="btn btn-primary btn-lg text-lg">
+                        <i class="fas fa-play h-5 w-5 mr-2"></i> 開始填寫
+                    </button>
+                </div>
+            `;
+        }
+        function renderEndPage() {
+            const success = state.submissionStatus === 'success';
+            return `
+                <div class="p-8 md:p-12 text-center space-y-6">
+                    <i class="fas ${success ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'}" style="font-size: 6rem;"></i>
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        ${success ? '提交成功！' : '提交失敗'}
+                    </h1>
+                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                        ${success ? '問卷到此全部結束。再次誠摯地感謝您撥出寶貴的時間提供您的意見！' : '抱歉，提交過程中發生錯誤。請檢查您的網路連線或稍後再試。'}
+                    </p>
+                    ${!success ? `<p class="text-sm text-gray-500">錯誤訊息: ${state.answers.errorMessage || '未知錯誤'}</p>` : ''}
+                    <button id="restartButton" class="btn btn-secondary">
+                        <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
+                    </button>
+                </div>
+            `;
+        }
+        function renderSurveyPage() {
+            const progress = ((state.currentStep + 1) / TOTAL_STEPS) * 100;
+            return `
+                <div class="p-4 bg-gray-50 border-b border-gray-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-semibold text-blue-600">
+                            第 ${state.currentStep + 1} / ${TOTAL_STEPS} 部分
+                        </span>
+                        <span class="text-sm font-medium text-gray-600">${Math.round(progress)}%</span>
+                    </div>
+                    <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="progress-bar-inner h-full rounded-full" style="width: ${progress}%;"></div>
+                    </div>
+                </div>
+                <div class="p-6 md:p-10 space-y-8" style="max-height: 70vh; overflow-y: auto;">
+                    ${renderStepContent(state.currentStep)}
+                </div>
+                <div class="p-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                    <button id="prevButton" class="btn btn-secondary" ${state.currentStep === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-arrow-left h-4 w-4 mr-2"></i> 上一步
+                    </button>
+                    <button id="nextButton" class="btn btn-primary">
+                        ${state.currentStep === TOTAL_STEPS - 1 ? '完成並提交 <i class="fas fa-check h-4 w-4 ml-2"></i>' : '下一步 <i class="fas fa-arrow-right h-4 w-4 ml-2"></i>'}
+                    </button>
+                </div>
+            `;
+        }
+        
+        // --- 渲染問卷步驟內容 (維持不變) ---
+        function renderStepContent(step) {
+            switch (step) {
+                case 0: return renderStep1();
+                case 1: return renderStep2();
+                case 2: return renderStep3();
+                case 3: return renderStep4();
+                case 4: return renderStep5();
+                case 5: return renderStep6();
+                default: return `<p>錯誤：未知的步驟</p>`;
+            }
+        }
+        
+        // --- 輔助函數 (createLikertRow, createSlider, createStep5Slider, createRadioGroup) (維持不變) ---
+        function createLikertRow(id, text) {
+            const options = ['非常不同意', '不同意', '普通', '同意', '非常同意'];
+            return `
+                <tr>
+                    <td>${text}</td>
+                    ${options.map((option, index) => `
+                        <td>
+                            <input type="radio" name="${id}" value="${option}" id="${id}-${index}" data-id="${id}">
+                            <label for="${id}-${index}" title="${option}"></label>
+                        </td>
+                    `).join('')}
+                </tr>
+            `;
+        }
+        function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
+            const currentValue = state.answers[id] || defaultValue || min;
+            return `
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="font-medium text-gray-700">${label}</label>
+                        <span id="slider-value-${id}" class="text-lg font-bold text-blue-600">${valueTextFn(currentValue)}</span>
+                    </div>
+                    <input type="range" data-id="${id}" id="${id}" min="${min}" max="${max}" step="${step}" value="${currentValue}"
+                           data-valuetextfn="${encodeURIComponent(valueTextFn.toString())}">
+                </div>
+            `;
+        }
+        function createStep5Slider(id, label, defaultValue) {
+            const currentValue = state.answers[id] || defaultValue;
+            const monetaryVal = ((currentValue - 5) * 1000).toLocaleString();
+            const scoreVal = currentValue;
+            return `
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <label class="font-medium text-gray-700">${label}</label>
+                            <span class="ml-2 font-bold text-gray-800">${monetaryVal}元</span>
+                        </div>
+                        <span id="slider-value-${id}" class="text-lg font-bold text-blue-600">${scoreVal}分</span>
+                    </div>
+                    <input type="range" data-id="${id}" id="${id}" min="0" max="10" step="1" value="${currentValue}"
+                           data-type="step5-slider"> 
+                </div>
+            `;
+        }
+        function createRadioGroup(id, label, options, gridClass = 'grid-cols-1 sm:grid-cols-2') {
+            return `
+                <div class="space-y-3">
+                    <label class="font-medium text-gray-700 text-lg">${label}</label>
+                    <div class="grid ${gridClass} gap-3" data-radio-group="${id}">
+                        ${options.map((option, index) => `
+                            <label class="radio-option">
+                                <input type="radio" name="${id}" value="${option}" data-id="${id}">
+                                ${option}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 步驟 1-6 的渲染函數 (維持不變) ---
+        function renderStep1() {
+            return `
+                <div class="page-section active space-y-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第一部分：飼主與寵物基本背景</h2>
+                    <div class="space-y-3">
+                        <label class="font-medium text-gray-700 text-lg">1.1 您的寵物類型是？</label>
+                        <div class="grid grid-cols-2 gap-4" data-radio-group="1.1_寵物類型">
+                            <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
+                                <input type="radio" name="1.1_寵物類型" value="犬" class="hidden" data-id="1.1_寵物類型">
+                                <i class="fas fa-dog text-6xl text-blue-400"></i>
+                                <span class="block text-xl font-bold text-gray-700">犬</span>
+                            </label>
+                            <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
+                                <input type="radio" name="1.1_寵物類型" value="貓" class="hidden" data-id="1.1_寵物類型">
+                                <i class="fas fa-cat text-6xl text-blue-400"></i>
+                                <span class="block text-xl font-bold text-gray-700">貓</span>
+                            </label>
+                        </div>
+                    </div>
+                    ${createSlider('1.2_飼養数量', '1.2 您總共飼養了幾隻犬/貓？', 1, 5, 1, 
+                        (v) => v >= 5 ? '5+ 隻' : `${v} 隻`,
+                        1
+                    )}
+                    <div class="space-y-4">
+                        <label class="font-medium text-gray-700 text-lg">1.3 您的寵物目前分別年齡為幾歲？</label>
+                        <p class="text-sm text-gray-500">請為您在 1.2 中選擇的每隻寵物設定年齡。</p>
+                        <div id="pet-age-inputs" class="space-y-6"></div>
+                    </div>
+                    ${createRadioGroup('1.4_居住型態', '1.4 您的居住型態為？', 
+                        ['透天厝', '公寓/華廈 (有電梯)', '公寓 (無電梯)', '套房/雅房']
+                    )}
+                </div>
+            `;
+        }
+        function renderStep2() {
+            return `
+                <div class="page-section active space-y-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第二部分：您與寵物的關係</h2>
+                    <p class="text-gray-600">請根據您與寵物的日常互動，評估您對以下描述的同意程度。</p>
+                    <table class="likert-table">
+                        <thead>
+                            <tr>
+                                <th>陳述</th>
+                                <th>非常<br>不同意</th>
+                                <th>不同意</th>
+                                <th>普通</th>
+                                <th>同意</th>
+                                <th>非常<br>同意</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${createLikertRow('2.1_視為家人', '2.1 我把我的寵物視為家庭的一份子，而不僅僅是動物。')}
+                            ${createLikertRow('2.2_情感慰藉', '2.2 當我感到壓力或難過時，我的寵物能提供重要的情感慰藉。')}
+                            ${createLikertRow('2.3_對寵說話', '2.3 我時常會對我的寵物說話，就像對待人一樣。')}
+                            ${createLikertRow('2.4_擔心想念', '2.4 若需要短時間與寵物分開（例如：出差、旅遊），我會非常擔心和想念牠。')}
+                            ${createLikertRow('2.5_快樂來源', '2.5 我的寵物是我生活中快樂與滿足感的重要來源。')}
+                            ${createLikertRow('2.6_像孩子', '2.6 在我的家庭中，我的寵物很大程度上扮演著像孩子一樣的角色。')}
+                            ${createLikertRow('2.7_填補空缺', '2.7 我的寵物填補了家中因子女不在（或沒有子女）所留下的空缺。')}
+                            ${createLikertRow('2.8_日常話題', '2.8 與伴侶（若有）的日常話題中，有很大一部分是圍繞著我們的寵物。')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        function renderStep3() {
+             return `
+                <div class="page-section active space-y-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第三部分：寵物日常照護與娛樂陪伴</h2>
+                    <table class="likert-table">
+                         <thead>
+                            <tr>
+                                <th>陳述</th>
+                                <th>非常<br>不同意</th>
+                                <th>不同意</th>
+                                <th>普通</th>
+                                <th>同意</th>
+                                <th>非常<br>同意</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${createLikertRow('3.1_充滿活力', '3.1 您認為您寵物目前的日常活動是否充滿活力？')}
+                            ${createLikertRow('3.2_擔心獨處', '3.2 您是否擔心出門後，寵物長時間獨處在家時較無活力？')}
+                            ${createLikertRow('3.3_願意陪伴', '3.3 您是否願意每天花費時間陪伴寵物？')}
+                        </tbody>
+                    </table>
+                    <hr class="my-6">
+                    ${createSlider('3.4_專心時間', '3.4 您每天花多少時間陪伴您的寵物？（如：撫摸、互動玩耍、訓練）', 0, 10, 1,
+                        (v) => {
+                            if (v == 10) return '5+ 小時';
+                            const hours = v * 0.5;
+                            return `${hours} 小時`;
+                        },
+                        0
+                    )}
+                </div>
+            `;
+        }
+        function renderStep4() {
+             return `
+                <div class="page-section active space-y-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第四部分：寵物物質照護與娛樂陪伴</h2>
+                    ${createSlider('4.1_食品保健花費', '4.1 平均每月花費在「寵物食品與保健品」的總金額？', 0, 10, 1,
+                        (v) => {
+                            if (v == 0) return '$0';
+                            if (v >= 10) return '$5,000+';
+                            return `$${v * 500}`;
+                        },
+                        0
+                    )}
+                    ${createSlider('4.2_玩具娛樂花費', '4.2 平均每年花費在「寵物玩具、娛樂用品、智能產品」的總金額？', 0, 30, 1,
+                        (v) => {
+                            if (v == 0) return '$0';
+                            if (v >= 30) return '$30,000+';
+                            return `$${v * 1000}`;
+                        },
+                        0
+                    )}
+                    ${createSlider('4.3_科技用品數量', '4.3 您曾經購買過幾種科技類的寵物用品？', 0, 5, 1,
+                        (v) => v >= 5 ? '5+ 種' : `${v} 種`,
+                        0
+                    )}
+                    ${createSlider('4.4_最高產品金額', '4.4 您曾經購買過的寵物產品最高金額大約是多少？', 0, 30, 1,
+                        (v) => {
+                            if (v == 0) return '$0';
+                            if (v >= 30) return '$30,000+';
+                            return `$${v * 1000}`;
+                        },
+                        0
+                    )}
+                </div>
+            `;
+        }
+        function renderStep5() {
+             return `
+                <div class="page-section active space-y-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第五部分：消費考量</h2>
+                    <div class="space-y-4 p-4 bg-gray-50 rounded-lg">
+                        <h3 class="font-medium text-gray-700 text-lg">5.1 在選購一項寵物用品時（例如：智能玩具、智能廁所、跳台、清潔機等），您最重視的因素是什麼？</h3>
+                        ${createStep5Slider('5.1_開心使用', '寵物能開心使用', 5)}
+                        ${createStep5Slider('5.1_安全使用', '寵物能安全使用', 5)}
+                        ${createStep5Slider('5.1_節省時間', '節省飼主時間、精力', 5)}
+                        ${createStep5Slider('5.1_持久耐用', '產品持久耐用', 5)}
+                        ${createStep5Slider('5.1_容易清潔', '產品容易清潔整理', 5)}
+                    </div>
+                    <hr class="my-6">
+                    ${createRadioGroup('5.2_不好經驗', '5.2 在為寵物購買較昂貴的用品時，您是否曾有過不好的經驗？', 
+                        ['經常有', '偶爾有', '幾乎沒有', '從未購買過昂貴用品']
+                    )}
+                </div>
+            `;
+        }
+        function renderStep6() {
+             return `
+                <div class="page-section active space-y-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第六部分：個人基本資訊</h2>
+                    ${createRadioGroup('6.1_性別', '6.1 您的性別？', 
+                        ['男性', '女性', '男同', '女同']
+                    )}
+                    ${createRadioGroup('6.2_年齡', '6.2 您的年齡區間？', 
+                        ['24歲以下', '25 - 34歲', '35 - 44歲', '45 - 54歲', '55歲以上'],
+                        'grid-cols-1 sm:grid-cols-3'
+                    )}
+                    ${createRadioGroup('6.3_婚姻家庭', '6.3 您的婚姻狀況與家庭生命週期？', 
+                        ['未婚，獨居', '未婚，與伴侶/家人/室友同住', '已婚/同居，無子女 (頂客族)', '已婚/同居，家中有學齡前子女', '已婚/同居，子女已成年但同住', '已婚/同居，子女已離家 (空巢期)'],
+                        'grid-cols-1 sm:grid-cols-2'
+                    )}
+                    ${createRadioGroup('6.4_學歷', '6.4 您的最高學歷？', 
+                        ['高中職(含)以下', '專科/大學', '碩士(含)以上'],
+                        'grid-cols-1 sm:grid-cols-3'
+                    )}
+                    ${createRadioGroup('6.6_月收入', '6.6 您個人平均月收入大約是多少？', 
+                        ['NT$ 30,000 以下', 'NT$ 30,001 - 50,000', 'NT$ 50,001 - 80,000', 'NT$ 80,001 以上']
+                    )}
+                </div>
+            `;
+        }
+        
+        // --- 渲染寵物年齡拉桿 (維持不變) ---
+        function renderPetAgeInputs(petCount) {
+            const container = document.getElementById('pet-age-inputs');
+            if (!container) return;
+            petCount = parseInt(petCount, 10);
+            if (petCount > 5) petCount = 5;
+            let html = '';
+            for (let i = 1; i <= petCount; i++) {
+                const id = `1.3_Age_Pet${i}`;
+                const label = `寵物 ${i} 年齡`;
+                html += createSlider(id, label, 0, 15, 1, 
+                    (v) => (v >= 15 ? '15+ 歲' : `${v} 歲`), 
+                    0
+                );
+            }
+            container.innerHTML = html;
+            container.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.oninput = (e) => {
+                    const id = e.target.dataset.id;
+                    const value = e.target.value;
+                    state.answers[id] = value;
+                    const valueEl = document.getElementById(`slider-value-${id}`);
+                    if (valueEl) {
+                        const valueTextFnStr = decodeURIComponent(e.target.dataset.valuetextfn);
+                        const valueTextFn = new Function(`return ${valueTextFnStr}`)();
+                        valueEl.textContent = valueTextFn(value);
+                    }
+                };
+                slider.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        }
+
+
+        // --- *** 修改：事件監聽器 *** ---
+        function attachStartListeners() {
+            document.getElementById('startButton').onclick = () => {
+                setState({ 
+                    page: 'survey',
+                    startTime: Date.now() // 【修改】在此處設置開始時間
+                });
+            };
+        }
+        function attachEndListeners() {
+            document.getElementById('restartButton').onclick = () => {
+                // 重置狀態
+                state = {
+                    page: 'start',
+                    currentStep: 0,
+                    answers: {},
+                    submissionStatus: 'idle',
+                    startTime: null, // 【修改】重置開始時間
+                    uniqueID: state.uniqueID // 【修改】保持 uniqueID 不變
+                };
+                render();
+            };
+        }
+        function attachSurveyListeners() {
+            // 導航按鈕 (維持不變)
+            document.getElementById('prevButton').onclick = () => {
+                if (state.currentStep > 0) {
+                    setState({ currentStep: state.currentStep - 1 });
+                }
+            };
+            document.getElementById('nextButton').onclick = handleNextOrSubmit;
+            
+            // 監聽所有表單輸入 (維持不變)
+            document.querySelectorAll('input[type="radio"]').forEach(input => {
+                input.onchange = (e) => {
+                    const id = e.target.dataset.id || e.target.name;
+                    state.answers[id] = e.target.value;
+                    updateRadioSelection(id);
+                };
+            });
+            document.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.oninput = (e) => {
+                    const id = e.target.dataset.id;
+                    const value = e.target.value;
+                    state.answers[id] = value;
+                    if (e.target.dataset.type === 'step5-slider') {
+                        const valueEl = document.getElementById(`slider-value-${id}`);
+                        const monetaryEl = e.target.previousElementSibling.querySelector('span.ml-2'); 
+                        const monetaryVal = ((value - 5) * 1000).toLocaleString();
+                        const scoreVal = value;
+                        if (valueEl) valueEl.textContent = `${scoreVal}分`;
+                        if (monetaryEl) monetaryEl.textContent = `${monetaryVal}元`;
+                    } else {
+                        const valueEl = document.getElementById(`slider-value-${id}`);
+                        if (valueEl) {
+                            const valueTextFnStr = decodeURIComponent(e.target.dataset.valuetextfn);
+                            const valueTextFn = new Function(`return ${valueTextFnStr}`)();
+                            valueEl.textContent = valueTextFn(value);
+                        }
+                    }
+                    if (id === '1.2_飼養数量') {
+                        renderPetAgeInputs(value);
+                    }
+                };
+            });
+            document.querySelectorAll('.pet-choice').forEach(label => {
+                label.onclick = () => {
+                    const input = label.querySelector('input[type="radio"]');
+                    input.checked = true;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                };
+            });
+        }
+        
+        // --- 狀態更新與驗證 (維持不變) ---
+        function setState(newState) {
+            saveCurrentStepAnswers();
+            state = { ...state, ...newState };
+            render();
+        }
+        function updateDOMState() {
+            // (此函數維持不變)
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                const id = input.dataset.id;
+                if (state.answers[id]) input.value = state.answers[id];
+            });
+             document.querySelectorAll('input[type="number"]').forEach(input => {
+                const id = input.dataset.id;
+                if (state.answers[id]) input.value = state.answers[id];
+            });
+            document.querySelectorAll('input[type="range"]').forEach(slider => {
+                const id = slider.dataset.id;
+                if (id.startsWith('1.3_Age_Pet')) return; 
+                const defaultValue = slider.closest('[data-default-value]') ? slider.closest('[data-default-value]').dataset.defaultValue : undefined;
+                if (state.answers[id]) {
+                    slider.value = state.answers[id];
+                } else if (defaultValue) {
+                    slider.value = defaultValue;
+                }
+                slider.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+            const radioIds = new Set(Object.keys(state.answers).filter(k => 
+                document.querySelector(`input[type="radio"][data-id="${k}"]`) ||
+                document.querySelector(`input[type="radio"][name="${k}"]`)
+            ));
+            radioIds.forEach(id => {
+                const value = state.answers[id];
+                if (value) {
+                    const input = document.querySelector(`input[type="radio"][name="${id}"][value="${CSS.escape(value)}"]`);
+                    if (input) {
+                        input.checked = true;
+                        updateRadioSelection(id);
+                    }
+                }
+            });
+            if (state.currentStep === 0) {
+                const petCount = state.answers['1.2_飼養数量'] || 1;
+                renderPetAgeInputs(petCount);
+                for (let i = 1; i <= petCount; i++) {
+                    const id = `1.3_Age_Pet${i}`;
+                    const slider = document.getElementById(id);
+                    if (slider && state.answers[id]) {
+                        slider.value = state.answers[id];
+                        slider.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+            }
+        }
+        function updateRadioSelection(id) {
+            const group = document.querySelector(`[data-radio-group="${id}"]`);
+            if (group) {
+                group.querySelectorAll('.radio-option, .pet-choice').forEach(label => {
+                    const input = label.querySelector('input');
+                    if (input.checked) {
+                        label.classList.add('selected');
+                    } else {
+                        label.classList.remove('selected');
+                    }
+                });
+            }
+        }
+        function saveCurrentStepAnswers() {
+            // (此函數維持不變)
+            const stepContainer = document.querySelector('.page-section.active');
+            if (!stepContainer) return;
+            stepContainer.querySelectorAll('input[type="text"]').forEach(input => {
+                state.answers[input.dataset.id] = input.value;
+            });
+            stepContainer.querySelectorAll('input[type="number"]').forEach(input => {
+                state.answers[input.dataset.id] = input.value;
+            });
+            stepContainer.querySelectorAll('input[type="range"]').forEach(input => {
+                state.answers[input.dataset.id] = input.value;
+            });
+            stepContainer.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+                const id = input.dataset.id || input.name;
+                state.answers[id] = input.value;
+            });
+        }
+        function isStepValid(stepIndex) {
+            // (此函數維持不變)
+            const requiredIds = REQUIRED_QUESTIONS_BY_STEP[stepIndex];
+            let isValid = true;
+            for (const id of requiredIds) {
+                const answer = state.answers[id];
+                if (answer === undefined || answer === null || answer === '') {
+                    console.warn(`Validation failed for step ${stepIndex + 1}: ${id}`);
+                    isValid = false;
+                }
+            }
+            if (stepIndex === 0) {
+                const petCount = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
+                for (let i = 1; i <= petCount; i++) {
+                    const ageId = `1.3_Age_Pet${i}`;
+                    const ageAnswer = state.answers[ageId];
+                    if (ageAnswer === undefined || ageAnswer === null || ageAnswer === '') {
+                        console.warn(`Validation failed for step 1: ${ageId}`);
+                        isValid = false;
+                    }
+                }
+            }
+            return isValid;
+        }
+        function validateAllAnswers() {
+            // (此函數維持不變)
+            for (let i = 0; i < TOTAL_STEPS; i++) {
+                if (!isStepValid(i)) {
+                    return { valid: false, firstInvalidStep: i };
+                }
+            }
+            return { valid: true };
+        }
+        function handleNextOrSubmit() {
+            // (此函數維持不變)
+            saveCurrentStepAnswers();
+            if (state.currentStep < TOTAL_STEPS - 1) {
+                setState({ currentStep: state.currentStep + 1 });
+                const card = document.querySelector('.quiz-card');
+                if (card) card.scrollTop = 0;
+            } else {
+                const validationResult = validateAllAnswers();
+                if (validationResult.valid) {
+                    handleFinalSubmit();
+                } else {
+                    showToast(`您在第 ${validationResult.firstInvalidStep + 1} 部分有未填寫的題目喔！`, "error");
+                    setState({ currentStep: validationResult.firstInvalidStep });
+                }
+            }
+        }
+        function showToast(message, type = 'info') {
+            // (此函數維持不變)
+            let toast = document.getElementById('toast-notification');
+            if (toast) { toast.remove(); }
+            toast = document.createElement('div');
+            toast.id = 'toast-notification';
+            const bgColor = type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            toast.className = `fixed top-5 right-5 ${bgColor} text-white p-4 rounded-lg shadow-lg z-50 animate-bounce`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.transition = 'opacity 0.5s ease-out';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 500);
+            }, 2500);
+        }
+        function fillWithRandomAnswers() {
+            // (此函數維持不變)
+            const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+            const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            const likert = ['非常不同意', '不同意', '普通', '同意', '非常同意'];
+            let newAnswers = {};
+            newAnswers['1.1_寵物類型'] = randomChoice(['犬', '貓']);
+            const petCount = randomInt(1, 5);
+            newAnswers['1.2_飼養数量'] = petCount;
+            for (let i = 1; i <= petCount; i++) { newAnswers[`1.3_Age_Pet${i}`] = randomInt(0, 15); }
+            newAnswers['1.4_居住型態'] = randomChoice(['透天厝', '公寓/華廈 (有電梯)', '公寓 (無電梯)', '套房/雅房']);
+            ['2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題'].forEach(id => newAnswers[id] = randomChoice(likert));
+            ['3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴'].forEach(id => newAnswers[id] = randomChoice(likert));
+            newAnswers['3.4_專心時間'] = randomInt(0, 10);
+            newAnswers['4.1_食品保健花費'] = randomInt(0, 10);
+            newAnswers['4.2_玩具娛樂花費'] = randomInt(0, 30);
+            newAnswers['4.3_科技用品數量'] = randomInt(0, 5);
+            newAnswers['4.4_最高產品金額'] = randomInt(0, 30);
+            ['5.1_開心使用', '5.1_安全使用', '5.1_節省時間', '5.1_持久耐用', '5.1_容易清潔'].forEach(id => newAnswers[id] = randomInt(0, 10)); 
+            newAnswers['5.2_不好經驗'] = randomChoice(['經常有', '偶爾有', '幾乎沒有', '從未購買過昂貴用品']);
+            newAnswers['6.1_性別'] = randomChoice(['男性', '女性', '男同', '女同']);
+            newAnswers['6.2_年齡'] = randomChoice(['24歲以下', '25 - 34歲', '35 - 44歲', '45 - 54歲', '55歲以上']);
+            newAnswers['6.3_婚姻家庭'] = randomChoice(['未婚，獨居', '未婚，與伴侶/家人/室友同住', '已婚/同居，無子女 (頂客族)', '已婚/同居，家中有學齡前子女', '已婚/同居，子女已成年但同住', '已婚/同居，子女已離家 (空巢期)']);
+            newAnswers['6.4_學歷'] = randomChoice(['高中職(含)以下', '專科/大學', '碩士(含)以上']);
+            newAnswers['6.6_月收入'] = randomChoice(['NT$ 30,000 以下', 'NT$ 30,001 - 50,000', 'NT$ 50,001 - 80,000', 'NT$ 80,001 以上']);
+            showToast("已填入隨機答案，請檢查最後一頁並提交！", "info");
+            setState({ answers: newAnswers, currentStep: TOTAL_STEPS - 1 });
+        }
+
+        // --- *** 修改：最終提交邏輯 *** ---
+        
+        // !!! 請確認這裡貼上您「已部署」的 Google Apps Script 網址 !!!
+        // (必須是已更新、能接收 Duration 和 UniqueID 的版本)
+        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnWVo-eZrQZKNMn3oAocqUOJTKyieqWnfLNfT0GPobqobBllLSXdbcfTLcTMTQstSwOg/exec'; 
+
+        async function handleFinalSubmit() {
+            if (state.submissionStatus === 'submitting') return;
+            
+            saveCurrentStepAnswers();
+            
+            // 確保 5.1 有預設值 (維持不變)
+            const sliderIds = ['5.1_開心使用', '5.1_安全使用', '5.1_節省時間', '5.1_持久耐用', '5.1_容易清潔'];
+            sliderIds.forEach(id => {
+                if (state.answers[id] === undefined) state.answers[id] = 5; 
+            });
+            // 確保 1.3 的 sliders 預設值為 0 (維持不變)
+            for(let i=1; i<=5; i++) {
+                const id = `1.3_Age_Pet${i}`;
+                if (state.answers[id] === undefined) state.answers[id] = '0';
+            }
+
+            // 【修改】在設定預設值 *之後* 才設置提交狀態
+            setState({ submissionStatus: 'submitting' });
+
+            // 【新增】計算作答時長 (秒)
+            // 如果 startTime 為 null (例如直接跳轉)，則時長為 0
+            const durationSeconds = state.startTime ? Math.round((Date.now() - state.startTime) / 1000) : 0;
+
+            // 【修改】準備要發送的資料 (dataToSend)
+            // 這裡的 key 必須與 .gs 檔案中的順序和 Sheet 欄位完全一致
+            const dataToSend = {
+                // --- 【新增欄位】 ---
+                'Duration': durationSeconds + ' 秒',
+                'UniqueID': state.uniqueID,
+                
+                // --- 【原有欄位】 ---
+                '1.1_寵物類型': state.answers['1.1_寵物類型'] || 'N/A',
+                '1.2_飼養数量': state.answers['1.2_飼養数量'] || 'N/A',
+                // 1.3 (Pet1-5) 會在下面動態加入
+                '1.4_居住型態': state.answers['1.4_居住型態'] || 'N/A',
+                '2.1_視為家人': state.answers['2.1_視為家人'] || 'N/A',
+                '2.2_情感慰藉': state.answers['2.2_情感慰藉'] || 'N/A',
+                '2.3_對寵說話': state.answers['2.3_對寵說話'] || 'N/A',
+                '2.4_擔心想念': state.answers['2.4_擔心想念'] || 'N/A',
+                '2.5_快樂來源': state.answers['2.5_快樂來源'] || 'N/A',
+                '2.6_像孩子': state.answers['2.6_像孩子'] || 'N/A',
+                '2.7_填補空缺': state.answers['2.7_填補空缺'] || 'N/A',
+                '2.8_日常話題': state.answers['2.8_日常話題'] || 'N/A',
+                '3.1_充滿活力': state.answers['3.1_充滿活力'] || 'N/A',
+                '3.2_擔心獨處': state.answers['3.2_擔心獨處'] || 'N/A',
+                '3.3_願意陪伴': state.answers['3.3_願意陪伴'] || 'N/A',
+                // 3.4 會在下面動態加入
+                '4.1_食品保健花費': state.answers['4.1_食品保健花費'] || 'N/A',
+                '4.2_玩具娛樂花費': state.answers['4.2_玩具娛樂花費'] || 'N/A',
+                '4.3_科技用品數量': state.answers['4.3_科技用品數量'] || 'N/A',
+                '4.4_最高產品金額': state.answers['4.4_最高產品金額'] || 'N/A',
+                '5.1_開心使用': state.answers['5.1_開心使用'] || '5',
+                '5.1_安全使用': state.answers['5.1_安全使用'] || '5',
+                '5.1_節省時間': state.answers['5.1_節省時間'] || '5',
+                '5.1_持久耐用': state.answers['5.1_持久耐用'] || '5',
+                '5.1_容易清潔': state.answers['5.1_容易清潔'] || '5',
+                '5.2_不好經驗': state.answers['5.2_不好經驗'] || 'N/A',
+                '6.1_性別': state.answers['6.1_性別'] || 'N/A',
+                '6.2_年齡': state.answers['6.2_年齡'] || 'N/A',
+                '6.3_婚姻家庭': state.answers['6.3_婚姻家庭'] || 'N/A',
+                '6.4_學歷': state.answers['6.4_學歷'] || 'N/A',
+                '6.6_月收入': state.answers['6.6_月收入'] || 'N/A',
+            };
+            
+            // 1.3 資料轉換 (維持不變)
+            const petCount = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
+            for (let i = 1; i <= 5; i++) {
+                const id = `1.3_Age_Pet${i}`;
+                if (i <= petCount) {
+                    const v = state.answers[id] || '0';
+                    dataToSend[id] = (v == 15) ? '15+' : v.toString();
+                } else {
+                    dataToSend[id] = '';
+                }
+            }
+
+            // 3.4 資料轉換 (維持不變)
+            const v3_4 = state.answers['3.4_專心時間'] || '0';
+            dataToSend['3.4_專心時間'] = (v3_4 == 10) ? '5+' : (v3_4 * 0.5).toString();
+
+            
+            console.log("Submitting Payload:", dataToSend);
+            
+            // 檢查 URL (維持不變)
+            if (GOOGLE_SHEET_SCRIPT_URL.includes('!!!') || !GOOGLE_SHEET_SCRIPT_URL.startsWith('https:')) {
+                console.error("尚未設定 Google Apps Script URL！");
+                setState({ 
+                    submissionStatus: "error", 
+                    page: "end",
+                    answers: { ...state.answers, errorMessage: '尚未設定 Google Apps Script URL' }
+                });
+                return;
+            }
+
+            try {
+                // Fetch 邏輯 (維持不變)
+                const formBody = new URLSearchParams(dataToSend).toString();
+                
+                await fetch(GOOGLE_SHEET_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    headers: {
+                      'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formBody 
+                });
+                
+                setTimeout(() => {
+                    setState({ submissionStatus: "success", page: "end" });
+                }, 1000);
+
+            } catch (error) {
+                console.error("提交到 Google Sheet 失敗 (fetch 本身出錯):", error);
+                setState({ 
+                    submissionStatus: "error", 
+                    page: "end",
+                    answers: { ...state.answers, errorMessage: error.toString() }
+                });
+            }
+        }
+
+        // --- 首次加載時渲染 (維持不變) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            render();
+            const debugButton = document.getElementById('debugFillButton');
+            if (debugButton) {
+                debugButton.onclick = fillWithRandomAnswers;
+            }
+        });
+    </script>
+</body>
+</html>
