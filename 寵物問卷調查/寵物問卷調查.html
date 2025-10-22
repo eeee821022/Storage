@@ -323,7 +323,7 @@
                         <div id="pet-age-inputs" class="space-y-6"></div>
                     </div>
                     ${createRadioGroup('1.4_居住型態', '1.4 您的居住型態為？', 
-                        ['透天厝', '公寓/華廈 (有電梯)', '公寓 (無電梯)', '套房/雅房']
+                        ['單間(3-10坪)', '多間(含客廳)', '透天(獨棟)', '別墅(有庭院)']
                     )}
                 </div>
             `;
@@ -776,7 +776,7 @@
             const petCount = randomInt(1, 5);
             newAnswers['1.2_飼養数量'] = petCount;
             for (let i = 1; i <= petCount; i++) { newAnswers[`1.3_Age_Pet${i}`] = randomInt(0, 4); }
-            newAnswers['1.4_居住型態'] = randomChoice(['透天厝', '公寓/華廈 (有電梯)', '公寓 (無電梯)', '套房/雅房']);
+            newAnswers['1.4_居住型態'] = randomChoice(['單間(3-10坪)', '多間(含客廳)', '透天(獨棟)', '別墅(有庭院)']);
             // Step 2
             ['2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題'].forEach(id => newAnswers[id] = randomInt(0, 4));
             // Step 3
