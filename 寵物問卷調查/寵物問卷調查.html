@@ -179,7 +179,7 @@
         const createDynamicFunction = (fnStr) => {
             return new Function('v', `
                 const LIKERT_MAP = ['非常不同意', '不同意', '普通', '同意', '非常同意'];
-                const AGE_RANGE_MAP = ['0-1歲', '1.3歲', '3-6歲', '6-9歲', '10歲以上'];
+                const AGE_RANGE_MAP = ['0-1歲', '1-3歲', '3-6歲', '6-9歲', '10歲以上'];
                 const budgetSliderValueToText = (v) => {
                     const value = parseInt(v, 10) * 500;
                     if (value === 0) return 'NT$ 0';
@@ -1302,5 +1302,6 @@
     </script>
 </body>
 </html>
+
 
 
