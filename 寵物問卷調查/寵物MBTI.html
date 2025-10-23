@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寵物MBTI 2.0: 毛孩性格探索</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* 參考你提供的 mbti-cat-quizzer 樣式 */
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        /* 定義參考樣式中的自訂顏色 */
+        .bg-brand-orange { background-color: #F39800; }
+        .text-brand-orange { color: #F39800; }
+        .border-brand-orange { border-color: #F39800; }
+        .hover\:bg-brand-orange-dark:hover { background-color: #D98900; }
+        
+        .text-brand-brown { color: #8B5E3C; }
+        .text-brand-dark-gray { color: #4A4A4A; }
+        .text-brand-gray { color: #757575; }
+
+        /* 漸層背景 */
+        .bg-brand-gradient {
+            background-image: linear-gradient(to bottom right, #FFF7E0, #FFFAF0, #FFF7E0);
+        }
+
+        /* 隱藏元素 */
+        .hidden {
+            display: none;
+        }
+
+        /* 答題選項樣式 */
+        .quiz-option {
+            transition: all 0.3s ease;
+        }
+        .quiz-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #F39800;
+        }
+        .quiz-option.selected {
+            background-color: #FFF7E0; /* 淺橘色背景 */
+            border-color: #F39800;
+            box-shadow: 0 2px 8px rgba(243, 152, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-brand-gradient min-h-screen">
+
+    <div class="container mx-auto max-w-2xl p-4 py-8">
+
+        <div id="start-screen" class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 text-center relative overflow-hidden">
+            <div class="absolute top-4 left-4 text-brand-orange opacity-20"><i class="fas fa-paw text-3xl"></i></div>
+            <div class="absolute top-8 right-8 text-brand-brown opacity-20"><i class="fas fa-paw text-2xl transform rotate-45"></i></div>
+            
+            <img src="https://placehold.co/150x100/F39800/FFFFFF?text=寵物MBTI&font=noto+sans+tc" alt="可愛寵物插圖" class="max-w-full h-32 mx-auto object-contain mb-6 rounded-lg">
+            
+            <h1 class="text-4xl md:text-5xl font-bold text-brand-dark-gray mb-4">寵物 MBTI 2.0</h1>
+            <p class="text-xl text-brand-gray mb-8">毛孩性格探索測驗</p>
+            
+            <div class="text-left text-brand-gray mb-8 px-4">
+                <p>這是一份以 MBTI 為靈感的寵物心理測驗, 將複雜的行為特質簡化為兩個核心維度：</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                    <li><strong>E/I (外向/內向):</strong> 牠如何獲取能量？</li>
+                    <li><strong>N/S (好奇/安逸):</strong> 牠對新事物的開放程度？</li>
+                </ul>
+                <p class="mt-2">準備好探索你家毛孩的真實性格了嗎？</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+                <h3 class="text-lg font-bold text-brand-dark-gray text-center mb-4">🐱 告訴我們你家寵物的名字</h3>
+                <div class="max-w-md mx-auto">
+                    <input type="text" id="petName" class="flex h-10 w-full text-center text-lg p-3 border-2 border-brand-orange/30 focus:border-brand-orange rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange/50" placeholder="例如：小白、咪咪、橘子..." maxlength="15">
+                    <p class="text-sm text-brand-gray mt-2 text-center">不填寫的話，測驗中會顯示「你的寵物」</p>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap bg-brand-orange hover:bg-brand-orange-dark h-12 text-white px-12 py-4 rounded-full text-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 border-0">
+                <i class="fas fa-play mr-2"></i>開始測驗
+            </button>
+        </div>
+
+        <div id="quiz-screen" class="hidden">
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                <div id="progress-bar" class="bg-brand-orange h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            
+            <div id="question-container">
+                <div class="bg-white rounded-3xl shadow-2xl p-8 md:p-12">
+                    <p class="text-lg text-brand-gray mb-4 text-center">
+                        第 <span id="current-question-num">1</span> 題 / 共 <span id="total-questions">10</span> 題
+                    </p>
+                    <h2 id="question-text" class="text-2xl font-bold text-brand-dark-gray mb-8 text-center">題目文字...</h2>
+                    <div id="options-container" class="space-y-4 mb-6">
+                        </div>
+                    <div class="flex justify-between mt-6">
+                        <button onclick="prevQuestion()" id="prev-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-lg font-semibold border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10 transition-colors duration-200" disabled>
+                            <i class="fas fa-arrow-left"></i> 上一題
+                        </button>
+                        <button onclick="nextQuestion()" id="next-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-lg font-semibold bg-brand-orange text-white hover:bg-brand-orange-dark transition-colors duration-200" disabled>
+                            下一題 <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="result-screen" class="hidden">
+            <div id="result-capture-area" class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 text-center relative overflow-hidden">
+                <p class="text-lg text-brand-gray mb-2"><span id="result-pet-name">你家寵物</span> 的測驗結果是...</p>
+                <h1 id="result-type" class="text-5xl font-bold text-brand-orange mb-4">EN</h1>
+                <h2 id="result-title" class="text-3xl font-bold text-brand-dark-gray mb-6">活力探險家</h2>
+                
+                <img id="result-image" src="https://eeee821022.github.io/Storage/%E5%AF%B5%E7%89%A9%E5%95%8F%E5%8D%B7%E8%AA%BF%E6%9F%A5/EN.png" alt="結果插圖" class="max-w-full w-full h-auto object-contain mb-6 rounded-lg">
+
+                <div id="result-description" class="text-left text-brand-gray space-y-3 mb-8">
+                    <p><strong>個性概述:</strong> 充滿活力、天生社交高手,對世界永遠保持熱情。牠們渴望互動、探索新事物,無論是戶外奔跑還是結交新朋友,都是生活的樂趣來源。</p><p><strong>互動指南:</strong><br>• 經常帶牠外出冒險、登山、公園活動。<br>• 提供多變玩具與互動訓練,刺激身心。<br>• 正向獎勵鼓勵牠探索新事物。</p>
+                </div>
+                
+                <p class="text-sm text-gray-400">© 寵物MBTI 2.0 測驗</p>
+            </div>
+            
+            <div class="text-center mt-8 space-y-4">
+                <button onclick="saveResultAndRedirect()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap bg-brand-orange hover:bg-brand-orange-dark h-12 text-white px-12 py-4 rounded-full text-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 border-0">
+                    <i class="fas fa-download mr-2"></i>儲存結果並填寫問卷
+                </button>
+                <button onclick="resetGame()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap bg-gray-200 hover:bg-gray-300 h-12 text-gray-800 px-12 py-4 rounded-full text-xl font-semibold transition-all duration-300 border-0">
+                    <i class="fas fa-redo mr-2"></i>重新測試
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="email-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+            <i class="fas fa-envelope-open-text text-5xl text-brand-orange mb-4"></i>
+            <h2 class="text-2xl font-bold text-brand-dark-gray mb-3">測驗完成！</h2>
+            <p class="text-brand-gray mb-6">請輸入你的 Email 來看結果，我們也會將結果寄給你喔！</p>
+            
+            <form id="email-form" onsubmit="handleEmailSubmit(event)">
+                <input type="email" id="email-input" class="flex h-12 w-full text-center text-lg p-3 border-2 border-brand-orange/30 focus:border-brand-orange rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange/50 mb-4" placeholder="your.email@example.com" required>
+                
+                <button type="submit" id="email-submit-btn" class="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap bg-brand-orange hover:bg-brand-orange-dark h-12 text-white px-12 py-4 rounded-full text-xl font-semibold hover:shadow-lg transition-all duration-300 border-0">
+                    查看結果
+                </button>
+                
+                <div id="loading-spinner" class="hidden w-full items-center justify-center gap-2 text-lg text-brand-gray mt-4">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>結果產生中...</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // ==========================================
+        // 1. Google Apps Script 部署後的網址
+        // ==========================================
+        // !!! 請將 'YOUR_WEB_APP_URL_HERE' 換成你自己的 Google Apps Script 網址 !!!
+        const GAS_WEB_APP_URL = 'YOUR_WEB_APP_URL_HERE';
+        
+        // ==========================================
+        // 2. 你的測驗題目 (已根據新版 PDF 更新)
+        // ==========================================
+        // 確保 'value' 對應到 MBTI 的兩個維度 (E/I, N/S)
+        const quizData = [
+            {
+                question: "Q1. 當有客人來訪時, 毛孩會:",
+                options: [
+                    { text: "A. 熱情迎接、繞著客人轉圈圈", value: "E" },
+                    { text: "B. 躲在沙發後觀察, 等氣氛安靜才出來", value: "I" }
+                ]
+            },
+            {
+                question: "Q2. 出門到新公園, 牠的反應是:",
+                options: [
+                    { text: "A. 立刻興奮奔跑、聞每個角落", value: "N" },
+                    { text: "B. 謹慎觀察、緊跟著主人", value: "S" }
+                ]
+            },
+            {
+                question: "Q3. 最喜歡的玩具類型是:",
+                options: [
+                    { text: "A. 互動球、逗貓棒、追逐型玩具", value: "E" },
+                    { text: "B. 絨毛娃娃或自己可玩的益智玩具", value: "I" }
+                ]
+            },
+            {
+                question: "Q4. 面對新食物時:",
+                options: [
+                    { text: "A. 毫不猶豫地嚐鮮, 像個小美食家", value: "N" },
+                    { text: "B. 先聞再等, 確定安全才吃", value: "S" }
+                ]
+            },
+            {
+                question: "Q5. 玩了一整天後, 牠會:",
+                options: [
+                    { text: "A. 靠在你身邊撒嬌、討摸", value: "E" },
+                    { text: "B. 自行回窩靜靜睡覺", value: "I" }
+                ]
+            },
+            {
+                question: "Q6. 聽到你拿出外出繩/提籠時:",
+                options: [
+                    { text: "A. 興奮到搖尾巴、想立刻出門", value: "N" },
+                    { text: "B. 稍微抗拒、偏好待在熟悉的環境", value: "S" }
+                ]
+            },
+            {
+                question: "Q7. 在寵物聚會中:",
+                options: [
+                    { text: "A. 主動結交新朋友, 像個社交小明星", value: "E" },
+                    { text: "B. 安靜觀察, 慢熱地挑人互動", value: "I" }
+                ]
+            },
+            {
+                question: "Q8. 家裡換了新傢俱後:",
+                options: [
+                    { text: "A. 馬上探索、嗅聞、跳上去試試看", value: "N" },
+                    { text: "B. 避開新物品幾天再靠近", value: "S" }
+                ]
+            },
+            {
+                question: "Q9. 無聊時, 牠會:",
+                options: [
+                    { text: "A. 主動找你互動, 用叫聲或撲撲提醒", value: "E" },
+                    { text: "B. 自己找事做, 看窗外、舔毛、打盹", value: "I" }
+                ]
+            },
+            {
+                question: "Q10. 關於日常作息:",
+                options: [
+                    { text: "A. 喜歡小驚喜, 每天變一點點", value: "N" },
+                    { text: "B. 喜歡固定時間吃飯與睡覺", value: "S" }
+                ]
+            }
+        ];
+
+        // ==========================================
+        // 3. 你的測驗結果描述 (已根據新版 PDF 和圖片 URL 更新)
+        // ==========================================
+        const resultDescriptions = {
+            "EN": {
+                title: "活力探險家",
+                description: "<p><strong>個性概述:</strong> 充滿活力、天生社交高手,對世界永遠保持熱情。牠們渴望互動、探索新事物,無論是戶外奔跑還是結交新朋友,都是生活的樂趣來源。</p><p><strong>互動指南:</strong><br>• 經常帶牠外出冒險、登山、公園活動。<br>• 提供多變玩具與互動訓練,刺激身心。<br>• 正向獎勵鼓勵牠探索新事物。</p>",
+                image: "https://eeee821022.github.io/Storage/%E5%AF%B5%E7%89%A9%E5%95%8F%E5%8D%B7%E8%AA%BF%E6%9F%A5/EN.png"
+            },
+            "ES": {
+                title: "貼心小跟班",
+                description: "<p><strong>個性概述:</strong> 溫柔、依戀型性格,是最忠誠的陪伴者。喜歡跟在主人身邊,享受被關注、被擁抱的感覺。新環境會讓牠緊張,但熟悉的家就是安全堡壘。</p><p><strong>互動指南:</strong><br>• 每天給予擁抱、梳毛、對話的時間。<br>• 偏好室內遊戲,例如躲貓貓、拉扯繩。<br>• 出門前可用小點心減緩焦慮。</p>",
+                image: "https://eeee821022.github.io/Storage/%E5%AF%B5%E7%89%A9%E5%95%8F%E5%8D%B7%E8%AA%BF%E6%9F%A5/ES.png"
+            },
+            "IN": {
+                title: "沉思觀察者",
+                description: "<p><strong>個性概述:</strong> 聰明、獨立、有洞察力,喜歡安靜地研究世界。牠不愛熱鬧,但對環境變化和細節極度敏銳。像個小科學家,用時間觀察並學習。</p><p><strong>互動指南:</strong><br>• 給予牠私人空間與益智型玩具。<br>• 設置需要動腦的尋寶遊戲。<br>• 不需頻繁撫摸,陪伴即可讓牠感到安全。</p>",
+                image: "https://eeee821022.github.io/Storage/%E5%AF%B5%E7%89%A9%E5%95%8F%E5%8D%B7%E8%AA%BF%E6%9F%A5/IN.png"
+            },
+            "IS": {
+                title: "居家鑑賞家",
+                description: "<p><strong>個性概述:</strong> 安靜、穩定、享受生活品質。喜歡熟悉的節奏與舒適的角落,是「生活品味者」。任何突如其來的變化都會讓牠感到不安。</p><p><strong>互動指南:</strong><br>• 保持規律時間表。<br>• 準備舒適床墊與乾淨飲食環境。<br>• 以輕柔撫摸、低語互動最合適。</p>",
+                image: "https://eeee821022.github.io/Storage/%E5%AF%B5%E7%89%A9%E5%95%8F%E5%8D%B7%E8%AA%BF%E6%9F%A5/IS.png"
+            },
+            "DEFAULT": { // 這是為了防止計算錯誤時的備用結果
+                title: "獨特的毛孩子",
+                description: "<p>你的寵物性格非常獨特！</p><p><strong>照顧小提示：</strong> 請依照你對牠的了解，給牠最多的愛與關懷。</p>",
+                image: "https://placehold.co/150x100/AAAAAA/FFFFFF?text=PET&font=noto+sans+tc"
+            }
+        };
+
+        // ==========================================
+        // 以下是遊戲運作的程式碼 (已更新)
+        // ==========================================
+
+        // 遊戲狀態
+        let currentQuestionIndex = 0;
+        let scores = { E: 0, I: 0, N: 0, S: 0 };
+        let finalResult = "";
+        let userPetName = "";
+        // *** 修改： userAnswers 現在儲存的是每個選項的原始 'value'，例如 "E", "N" ***
+        // *** 為了方便追蹤使用者選了哪個選項，新增一個儲存選項索引的陣列 ***
+        let selectedOptionIndexes = new Array(quizData.length).fill(null); 
+
+        // DOM 元素
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const emailModal = document.getElementById('email-modal');
+        const progressBar = document.getElementById('progress-bar');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const currentQuestionNum = document.getElementById('current-question-num');
+        const totalQuestions = document.getElementById('total-questions');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        // 初始化總題數顯示
+        totalQuestions.innerText = quizData.length;
+
+        // 開始遊戲
+        function startGame() {
+            userPetName = document.getElementById('petName').value || "你的寵物";
+            currentQuestionIndex = 0;
+            scores = { E: 0, I: 0, N: 0, S: 0 };
+            selectedOptionIndexes = new Array(quizData.length).fill(null); // 重置已選選項
+            
+            startScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            loadQuestion();
+        }
+
+        // 載入題目
+        function loadQuestion() {
+            // 更新進度條
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            currentQuestionNum.innerText = currentQuestionIndex + 1; // 更新題號
+
+            const q = quizData[currentQuestionIndex];
+            questionText.innerText = q.question.replace(/毛孩/g, userPetName);
+            optionsContainer.innerHTML = ""; // 清空舊選項
+
+            q.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = "w-full text-left p-5 bg-gray-50 rounded-xl border-2 border-gray-200 quiz-option text-brand-dark-gray text-lg";
+                button.innerText = option.text.replace(/毛孩/g, userPetName);
+                button.onclick = () => selectAnswer(option.value, index); // 傳入選項索引
+                
+                // *** 根據之前選過的答案，標示選中狀態 ***
+                if (selectedOptionIndexes[currentQuestionIndex] === index) {
+                    button.classList.add('selected');
+                }
+                optionsContainer.appendChild(button);
+            });
+
+            updateNavigationButtons(); // 更新導航按鈕狀態
+        }
+
+        // 選擇答案
+        function selectAnswer(value, optionIndex) {
+            // 移除前一個選中的選項樣式
+            const prevSelected = optionsContainer.querySelector('.quiz-option.selected');
+            if (prevSelected) {
+                prevSelected.classList.remove('selected');
+            }
+
+            // 添加當前選中選項的樣式
+            event.target.classList.add('selected');
+
+            // 記錄答案
+            selectedOptionIndexes[currentQuestionIndex] = optionIndex; // 記錄選項索引
+            
+            // 如果所有題目都答完了，才自動跳到下一題
+            if (currentQuestionIndex < quizData.length - 1) {
+                setTimeout(nextQuestion, 200); 
+            } else {
+                // 如果是最後一題且已選，啟用「完成測驗」按鈕
+                updateNavigationButtons();
+            }
+        }
+
+        // 更新導航按鈕狀態
+        function updateNavigationButtons() {
+            // 上一題按鈕
+            prevBtn.disabled = currentQuestionIndex === 0;
+
+            // 下一題 / 完成測驗按鈕
+            if (currentQuestionIndex === quizData.length - 1) {
+                nextBtn.innerText = "完成測驗";
+                nextBtn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> 完成測驗`;
+                // 只有當最後一題被選中時才啟用完成按鈕
+                nextBtn.disabled = selectedOptionIndexes[currentQuestionIndex] === null;
+            } else {
+                nextBtn.innerText = "下一題";
+                nextBtn.innerHTML = `下一題 <i class="fas fa-arrow-right"></i>`;
+                // 只有當前題目被選中時才啟用下一題按鈕
+                nextBtn.disabled = selectedOptionIndexes[currentQuestionIndex] === null;
+            }
+        }
+
+        // 前往上一題
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        }
+
+        // 前往下一題或完成測驗
+        function nextQuestion() {
+            // 確保當前題目有被選中
+            if (selectedOptionIndexes[currentQuestionIndex] === null) {
+                alert("請先選擇一個答案！");
+                return;
+            }
+
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                // 如果是最後一題，則顯示 Email 彈窗
+                showEmailModal();
+            }
+        }
+
+        // 顯示 Email 彈窗
+        function showEmailModal() {
+            quizScreen.classList.add('hidden');
+            emailModal.classList.remove('hidden');
+            // 清空 Email 輸入框
+            document.getElementById('email-input').value = "";
+        }
+
+        // 處理 Email 提交
+        async function handleEmailSubmit(event) {
+            event.preventDefault(); // 防止頁面刷新
+            const email = document.getElementById('email-input').value;
+            
+            // 顯示讀取中...
+            document.getElementById('email-submit-btn').classList.add('hidden');
+            document.getElementById('loading-spinner').classList.remove('hidden');
+            
+            // 1. 重新計算分數 (因為使用者可能回頭修改答案)
+            scores = { E: 0, I: 0, N: 0, S: 0 };
+            const actualAnswers = []; // 儲存最終答案的實際 value (E, I, N, S)
+
+            selectedOptionIndexes.forEach((optionIndex, qIndex) => {
+                if (optionIndex !== null) {
+                    const selectedValue = quizData[qIndex].options[optionIndex].value;
+                    scores[selectedValue]++;
+                    actualAnswers.push(selectedValue); // 記錄實際答案 value
+                } else {
+                    actualAnswers.push("未選"); // 如果有題目未選，記錄 "未選"
+                }
+            });
+
+            // 2. 計算結果
+            finalResult = calculateResult(); // "EN", "ES", "IN", "IS"
+            
+            // 3. 提交到 Google Script
+            try {
+                await submitToGoogleScript(email, finalResult, actualAnswers);
+            } catch (error) {
+                console.error("提交到 Google Script 失敗:", error);
+                // 即使提交失敗，我們仍然顯示結果給使用者
+            }
+            
+            // 4. 顯示結果
+            showResultScreen(finalResult);
+
+            // 隱藏 Email 彈窗
+            emailModal.classList.add('hidden');
+            // (重設按鈕狀態，以便下次使用)
+            document.getElementById('email-submit-btn').classList.remove('hidden');
+            document.getElementById('loading-spinner').classList.add('hidden');
+        }
+
+        // 計算 MBTI 結果 (E/I + N/S)
+        function calculateResult() {
+            let result = "";
+            // 如果 E 和 I 分數相同，預設為 E
+            result += (scores.E >= scores.I) ? "E" : "I"; 
+            // 如果 N 和 S 分數相同，預設為 N
+            result += (scores.N >= scores.S) ? "N" : "S"; 
+            return result;
+        }
+
+        // 提交到 Google Apps Script
+        function submitToGoogleScript(email, result, answers) {
+            if (GAS_WEB_APP_URL === 'YOUR_WEB_APP_URL_HERE') {
+                console.warn("尚未設定 Google Apps Script 網址，略過提交。");
+                return Promise.resolve(); // 直接成功
+            }
+            
+            const data = { 
+                email: email, 
+                result: result, // "EN", "ES", "IN", "IS"
+                petName: userPetName,
+                answers: answers // ["E", "N", ..., "S"] (10個答案)
+            };
+            
+            return fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Google Script Web App 需要 no-cors 或特定設定
+                cache: 'no-cache',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data),
+                redirect: 'follow'
+            });
+            // 注意：使用 mode: 'no-cors'，我們無法得知請求是否真的成功
+            // 但這是跨域 POST 到 Google Script 最簡單的方式
+            // GAS 端的 doPost 需要正確處理
+        }
+
+        // 顯示結果畫面
+        function showResultScreen(result) {
+            const resultData = resultDescriptions[result] || resultDescriptions["DEFAULT"];
+
+            document.getElementById('result-pet-name').innerText = userPetName;
+            document.getElementById('result-type').innerText = result;
+            document.getElementById('result-title').innerText = resultData.title;
+            document.getElementById('result-description').innerHTML = resultData.description;
+            document.getElementById('result-image').src = resultData.image; 
+
+            resultScreen.classList.remove('hidden');
+        }
+
+        // 儲存結果圖片並跳轉
+        function saveResultAndRedirect() {
+            const resultElement = document.getElementById('result-capture-area');
+            
+            // 顯示一個短暫的 "儲存中..." 提示
+            const saveButton = event.target;
+            const originalButtonText = saveButton.innerHTML;
+            saveButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>儲存中...`;
+            saveButton.disabled = true;
+
+            html2canvas(resultElement, {
+                scale: 2, // 提高圖片解析度
+                useCORS: true // 允許跨域圖片 (因為你的圖片來源是 github)
+            }).then(canvas => {
+                // 建立下載連結
+                const link = document.createElement('a');
+                link.download = `${userPetName}_MBTI_${finalResult}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // 執行下載後，恢復按鈕並跳轉
+                saveButton.innerHTML = originalButtonText;
+                saveButton.disabled = false;
+                
+                // 跳轉到你的問卷
+                window.location.href = 'https://tinyurl.com/yc2htzfc';
+
+            }).catch(err => {
+                console.error("儲存圖片失敗:", err);
+                // 即使失敗，也要恢復按鈕並跳轉
+                saveButton.innerHTML = originalButtonText;
+                saveButton.disabled = false;
+                alert("儲存圖片失敗，即將前往問卷頁面。");
+                window.location.href = 'https://tinyurl.com/yc2htzfc';
+            });
+        }
+
+        // 重新測試
+        function resetGame() {
+            // 重置所有遊戲狀態
+            currentQuestionIndex = 0;
+            scores = { E: 0, I: 0, N: 0, S: 0 };
+            finalResult = "";
+            userPetName = "";
+            selectedOptionIndexes = new Array(quizData.length).fill(null); 
+
+            // 顯示開始畫面
+            resultScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            document.getElementById('petName').value = ""; // 清空寵物名稱輸入框
+        }
+
+    </script>
+</body>
+</html>
+
