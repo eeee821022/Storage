@@ -70,11 +70,11 @@
     </div>
 
     <!-- 快速測試按鈕 (已註解) -->
-    <!--
+    
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
-    -->
+    
 
     <script>
         // --- 獲取或設定唯一識別碼 ---
@@ -255,8 +255,27 @@
                 </div>
             `;
             } else if (state.submissionStatus === 'success') {
+                
+                // --- 修改開始: 根據是否接受訪談，顯示不同按鈕 ---
                 let downloadSection = '';
+                let actionButtons = ''; // 用於存放「重新填寫」和「MBTI」按鈕
+                let message = '';
+
                 if (state.interviewConsent === 'Yes') {
+                    // --- 狀況 2: 接受訪談 (Yes) ---
+                    message = '再次感謝您願意提供聯絡資訊！';
+                    
+                    // --- 修改：顯示「重新填寫」和「MBTI測驗」按鈕 ---
+                    actionButtons = `
+                        <button id="restartButton" class="btn btn-secondary">
+                            <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
+                        </button>
+                        <button id="mbtiButton" class="btn btn-primary">
+                            <i class="fas fa-paw h-4 w-4 mr-2"></i> 寵物MBTI測驗
+                        </button>
+                    `;
+                    
+                    // --- 修改：恢復顯示下載區塊，並使用原始按鈕文字 ---
                     downloadSection = `
                         <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
                             <h3 class="text-xl font-semibold text-gray-800 mb-4">問卷答案摘要</h3>
@@ -267,7 +286,26 @@
                             </button>
                         </div>
                     `;
+
+                } else {
+                    // --- 狀況 1: 拒絕訪談 (No) ---
+                    message = '問卷到此全部結束。再次誠摯地感謝您撥出寶貴的時間提供您的意見！';
+                    
+                    // 顯示「重新填寫」和「MBTI測驗」按鈕
+                    actionButtons = `
+                        <button id="restartButton" class="btn btn-secondary">
+                            <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
+                        </button>
+                        <button id="mbtiButton" class="btn btn-primary">
+                            <i class="fas fa-paw h-4 w-4 mr-2"></i> 寵物MBTI測驗
+                        </button>
+                    `;
+                    
+                    // 不顯示下載區塊
+                    downloadSection = '';
                 }
+                // --- 修改結束 ---
+
                 return `
                 <div class="p-8 md:p-12 text-center space-y-6">
                     <div>
@@ -278,11 +316,12 @@
                     </div>
                     <h1 class="text-3xl font-bold text-gray-800">提交成功！</h1>
                     <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                        ${state.interviewConsent === 'Yes' ? '再次感謝您願意提供聯絡資訊！' : '問卷到此全部結束。再次誠摯地感謝您撥出寶貴的時間提供您的意見！'}
+                        ${message}
                     </p>
-                    <button id="restartButton" class="btn btn-secondary">
-                        <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
-                    </button>
+                    <!-- 修改: 將按鈕放入 flex 容器中 -->
+                    <div class="flex justify-center gap-4 flex-wrap">
+                        ${actionButtons}
+                    </div>
                     ${downloadSection}
                 </div>
             `;
@@ -791,19 +830,26 @@
                 link.click();
                 document.body.removeChild(link);
 
+                // --- 修改開始: 移除下載後的跳轉邏輯 ---
+                // (setTimeout 和 window.top.location.href 已被移除)
+                // --- 修改結束 ---
+
             } catch (err) {
                 console.error("PNG 產生失敗:", err);
                 button.innerHTML = '<i class="fas fa-times h-4 w-4 mr-2"></i> 產生失敗，請重試';
             } finally {
-                // --- 修正開始 ---
+                // --- 修改：恢復 finally 區塊 ---
                 // 4. 無論成功或失敗，都恢復原始樣式
                 summaryElement.style.maxHeight = originalMaxHeight;
                 summaryElement.style.overflowY = originalOverflowY;
-                // --- 修正結束 ---
 
                 // 恢復按鈕狀態
                 button.disabled = false;
-                button.innerHTML = '<i class="fas fa-download h-4 w-4 mr-2"></i> 下載答案摘要 (PNG)';
+                // 只有在非失敗時才恢復文字，避免覆蓋"產生失敗"的訊息
+                if (!button.innerHTML.includes('產生失敗')) {
+                    button.innerHTML = '<i class="fas fa-download h-4 w-4 mr-2"></i> 下載答案摘要 (PNG)';
+                }
+                // --- 修改結束 ---
             }
         }
 
@@ -823,6 +869,18 @@
                 };
                 render();
             };
+
+            // --- 修改開始: 加入 MBTI 按鈕監聽 ---
+            const mbtiButton = document.getElementById('mbtiButton');
+            if (mbtiButton) {
+                mbtiButton.onclick = () => {
+                    // window.location.href = 'https://tinyurl.com/2uh8kcva';
+                    // --- 修正: 使用 window.top.location.href 來跳出 iFrame ---
+                    window.top.location.href = 'https://tinyurl.com/2uh8kcva';
+                };
+            }
+            // --- 修改結束 ---
+
             const downloadButton = document.getElementById('downloadPngButton');
             if (downloadButton) {
                 renderAnswerSummary();
@@ -1117,7 +1175,7 @@
         }
 
         // --- 您的 Google Apps Script 網址 ---
-        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwe6IrTkNS7itNbZbdH-4fDsUXBKM7AqHxIjpRZmiERQmNigaNR6h83FREjXFlJo_7AGg/exec'; 
+        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyu_mLipOxd9nEiH5Mqa32uYZI-NLqyiymWaYmH8JFqYZHtkVTkttFkT-CMJ_r-A7FGhg/exec'; 
 
         // --- *** 修改：最終提交邏輯 *** ---
         async function handleFinalSubmit() {
@@ -1244,3 +1302,5 @@
     </script>
 </body>
 </html>
+
+
