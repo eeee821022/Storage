@@ -135,26 +135,8 @@
 
     </div>
 
-    <div id="email-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-            <i class="fas fa-envelope-open-text text-5xl text-brand-orange mb-4"></i>
-            <h2 class="text-2xl font-bold text-brand-dark-gray mb-3">測驗完成！</h2>
-            <p class="text-brand-gray mb-6">請輸入你的 Email 來看結果，我們也會將結果寄給你喔！</p>
-            
-            <form id="email-form" onsubmit="handleEmailSubmit(event)">
-                <input type="email" id="email-input" class="flex h-12 w-full text-center text-lg p-3 border-2 border-brand-orange/30 focus:border-brand-orange rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange/50 mb-4" placeholder="your.email@example.com" required>
-                
-                <button type="submit" id="email-submit-btn" class="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap bg-brand-orange hover:bg-brand-orange-dark h-12 text-white px-12 py-4 rounded-full text-xl font-semibold hover:shadow-lg transition-all duration-300 border-0">
-                    查看結果
-                </button>
-                
-                <div id="loading-spinner" class="hidden w-full items-center justify-center gap-2 text-lg text-brand-gray mt-4">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <span>結果產生中...</span>
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- ===== Email 輸入彈窗 (已移除) ===== -->
+    <!-- <div id="email-modal" class="hidden ..."> ... </div> -->
 
 
     <script>
@@ -162,7 +144,7 @@
         // 1. Google Apps Script 部署後的網址
         // ==========================================
         // !!! 請將 'YOUR_WEB_APP_URL_HERE' 換成你自己的 Google Apps Script 網址 !!!
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzyvwCQMStlaT4_Sw_a__59UcB2uTne35G6mYWQ4qH0qUy_tvcfbMZH2Hhbx6NWQf6ooQ/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyv4jKzd1FojlC57usFrOKWscRItAfHNeb-OiXXYjwYbTa2LBkpdNhXtaPb_Z4Uuu0pWg/exec';
         
         // ==========================================
         // 2. 你的測驗題目 (已根據新版 PDF 更新)
@@ -289,7 +271,7 @@
         const startScreen = document.getElementById('start-screen');
         const quizScreen = document.getElementById('quiz-screen');
         const resultScreen = document.getElementById('result-screen');
-        const emailModal = document.getElementById('email-modal');
+        // const emailModal = document.getElementById('email-modal'); // <-- 移除
         const progressBar = document.getElementById('progress-bar');
         const questionText = document.getElementById('question-text');
         const optionsContainer = document.getElementById('options-container');
@@ -402,29 +384,30 @@
                 currentQuestionIndex++;
                 loadQuestion();
             } else {
-                // 如果是最後一題，則顯示 Email 彈窗
-                showEmailModal();
+                // 如果是最後一題，直接處理測驗完成
+                handleTestCompletion();
             }
         }
 
-        // 顯示 Email 彈窗
-        function showEmailModal() {
-            quizScreen.classList.add('hidden');
-            emailModal.classList.remove('hidden');
-            // 清空 Email 輸入框
-            document.getElementById('email-input').value = "";
-        }
+        // (移除 showEmailModal 函數)
 
-        // 處理 Email 提交
-        async function handleEmailSubmit(event) {
-            event.preventDefault(); // 防止頁面刷新
-            const email = document.getElementById('email-input').value;
+        // ===== 修改點：移除 handleEmailSubmit，改為 handleTestCompletion =====
+        /**
+         * 處理測驗完成 (計算、提交、顯示結果)
+         */
+        async function handleTestCompletion() {
+            // 顯示讀取中... (例如，可以暫時禁用按鈕)
+            nextBtn.disabled = true;
+            nextBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 正在計算...`;
+
+            // 1. 取得或建立 Device ID
+            let deviceID = localStorage.getItem('petMBTI_DeviceID');
+            if (!deviceID) {
+                deviceID = crypto.randomUUID(); // 產生一組隨機 ID
+                localStorage.setItem('petMBTI_DeviceID', deviceID);
+            }
             
-            // 顯示讀取中...
-            document.getElementById('email-submit-btn').classList.add('hidden');
-            document.getElementById('loading-spinner').classList.remove('hidden');
-            
-            // 1. 重新計算分數 (因為使用者可能回頭修改答案)
+            // 2. 重新計算分數 (因為使用者可能回頭修改答案)
             scores = { E: 0, I: 0, N: 0, S: 0 };
             const actualAnswers = []; // 儲存最終答案的實際 value (E, I, N, S)
 
@@ -438,25 +421,25 @@
                 }
             });
 
-            // 2. 計算結果
+            // 3. 計算結果
             finalResult = calculateResult(); // "EN", "ES", "IN", "IS"
             
-            // 3. 提交到 Google Script
+            // 4. 提交到 Google Script
             try {
-                await submitToGoogleScript(email, finalResult, actualAnswers);
+                // *** 修改：傳入 deviceID 而不是 email ***
+                await submitToGoogleScript(deviceID, finalResult, actualAnswers);
             } catch (error) {
                 console.error("提交到 Google Script 失敗:", error);
                 // 即使提交失敗，我們仍然顯示結果給使用者
             }
             
-            // 4. 顯示結果
+            // 5. 顯示結果
+            quizScreen.classList.add('hidden'); // 隱藏測驗畫面
             showResultScreen(finalResult);
 
-            // 隱藏 Email 彈窗
-            emailModal.classList.add('hidden');
             // (重設按鈕狀態，以便下次使用)
-            document.getElementById('email-submit-btn').classList.remove('hidden');
-            document.getElementById('loading-spinner').classList.add('hidden');
+            nextBtn.disabled = false;
+            updateNavigationButtons(); // 恢復按鈕文字 (例如 "完成測驗")
         }
 
         // 計算 MBTI 結果 (E/I + N/S)
@@ -469,15 +452,16 @@
             return result;
         }
 
+        // ===== 修改點：提交 DeviceID 而不是 Email =====
         // 提交到 Google Apps Script
-        function submitToGoogleScript(email, result, answers) {
+        function submitToGoogleScript(deviceID, result, answers) {
             if (GAS_WEB_APP_URL === 'YOUR_WEB_APP_URL_HERE') {
                 console.warn("尚未設定 Google Apps Script 網址，略過提交。");
                 return Promise.resolve(); // 直接成功
             }
             
             const data = { 
-                email: email, 
+                deviceID: deviceID, // <-- 修改
                 result: result, // "EN", "ES", "IN", "IS"
                 petName: userPetName,
                 answers: answers // ["E", "N", ..., "S"] (10個答案)
@@ -566,4 +550,5 @@
     </script>
 </body>
 </html>
+
 
