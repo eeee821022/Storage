@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 載入 Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.css">
+    <!-- 載入 html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         /* [您的 CSS 樣式...] */
@@ -38,8 +40,6 @@
         input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
         .page-section { display: none; }
         .page-section.active { display: block; }
-        
-        /* [Loading 與 Success 動畫樣式...] */
         .loader { width: 80px; height: 80px; border: 8px solid #f3f3f3; border-top: 8px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .success-icon { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 5; stroke: white; stroke-miterlimit: 10; margin: 0 auto; box-shadow: inset 0px 0px 0px #4ade80; animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
@@ -50,69 +50,35 @@
         @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 80px #4ade80; } }
         .error-icon { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; background-color: #f87171; }
         .error-icon i { color: white; font-size: 40px; font-weight: bold; }
-
-        /* [5.4 預算分配滑桿樣式...] */
         .budget-slider::-webkit-slider-runnable-track { background: linear-gradient(to right, #ef4444, #f87171, #d1d5db, #d1d5db, #60a5fa, #3b82f6); }
         .budget-slider::-moz-range-track { background: linear-gradient(to right, #ef4444, #f87171, #d1d5db, #d1d5db, #60a5fa, #3b82f6); }
-        
-        /* *** 新增：受訪意願 Modal 樣式 *** */
-        .modal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-        }
-        .modal-content {
-            background-color: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        /* 標準文字輸入框 */
-        .text-input {
-            display: block;
-            width: 100%;
-            border: 2px solid #e2e8f0;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
-            color: #374151;
-            transition: all 0.2s ease-in-out;
-        }
-        .text-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
-
+        .modal-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal-content { background-color: white; border-radius: 1rem; padding: 2rem; width: 90%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .text-input { display: block; width: 100%; border: 2px solid #e2e8f0; border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 1rem; color: #374151; transition: all 0.2s ease-in-out; }
+        .text-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        #answer-summary { background-color: white; border: 1px solid #d1d5db; border-radius: 0.75rem; padding: 1rem; max-height: 240px; overflow-y: auto; text-align: left; line-height: 1.6; }
+        #answer-summary div { padding: 0.25rem 0; border-bottom: 1px dashed #e5e7eb; }
+        #answer-summary div:last-child { border-bottom: none; }
+        #answer-summary strong { color: #1f2937; }
+        #answer-summary span { color: #1d4ed8; font-weight: 500; }
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
 
     <div id="app" class="quiz-card relative">
         <!-- 應用程式內容將由 JavaScript 動態渲染 -->
-        <!-- Modal 將被插入到這裡 -->
     </div>
 
     <!-- 快速測試按鈕 (已註解) -->
-    <!--
+    
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
-    -->
-
+    
 
     <script>
         // --- 獲取或設定唯一識別碼 ---
-        function getOrSetUniqueID() {
+        function getOrSetUniqueID() { /* ... (來自 V8) ... */ 
             let id = localStorage.getItem('petSurveyUniqueID_v2');
             if (!id) {
                 id = 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
@@ -121,7 +87,7 @@
             return id;
         }
 
-        // --- *** 修改：應用程式狀態 *** ---
+        // --- 應用程式狀態 ---
         let state = {
             page: 'start', 
             currentStep: 0,
@@ -129,16 +95,16 @@
             submissionStatus: 'idle',
             startTime: null, 
             uniqueID: getOrSetUniqueID(),
-            showInterviewModal: false, // 新增
-            interviewConsent: null,    // 新增 (null, 'yes', 'no')
-            contactInfo: ''            // 新增
+            showInterviewModal: false,
+            interviewConsent: null,
+            contactInfo: ''
         };
 
-        // --- 問卷結構 (來自 V6) ---
+        // --- *** 修改：問卷結構 *** ---
         const TOTAL_STEPS = 6;
         const REQUIRED_QUESTIONS_BY_STEP = [
-            // ... (與 V6 相同) ...
-            ['1.1_寵物類型', '1.2_飼養数量', '1.4_居住型態'], // Step 1
+            // *** 修改：Step 1 移除 Pet1-5, 加入 Oldest/Youngest (稍後動態判斷) ***
+            ['1.1_寵物類型', '1.2_飼養数量', '1.4_居住型態', /* '1.3_Age_Oldest' 會動態加入 */], 
             ['2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題'], // Step 2
             ['3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴', '3.4_專心時間'], // Step 3
             ['4.1_食品保健花費', '4.2_玩具娛樂花費', '4.3_科技用品數量', '4.4_最高產品金額'], // Step 4
@@ -146,18 +112,70 @@
             ['6.1_性別', '6.2_年齡', '6.3_單身', '6.4_獨居', '6.5_子女', '6.6_寵物相關背景', '6.7_月收入'] // Step 6
         ];
 
-        // --- 轉換輔助函數 (來自 V6) ---
+        // --- *** 修改：問題文字對照表 (QUESTION_MAP) *** ---
+        const QUESTION_MAP = {
+            '1.1_寵物類型': '1.1 您的寵物類型是？',
+            '1.2_飼養数量': '1.2 您總共飼養了幾隻犬/貓？',
+            // *** 修改：移除 Pet1-5, 加入 Oldest/Youngest ***
+            '1.3_Age_Oldest': '1.3 最年長寵物年齡', 
+            '1.3_Age_Youngest': '1.3 最年幼寵物年齡',
+            '1.4_居住型態': '1.4 您的居住型態為？',
+            '2.1_視為家人': '2.1 我把寵物視為家庭的一份子...',
+            '2.2_情感慰藉': '2.2 當我感到壓力或難過時...',
+            '2.3_對寵說話': '2.3 我時常會對寵物說話...',
+            '2.4_擔心想念': '2.4 若需要短時間與寵物分開...',
+            '2.5_快樂來源': '2.5 寵物是我生活中快樂的來源...',
+            '2.6_像孩子': '2.6 寵物很大程度上扮演像孩子...',
+            '2.7_填補空缺': '2.7 寵物填補了家中空缺...',
+            '2.8_日常話題': '2.8 日常話題中常圍繞著寵物...',
+            '3.1_充滿活力': '3.1 寵物目前的日常是否充滿活力？',
+            '3.2_擔心獨處': '3.2 您是否擔心寵物長時間獨處？',
+            '3.3_願意陪伴': '3.3 您是否願意每天花時間陪伴寵物？',
+            '3.4_專心時間': '3.4 您每天花多久陪伴寵物？',
+            '4.1_食品保健花費': '4.1 每月花費 (食品保健)',
+            '4.2_玩具娛樂花費': '4.2 每年花費 (玩具娛樂)',
+            '4.3_科技用品數量': '4.3 曾經購買過的科技寵物用品數量？',
+            '4.4_最高產品金額': '4.4 曾購買的最高產品金額？',
+            '5.1_不好經驗': '5.1 購買昂貴用品時是否有過不好經驗？',
+            '5.2_願意添購': '5.2 無法陪伴時, 是否願意添購陪伴產品?',
+            '5.3_願意購買金額': '5.3 願意購買的金額為?',
+            '5.4_開心使用': '5.4 預算分配 (開心使用)',
+            '5.4_安全使用': '5.4 預算分配 (安全使用)',
+            '5.4_節省時間': '5.4 預算分配 (節省時間)',
+            '5.4_持久耐用': '5.4 預算分配 (持久耐用)',
+            '5.4_容易清潔': '5.4 預算分配 (容易清潔)',
+            '6.1_性別': '6.1 您的性別？',
+            '6.2_年齡': '6.2 您的年齡區間？',
+            '6.3_單身': '6.3 您是否單身?',
+            '6.4_獨居': '6.4 您是否獨居?',
+            '6.5_子女': '6.5 您是否有子女?',
+            '6.6_寵物相關背景': '6.6 您是否有寵物相關背景?',
+            '6.7_月收入': '6.7 您個人平均月收入？',
+            '7.1_願意受訪': '7.1 願意接受訪問嗎？',
+            '7.2_聯絡資訊': '7.2 聯絡資訊'
+        };
+
+
+        // --- 轉換輔助函數 ---
         const LIKERT_MAP = ['非常不同意', '不同意', '普通', '同意', '非常同意'];
         const likertValueToText = (v) => LIKERT_MAP[parseInt(v, 10)] || '普通';
         const AGE_RANGE_MAP = ['0-1歲', '1-3歲', '3-6歲', '6-9歲', '10歲以上'];
         const ageValueToText = (v) => AGE_RANGE_MAP[parseInt(v, 10)] || '0-1歲';
-        const budgetSliderValueToText = (v) => {
+        const budgetSliderValueToText = (v) => { /* ... (來自 V8) ... */ 
             const value = parseInt(v, 10) * 500;
             if (value === 0) return 'NT$ 0';
             return value > 0 ? `NT$ +${value.toLocaleString()}` : `NT$ -${Math.abs(value).toLocaleString()}`;
         };
+        // *** 新增：1.2 拉桿的文字轉換 ***
+        const petCountValueToText = (v) => {
+            const index = parseInt(v, 10);
+            if (index === 0) return '1 隻';
+            if (index === 1) return '2 隻';
+            if (index === 2) return '2+ 隻';
+            return '1 隻'; // 預設
+        };
 
-        // --- 動態函數產生器 (來自 V6) ---
+        // --- 動態函數產生器 ---
         const createDynamicFunction = (fnStr) => {
             return new Function('v', `
                 const LIKERT_MAP = ['非常不同意', '不同意', '普通', '同意', '非常同意'];
@@ -167,6 +185,14 @@
                     if (value === 0) return 'NT$ 0';
                     return value > 0 ? \`NT$ +\${value.toLocaleString()}\` : \`NT$ -\${Math.abs(value).toLocaleString()}\`;
                 };
+                // *** 新增 petCountValueToText ***
+                const petCountValueToText = (v) => {
+                    const index = parseInt(v, 10);
+                    if (index === 0) return '1 隻';
+                    if (index === 1) return '2 隻';
+                    if (index === 2) return '2+ 隻';
+                    return '1 隻';
+                };
                 const likertValueToText = (v) => LIKERT_MAP[parseInt(v, 10)] || '普通';
                 const ageValueToText = (v) => AGE_RANGE_MAP[parseInt(v, 10)] || '0-1歲';
                 const fn = ${fnStr};
@@ -175,11 +201,10 @@
         };
 
 
-        // --- *** 修改：渲染主要應用程式 *** ---
-        function render() {
+        // --- 渲染主要應用程式 ---
+        function render() { /* ... (來自 V8) ... */ 
             const app = document.getElementById('app');
             app.innerHTML = ''; 
-
             switch (state.page) {
                 case 'start':
                     app.innerHTML = renderStartPage();
@@ -188,7 +213,6 @@
                 case 'survey':
                     app.innerHTML = renderSurveyPage();
                     attachSurveyListeners();
-                    // *** 新增：如果需要，渲染並綁定 Modal ***
                     if (state.showInterviewModal) {
                         app.innerHTML += renderInterviewModal();
                         attachModalListeners();
@@ -205,8 +229,7 @@
         }
 
         // --- 頁面渲染函數 (start, end, survey) ---
-        function renderStartPage() {
-            // (來自 V6)
+        function renderStartPage() { /* ... (來自 V8) ... */ 
             return `
                 <div class="p-8 md:p-12 text-center space-y-6">
                     <i class="fas fa-paw text-6xl text-blue-500"></i>
@@ -222,52 +245,53 @@
                 </div>
             `;
         }
-        function renderEndPage() {
-            // (來自 V7)
+        function renderEndPage() { /* ... (來自 V8) ... */ 
             if (state.submissionStatus === 'submitting') {
                 return `
                 <div class="p-8 md:p-12 text-center space-y-6">
                     <div class="loader"></div>
-                    <h1 class="text-3xl font-bold text-gray-800">
-                        問卷提交中...
-                    </h1>
-                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                        請稍候，正在為您傳送資料。
-                    </p>
+                    <h1 class="text-3xl font-bold text-gray-800">問卷提交中...</h1>
+                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">請稍候，正在為您傳送資料。</p>
                 </div>
             `;
             } else if (state.submissionStatus === 'success') {
+                let downloadSection = '';
+                if (state.interviewConsent === 'Yes') {
+                    downloadSection = `
+                        <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-4">問卷答案摘要</h3>
+                            <p class="text-gray-600 mb-4">您可以下載本次的填答摘要作為備份。</p>
+                            <div id="answer-summary" class="mb-4"></div>
+                            <button id="downloadPngButton" class="btn btn-secondary w-full">
+                                <i class="fas fa-download h-4 w-4 mr-2"></i> 下載答案摘要 (PNG)
+                            </button>
+                        </div>
+                    `;
+                }
                 return `
                 <div class="p-8 md:p-12 text-center space-y-6">
-                    <div classka="success-icon">
+                    <div>
                         <svg class="success-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
                             <circle class="success-icon__circle" cx="26" cy="26" r="25" fill="none"/>
                             <path class="success-icon__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
                         </svg>
                     </div>
-                    <h1 class="text-3xl font-bold text-gray-800">
-                        提交成功！
-                    </h1>
+                    <h1 class="text-3xl font-bold text-gray-800">提交成功！</h1>
                     <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                        問卷到此全部結束。再次誠摯地感謝您撥出寶貴的時間提供您的意見！
+                        ${state.interviewConsent === 'Yes' ? '再次感謝您願意提供聯絡資訊！' : '問卷到此全部結束。再次誠摯地感謝您撥出寶貴的時間提供您的意見！'}
                     </p>
                     <button id="restartButton" class="btn btn-secondary">
                         <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
                     </button>
+                    ${downloadSection}
                 </div>
             `;
             } else {
                 return `
                 <div class="p-8 md:p-12 text-center space-y-6">
-                    <div class="error-icon">
-                         <i class="fas fa-times"></i>
-                    </div>
-                    <h1 class="text-3xl font-bold text-gray-800">
-                        提交失敗
-                    </h1>
-                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                        抱歉，提交過程中發生錯誤。請檢查您的網路連線或稍後再試。
-                    </p>
+                    <div class="error-icon"><i class="fas fa-times"></i></div>
+                    <h1 class="text-3xl font-bold text-gray-800">提交失敗</h1>
+                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">抱歉，提交過程中發生錯誤。請檢查您的網路連線或稍後再試。</p>
                     <p class="text-sm text-gray-500">錯誤訊息: ${state.answers.errorMessage || '未知錯誤'}</p>
                     <button id="restartButton" class="btn btn-secondary">
                         <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
@@ -276,15 +300,12 @@
             `;
             }
         }
-        function renderSurveyPage() {
-            // (來自 V6)
+        function renderSurveyPage() { /* ... (來自 V8) ... */ 
             const progress = ((state.currentStep + 1) / TOTAL_STEPS) * 100;
             return `
                 <div class="p-4 bg-gray-50 border-b border-gray-200">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-semibold text-blue-600">
-                            第 ${state.currentStep + 1} / ${TOTAL_STEPS} 部分
-                        </span>
+                        <span class="text-sm font-semibold text-blue-600">第 ${state.currentStep + 1} / ${TOTAL_STEPS} 部分</span>
                         <span class="text-sm font-medium text-gray-600">${Math.round(progress)}%</span>
                     </div>
                     <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -304,28 +325,16 @@
                 </div>
             `;
         }
-
-        // --- *** 新增：渲染受訪意願 Modal *** ---
-        function renderInterviewModal() {
+        function renderInterviewModal() { /* ... (來自 V8) ... */ 
             return `
                 <div id="interview-modal" class="modal-overlay">
                     <div class="modal-content space-y-6">
                         <h2 class="text-2xl font-bold text-gray-800 text-center">感謝您的填寫！</h2>
-                        <p class="text-lg text-gray-600 text-center">
-                            我們誠摯邀請您參與後續的訪談，<br>請問您是否願意接受訪問嗎？
-                        </p>
-                        
-                        <!-- 步驟 1: Yes / No 按鈕 -->
+                        <p class="text-lg text-gray-600 text-center">我們誠摯邀請您參與後續的訪談，<br>請問您是否願意接受訪問嗎？</p>
                         <div id="interview-step-1" class="flex justify-around gap-4">
-                            <button id="interview-no" class="btn btn-secondary w-full">
-                                <i class="fas fa-times h-4 w-4 mr-2"></i> 不用了，謝謝
-                            </button>
-                            <button id="interview-yes" class="btn btn-primary w-full">
-                                <i class="fas fa-check h-4 w-4 mr-2"></i> 願意
-                            </button>
+                            <button id="interview-no" class="btn btn-secondary w-full"><i class="fas fa-times h-4 w-4 mr-2"></i> 不用了，謝謝</button>
+                            <button id="interview-yes" class="btn btn-primary w-full"><i class="fas fa-check h-4 w-4 mr-2"></i> 願意</button>
                         </div>
-
-                        <!-- 步驟 2: 聯絡資訊 (預設隱藏) -->
                         <div id="interview-step-2" class="hidden space-y-4">
                             <p class="text-gray-600">太好了！請留下您的聯絡資訊 (手機號碼或 LINE ID) 以及方便我們稱呼您的簡稱。</p>
                             <div>
@@ -333,19 +342,16 @@
                                 <input type="text" id="contact-input" class="text-input mt-1" placeholder="例如：0912-345-678 王先生">
                                 <p id="contact-error" class="text-red-500 text-sm mt-1 hidden">請勿空白</p>
                             </div>
-                            <button id="interview-submit-contact" class="btn btn-primary w-full">
-                                送出聯絡資訊並提交問卷
-                            </button>
+                            <button id="interview-submit-contact" class="btn btn-primary w-full">送出聯絡資訊並提交問卷</button>
                         </div>
                     </div>
                 </div>
             `;
         }
         
-        // --- 渲染問卷步驟內容 (來自 V6) ---
-        function renderStepContent(step) {
-            // ... (與 V6 相同) ...
-            switch (step) {
+        // --- 渲染問卷步驟內容 ---
+        function renderStepContent(step) { /* ... (來自 V8) ... */ 
+             switch (step) {
                 case 0: return renderStep1();
                 case 1: return renderStep2();
                 case 2: return renderStep3();
@@ -356,9 +362,8 @@
             }
         }
         
-        // --- 輔助函數 (來自 V6) ---
-        function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
-            // ... (與 V6 相同) ...
+        // --- 輔助函數 ---
+        function createSlider(id, label, min, max, step, valueTextFn, defaultValue) { /* ... (來自 V8) ... */ 
             const currentValue = state.answers[id] || defaultValue || min;
             return `
                 <div class="space-y-2 py-2"> 
@@ -371,8 +376,7 @@
                 </div>
             `;
         }
-        function createRadioGroup(id, label, options, gridClass = 'grid-cols-1 sm:grid-cols-2') {
-            // ... (與 V6 相同) ...
+        function createRadioGroup(id, label, options, gridClass = 'grid-cols-1 sm:grid-cols-2') { /* ... (來自 V8) ... */ 
             return `
                 <div class="space-y-3">
                     <label class="font-medium text-gray-700 text-lg">${label}</label>
@@ -387,8 +391,7 @@
                 </div>
             `;
         }
-        function createYesNoBlock(id, label, yesText = '是', noText = '否', yesIcon = 'fa-check', noIcon = 'fa-times') {
-             // ... (與 V6 相同) ...
+        function createYesNoBlock(id, label, yesText = '是', noText = '否', yesIcon = 'fa-check', noIcon = 'fa-times') { /* ... (來自 V8) ... */ 
              return `
                 <div class="space-y-3">
                     <label class="font-medium text-gray-700 text-lg">${label}</label>
@@ -407,8 +410,7 @@
                 </div>
             `;
         }
-        function createLikertSlider(id, label) {
-            // ... (與 V6 相同) ...
+        function createLikertSlider(id, label) { /* ... (來自 V8) ... */ 
             const currentValue = state.answers[id] !== undefined ? state.answers[id] : 2;
             const currentText = likertValueToText(currentValue);
             const valueTextFnString = likertValueToText.toString();
@@ -423,8 +425,7 @@
                 </div>
             `;
         }
-        function createBudgetSlider(id, label) {
-            // ... (與 V6 相同) ...
+        function createBudgetSlider(id, label) { /* ... (來自 V8) ... */ 
             const currentValue = state.answers[id] !== undefined ? state.answers[id] : 0;
             const currentText = budgetSliderValueToText(currentValue);
             const valueTextFnString = budgetSliderValueToText.toString();
@@ -441,7 +442,9 @@
             `;
         }
 
-        // --- 步驟 1-6 的渲染函數 (來自 V6, 未變更) ---
+        // --- 步驟 1-6 的渲染函數 ---
+        
+        // --- *** 修改：renderStep1 *** ---
         function renderStep1() {
              return `
                 <div class="page-section active space-y-6">
@@ -461,22 +464,29 @@
                             </label>
                         </div>
                     </div>
-                    ${createSlider('1.2_飼養数量', '1.2 您總共飼養了幾隻犬/貓？', 1, 5, 1, 
-                        (v) => v >= 5 ? '5+ 隻' : `${v} 隻`,
-                        1
+                    
+                    <!-- *** 修改：1.2 拉桿範圍和文字 *** -->
+                    ${createSlider('1.2_飼養数量', '1.2 您總共飼養了幾隻犬/貓？', 0, 2, 1, 
+                        petCountValueToText, // 使用新的文字轉換函數
+                        0 // 預設值為 0 (代表 1 隻)
                     )}
+
+                    <!-- *** 修改：1.3 的容器 *** -->
                     <div class="space-y-4">
                         <label class="font-medium text-gray-700 text-lg">1.3 您的寵物目前分別年齡為幾歲？</label>
-                        <p class="text-sm text-gray-500">請為您在 1.2 中選擇的每隻寵物設定年齡。</p>
-                        <div id="pet-age-inputs" class="space-y-6"></div>
+                        <p class="text-sm text-gray-500">請為您家中最年長 (和最年幼) 的寵物設定年齡區間。</p>
+                        <div id="dynamic-age-sliders" class="space-y-6">
+                            <!-- 年齡拉桿將由 JavaScript 動態插入 -->
+                        </div>
                     </div>
+
                     ${createRadioGroup('1.4_居住型態', '1.4 您的居住型態為？', 
                         ['單間(3-10坪)', '多間(含客廳)', '透天(獨棟)', '別墅(有庭院)']
                     )}
                 </div>
             `;
         }
-        function renderStep2() {
+        function renderStep2() { /* ... (來自 V8) ... */ 
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第二部分：您與寵物的關係</h2>
@@ -494,7 +504,7 @@
                 </div>
             `;
         }
-        function renderStep3() {
+        function renderStep3() { /* ... (來自 V8) ... */ 
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第三部分：寵物日常照護與陪伴</h2>
@@ -515,7 +525,7 @@
                 </div>
             `;
         }
-        function renderStep4() {
+        function renderStep4() { /* ... (來自 V8) ... */ 
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第四部分：寵物生活品質投入</h2>
@@ -550,7 +560,7 @@
                 </div>
             `;
         }
-        function renderStep5() { 
+        function renderStep5() { /* ... (來自 V8) ... */ 
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第五部分：消費考量</h2>
@@ -593,7 +603,7 @@
                 </div>
             `;
         }
-        function renderStep6() { 
+        function renderStep6() { /* ... (來自 V8) ... */ 
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第六部分：個人基本資訊</h2>
@@ -626,40 +636,59 @@
             `;
         }
         
-        // --- 渲染寵物年齡拉桿 (來自 V6, 未變更) ---
-        function renderPetAgeInputs(petCount) {
-            // ... (與 V6 相同) ...
-            const container = document.getElementById('pet-age-inputs');
+        // --- *** 新增：渲染動態年齡拉桿 *** ---
+        function renderDynamicAgeSliders(petCountValue) {
+            const container = document.getElementById('dynamic-age-sliders');
             if (!container) return;
-            petCount = parseInt(petCount, 10);
-            if (petCount > 5) petCount = 5;
+            
+            const countIndex = parseInt(petCountValue, 10); // 0: '1', 1: '2', 2: '2+'
             let html = '';
-            for (let i = 1; i <= petCount; i++) {
-                const id = `1.3_Age_Pet${i}`;
-                const label = `寵物 ${i} 年齡`;
-                html += createSlider(id, label, 0, 4, 1, ageValueToText, 0);
+
+            if (countIndex === 0) { // 只有 1 隻
+                const id = '1.3_Age_Oldest';
+                const label = '寵物最大 現況'; // 您的要求
+                html = createSlider(id, label, 0, 4, 1, ageValueToText, 0); 
+            } else { // 2 隻或 2+ 隻
+                const idOldest = '1.3_Age_Oldest';
+                const labelOldest = '寵物最大';
+                const idYoungest = '1.3_Age_Youngest';
+                const labelYoungest = '寵物最小';
+                html = createSlider(idOldest, labelOldest, 0, 4, 1, ageValueToText, 0);
+                html += createSlider(idYoungest, labelYoungest, 0, 4, 1, ageValueToText, 0);
             }
+            
             container.innerHTML = html;
             
+            // 為新產生的拉桿加上事件監聽和初始值
             container.querySelectorAll('input[type="range"]').forEach(slider => {
+                const id = slider.dataset.id;
+                // 設定初始值 (如果 state 中有值)
+                if (state.answers[id]) {
+                     slider.value = state.answers[id];
+                } else {
+                     slider.value = 0; // 預設值
+                     state.answers[id] = '0'; // 將預設值存入 state
+                }
+                
+                // 綁定 input 事件
                 slider.oninput = (e) => {
-                    const id = e.target.dataset.id;
+                    const currentId = e.target.dataset.id;
                     const value = e.target.value;
-                    state.answers[id] = value;
-                    const valueEl = document.getElementById(`slider-value-${id}`);
+                    state.answers[currentId] = value;
+                    const valueEl = document.getElementById(`slider-value-${currentId}`);
                     if (valueEl) {
                         const valueTextFnStr = decodeURIComponent(e.target.dataset.valuetextfn);
                         const valueTextFn = createDynamicFunction(valueTextFnStr);
                         valueEl.textContent = valueTextFn(value);
                     }
                 };
+                // 觸發一次 input 事件以更新顯示文字
                 slider.dispatchEvent(new Event('input', { bubbles: true }));
             });
         }
 
-        // --- 更新 5.4 預算總和 (來自 V6, 未變更) ---
-        function updateBudgetTotal() {
-            // ... (與 V6 相同) ...
+        // --- 更新 5.4 預算總和 (來自 V8) ---
+        function updateBudgetTotal() { /* ... (來自 V8) ... */ 
             const budgetIds = [
                 '5.4_開心使用', '5.4_安全使用', '5.4_節省時間', '5.4_持久耐用', '5.4_容易清潔'
             ];
@@ -667,48 +696,142 @@
             budgetIds.forEach(id => {
                 sum += parseInt(state.answers[id] || 0, 10);
             });
-            
             const totalValue = 10000 + (sum * 500);
             const displayEl = document.getElementById('budget-total-display');
             if (!displayEl) return;
-
             displayEl.textContent = `NT$ ${totalValue.toLocaleString()}`;
-            
             displayEl.classList.remove('text-blue-600', 'text-red-500', 'text-yellow-600');
-            
             if (totalValue < 10000) {
-                displayEl.classList.add('text-red-500'); // 負數
+                displayEl.classList.add('text-red-500');
             } else if (totalValue > 10000) {
-                displayEl.classList.add('text-yellow-600'); // 正數
+                displayEl.classList.add('text-yellow-600');
             } else {
-                displayEl.classList.add('text-blue-600'); // 剛好
+                displayEl.classList.add('text-blue-600');
+            }
+        }
+
+        // --- 渲染答案摘要 (來自 V8) ---
+        function renderAnswerSummary() { /* ... (來自 V8) ... */ 
+            const container = document.getElementById('answer-summary');
+            if (!container) return;
+            let html = '<div class="space-y-1 text-sm">';
+            for (const [id, question] of Object.entries(QUESTION_MAP)) {
+                let answer = state.answers[id];
+                if (answer === undefined || answer === null || answer === '') {
+                     if (id === '1.3_Age_Youngest' && (state.answers['1.2_飼養数量'] || '0') === '0') continue; // 如果只有一隻，跳過 youngest
+                     if (id === '7.2_聯絡資訊' && state.interviewConsent !== 'Yes') continue; 
+                }
+                try {
+                    if (id === '1.2_飼養数量') {
+                        answer = petCountValueToText(answer);
+                    } else if (id === '1.3_Age_Oldest' || id === '1.3_Age_Youngest') {
+                        answer = ageValueToText(answer);
+                    } else if (id.startsWith('2.') || ['3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴'].includes(id)) {
+                        answer = likertValueToText(answer);
+                    } else if (id === '3.4_專心時間') {
+                        answer = (answer == 10) ? '5+ 小時' : `${answer * 0.5} 小時`;
+                    } else if (id === '4.1_食品保健花費') {
+                        answer = (answer == 0) ? '$0' : (answer >= 10 ? '$5,000+' : `$${answer * 500}`);
+                    } else if (id === '4.2_玩具娛樂花費') {
+                        answer = (answer == 0) ? '$0' : (answer >= 30 ? '$30,000+' : `$${answer * 1000}`);
+                    } else if (id === '4.3_科技用品數量') {
+                        answer = (answer >= 5) ? '5+ 種' : `${answer} 種`;
+                    } else if (id === '4.4_最高產品金額' || id === '5.3_願意購買金額') {
+                        answer = (answer == 0) ? '$0' : (answer >= 30 ? '$30,000+' : `$${answer * 1000}`);
+                    } else if (id.startsWith('5.4_')) {
+                        answer = budgetSliderValueToText(answer);
+                    } else if (id === '7.1_願意受訪') {
+                        answer = state.interviewConsent; 
+                    } else if (id === '7.2_聯絡資訊') {
+                        answer = state.contactInfo; 
+                    }
+                } catch (e) {
+                    console.warn(`轉換答案時出錯 (ID: ${id}):`, e);
+                    answer = state.answers[id] || 'N/A';
+                }
+                html += `<div><strong>${question}:</strong> <span>${answer}</span></div>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // --- 處理 PNG 下載 (來自 V8) ---
+        // --- *** 修正：handleDownloadPng *** ---
+        async function handleDownloadPng() { 
+            const button = document.getElementById('downloadPngButton');
+            const summaryElement = document.getElementById('answer-summary');
+            if (!summaryElement || !button) return;
+
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin h-4 w-4 mr-2"></i> 圖片產生中...';
+
+            // --- 修正開始 ---
+            // 1. 儲存原始樣式
+            const originalMaxHeight = summaryElement.style.maxHeight;
+            const originalOverflowY = summaryElement.style.overflowY;
+
+            // 2. 暫時移除樣式限制，讓所有內容可見
+            summaryElement.style.maxHeight = 'none';
+            summaryElement.style.overflowY = 'visible';
+            // --- 修正結束 ---
+
+            try {
+                // 3. 擷取現在完整展開的元素
+                const canvas = await html2canvas(summaryElement, { 
+                    scale: 2, 
+                    useCORS: true, 
+                    backgroundColor: '#ffffff' 
+                });
+                
+                const dataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = `pet-survey-summary-${state.uniqueID.substring(0, 8)}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (err) {
+                console.error("PNG 產生失敗:", err);
+                button.innerHTML = '<i class="fas fa-times h-4 w-4 mr-2"></i> 產生失敗，請重試';
+            } finally {
+                // --- 修正開始 ---
+                // 4. 無論成功或失敗，都恢復原始樣式
+                summaryElement.style.maxHeight = originalMaxHeight;
+                summaryElement.style.overflowY = originalOverflowY;
+                // --- 修正結束 ---
+
+                // 恢復按鈕狀態
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-download h-4 w-4 mr-2"></i> 下載答案摘要 (PNG)';
             }
         }
 
 
         // --- 事件監聽器 ---
-        function attachStartListeners() {
-            // (來自 V6)
-            document.getElementById('startButton').onclick = () => {
-                setState({ 
-                    page: 'survey',
-                    startTime: Date.now()
-                });
+        function attachStartListeners() { /* ... (來自 V8) ... */ 
+             document.getElementById('startButton').onclick = () => {
+                setState({ page: 'survey', startTime: Date.now() });
             };
         }
-        function attachEndListeners() {
-            // (來自 V6)
+        function attachEndListeners() { /* ... (來自 V8) ... */ 
             document.getElementById('restartButton').onclick = () => {
                 state = {
                     page: 'start', currentStep: 0, answers: {},
                     submissionStatus: 'idle', startTime: null, uniqueID: state.uniqueID,
-                    showInterviewModal: false, interviewConsent: null, contactInfo: '' // 重置 modal 狀態
+                    showInterviewModal: false, interviewConsent: null, contactInfo: ''
                 };
                 render();
             };
+            const downloadButton = document.getElementById('downloadPngButton');
+            if (downloadButton) {
+                renderAnswerSummary();
+                downloadButton.onclick = handleDownloadPng;
+            }
         }
+        
+        // --- *** 修改：attachSurveyListeners *** ---
         function attachSurveyListeners() {
-            // (來自 V6)
             document.getElementById('prevButton').onclick = () => {
                 if (state.currentStep > 0) {
                     setState({ currentStep: state.currentStep - 1 });
@@ -716,7 +839,6 @@
             };
             document.getElementById('nextButton').onclick = handleNextOrSubmit;
             
-            // (以下來自 V6, 未變更)
             document.querySelectorAll('input[type="radio"]').forEach(input => {
                 input.onchange = (e) => {
                     const id = e.target.dataset.id || e.target.name;
@@ -724,26 +846,34 @@
                     updateRadioSelection(id);
                 };
             });
+            
             document.querySelectorAll('input[type="range"]').forEach(slider => {
-                if (slider.id.startsWith('1.3_Age_Pet')) return;
+                // *** 修改：動態年齡拉桿的監聽在 renderDynamicAgeSliders 中綁定 ***
+                if (slider.id.startsWith('1.3_Age_')) return; 
+
                 slider.oninput = (e) => {
                     const id = e.target.dataset.id;
                     const value = e.target.value;
                     state.answers[id] = value;
+                    
                     const valueEl = document.getElementById(`slider-value-${id}`);
                     if (valueEl) {
                         const valueTextFnStr = decodeURIComponent(e.target.dataset.valuetextfn);
                         const valueTextFn = createDynamicFunction(valueTextFnStr);
                         valueEl.textContent = valueTextFn(value);
                     }
+                    
+                    // *** 修改：當 1.2 變動時，呼叫 renderDynamicAgeSliders ***
                     if (id === '1.2_飼養数量') {
-                        renderPetAgeInputs(value);
+                        renderDynamicAgeSliders(value);
                     }
+                    
                     if (e.target.dataset.type === 'budget-slider') {
                         updateBudgetTotal();
                     }
                 };
             });
+            
             document.querySelectorAll('.pet-choice').forEach(label => {
                 label.onclick = () => {
                     const input = label.querySelector('input[type="radio"]');
@@ -753,29 +883,23 @@
             });
         }
         
-        // --- *** 新增：Modal 事件監聽器 *** ---
-        function attachModalListeners() {
+        function attachModalListeners() { /* ... (來自 V8) ... */ 
             document.getElementById('interview-no').onclick = () => {
                 state.interviewConsent = 'No';
-                setState({ showInterviewModal: false }); // 關閉 modal
-                handleFinalSubmit(); // 直接提交
+                setState({ showInterviewModal: false });
+                handleFinalSubmit();
             };
-            
             document.getElementById('interview-yes').onclick = () => {
                 state.interviewConsent = 'Yes';
-                // 顯示步驟 2，隱藏步驟 1
                 document.getElementById('interview-step-1').classList.add('hidden');
                 document.getElementById('interview-step-2').classList.remove('hidden');
             };
-            
             document.getElementById('interview-submit-contact').onclick = () => {
                 const input = document.getElementById('contact-input');
                 const errorEl = document.getElementById('contact-error');
                 if (input.value.trim() === '') {
-                    // 顯示錯誤
                     errorEl.classList.remove('hidden');
                 } else {
-                    // 隱藏錯誤，儲存資料，關閉 modal 並提交
                     errorEl.classList.add('hidden');
                     state.contactInfo = input.value.trim();
                     setState({ showInterviewModal: false });
@@ -784,35 +908,46 @@
             };
         }
 
-        // --- 狀態更新與驗證 (來自 V6, 未變更) ---
-        function setState(newState) {
+        // --- 狀態更新與驗證 ---
+        function setState(newState) { /* ... (來自 V8) ... */ 
             saveCurrentStepAnswers();
             state = { ...state, ...newState };
             render();
         }
+        
+        // --- *** 修改：updateDOMState *** ---
         function updateDOMState() {
-            // (來自 V6, 未變更)
+            // 更新 text, number inputs (維持不變)
             document.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
                 const id = input.dataset.id;
                 if (state.answers[id]) input.value = state.answers[id];
             });
+            
+            // 更新 range sliders (排除動態年齡拉桿)
             document.querySelectorAll('input[type="range"]').forEach(slider => {
                 const id = slider.dataset.id;
-                if (id.startsWith('1.3_Age_Pet')) return; 
+                if (id.startsWith('1.3_Age_')) return; // 動態年齡拉桿由 renderDynamicAgeSliders 處理初始值
+
                 const defaultValue = slider.closest('[data-default-value]') ? slider.closest('[data-default-value]').dataset.defaultValue : undefined;
+                
                 if (id.startsWith('2.') || id.startsWith('3.')) {
                     slider.value = state.answers[id] !== undefined ? state.answers[id] : 2;
                 } else if (id.startsWith('5.4_')) {
                     slider.value = state.answers[id] !== undefined ? state.answers[id] : 0;
-                } else {
+                } else if (id === '1.2_飼養数量') { // 處理 1.2 的初始值
+                     slider.value = state.answers[id] !== undefined ? state.answers[id] : 0; // 預設 0 (1隻)
+                } else { // 其他 (如 4.x, 5.3)
                     if (state.answers[id]) {
                         slider.value = state.answers[id];
                     } else if (defaultValue) {
                         slider.value = defaultValue;
                     }
                 }
+                
                 slider.dispatchEvent(new Event('input', { bubbles: true }));
             });
+            
+            // 更新 radio buttons (維持不變)
             const radioIds = new Set(Object.keys(state.answers).filter(k => 
                 document.querySelector(`input[type="radio"][data-id="${k}"]`) ||
                 document.querySelector(`input[type="radio"][name="${k}"]`)
@@ -827,24 +962,19 @@
                     }
                 }
             });
+
+            // *** 修改：在 Step 1 呼叫 renderDynamicAgeSliders 來處理初始狀態 ***
             if (state.currentStep === 0) {
-                const petCount = state.answers['1.2_飼養数量'] || 1;
-                renderPetAgeInputs(petCount); 
-                for (let i = 1; i <= petCount; i++) {
-                    const id = `1.3_Age_Pet${i}`;
-                    const slider = document.getElementById(id);
-                    if (slider && state.answers[id]) {
-                        slider.value = state.answers[id];
-                        slider.dispatchEvent(new Event('input', { bubbles: true })); 
-                    }
-                }
+                const petCountValue = state.answers['1.2_飼養数量'] || 0; // 取得 1.2 的值
+                renderDynamicAgeSliders(petCountValue); // 根據 1.2 的值渲染年齡拉桿並設定初始值
             }
+
+            // 更新預算總和 (維持不變)
             if (state.currentStep === 4) {
                 updateBudgetTotal();
             }
         }
-        function updateRadioSelection(id) {
-            // (來自 V6, 未變更)
+        function updateRadioSelection(id) { /* ... (來自 V8) ... */ 
             const group = document.querySelector(`[data-radio-group="${id}"]`);
             if (group) {
                 group.querySelectorAll('.radio-option, .pet-choice').forEach(label => {
@@ -857,47 +987,52 @@
                 });
             }
         }
-        function saveCurrentStepAnswers() {
-            // (來自 V6, 未變更)
+        function saveCurrentStepAnswers() { /* ... (來自 V8) ... */ 
             const stepContainer = document.querySelector('.page-section.active');
             if (!stepContainer) return;
             stepContainer.querySelectorAll('input[type="text"], input[type="number"], input[type="range"]').forEach(input => {
-                state.answers[input.dataset.id] = input.value;
+                // *** 修改：確保 ID 存在才儲存 ***
+                if (input.dataset.id) {
+                     state.answers[input.dataset.id] = input.value;
+                }
             });
             stepContainer.querySelectorAll('input[type="radio"]:checked').forEach(input => {
                 const id = input.dataset.id || input.name;
                 state.answers[id] = input.value;
             });
         }
+        
+        // --- *** 修改：isStepValid *** ---
         function isStepValid(stepIndex) {
-            // (來自 V6, 未變更)
-            const requiredIds = REQUIRED_QUESTIONS_BY_STEP[stepIndex];
+            const requiredIds = [...REQUIRED_QUESTIONS_BY_STEP[stepIndex]]; // 複製一份，避免修改原陣列
+
+            // *** 修改：動態加入 Step 1 的年齡驗證 ***
+            if (stepIndex === 0) {
+                const petCountValue = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
+                requiredIds.push('1.3_Age_Oldest'); // 最年長是必填
+                if (petCountValue > 0) { // 如果是 2 或 2+
+                    requiredIds.push('1.3_Age_Youngest'); // 最年幼也是必填
+                }
+            }
+
             let isValid = true;
             for (const id of requiredIds) {
                 const answer = state.answers[id];
                 if (answer === undefined || answer === null || answer === '') {
-                    if ((id.startsWith('5.4_') || id === '5.3_願意購買金額') && answer === '0') {
-                       // 0 is valid
+                    // 檢查是否為允許空白的特殊情況 (如金額為 0)
+                    if ((id.startsWith('5.4_') || id === '5.3_願意購買金額' || id.startsWith('1.3_Age_')) && answer === '0') {
+                       // 0 is valid for these
                     } else {
-                        console.warn(`Validation failed for step ${stepIndex + 1}: ${id}`);
+                        console.warn(`Validation failed for step ${stepIndex + 1}: ${id} is missing or empty.`);
                         isValid = false;
-                    }
-                }
-            }
-            if (stepIndex === 0) {
-                const petCount = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
-                for (let i = 1; i <= petCount; i++) {
-                    const ageId = `1.3_Age_Pet${i}`;
-                    if (state.answers[ageId] === undefined || state.answers[ageId] === null) { 
-                        console.warn(`Validation failed for step 1: ${ageId}`);
-                        isValid = false;
+                        // break; // 可以取消註解，提早結束檢查
                     }
                 }
             }
             return isValid;
         }
-        function validateAllAnswers() {
-            // (來自 V6, 未變更)
+
+        function validateAllAnswers() { /* ... (來自 V8) ... */ 
             for (let i = 0; i < TOTAL_STEPS; i++) {
                 if (!isStepValid(i)) {
                     return { valid: false, firstInvalidStep: i };
@@ -905,20 +1040,15 @@
             }
             return { valid: true };
         }
-
-        // --- *** 修改：handleNextOrSubmit *** ---
-        function handleNextOrSubmit() {
+        function handleNextOrSubmit() { /* ... (來自 V8) ... */ 
             saveCurrentStepAnswers();
             if (state.currentStep < TOTAL_STEPS - 1) {
-                // 還沒到最後一步，正常換頁
                 setState({ currentStep: state.currentStep + 1 });
                 const card = document.querySelector('.quiz-card');
                 if (card) card.scrollTop = 0;
             } else {
-                // 已在最後一步，驗證
                 const validationResult = validateAllAnswers();
                 if (validationResult.valid) {
-                    // *** 修改：不再直接提交，而是顯示 Modal ***
                     setState({ showInterviewModal: true });
                 } else {
                     showToast(`您在第 ${validationResult.firstInvalidStep + 1} 部分有未填寫的題目喔！`, "error");
@@ -926,9 +1056,7 @@
                 }
             }
         }
-
-        function showToast(message, type = 'info') {
-            // (來自 V6, 未變更)
+        function showToast(message, type = 'info') { /* ... (來自 V8) ... */ 
             let toast = document.getElementById('toast-notification');
             if (toast) { toast.remove(); }
             toast = document.createElement('div');
@@ -944,17 +1072,23 @@
             }, 2500);
         }
 
-        // --- 快速填寫隨機答案 (來自 V6, 未變更) ---
+        // --- *** 修改：快速填寫隨機答案 *** ---
         function fillWithRandomAnswers() {
-            // ... (與 V6 相同) ...
             const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
             const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
             let newAnswers = {};
+
+            // Step 1
             newAnswers['1.1_寵物類型'] = randomChoice(['犬', '貓']);
-            const petCount = randomInt(1, 5);
-            newAnswers['1.2_飼養数量'] = petCount;
-            for (let i = 1; i <= petCount; i++) { newAnswers[`1.3_Age_Pet${i}`] = randomInt(0, 4); }
+            const petCountValue = randomInt(0, 2); // 0: '1', 1: '2', 2: '2+'
+            newAnswers['1.2_飼養数量'] = petCountValue;
+            newAnswers['1.3_Age_Oldest'] = randomInt(0, 4); // 最年長必填
+            if (petCountValue > 0) { // 如果是 2 或 2+
+                newAnswers['1.3_Age_Youngest'] = randomInt(0, newAnswers['1.3_Age_Oldest']); // 最年幼 <= 最年長
+            }
             newAnswers['1.4_居住型態'] = randomChoice(['單間(3-10坪)', '多間(含客廳)', '透天(獨棟)', '別墅(有庭院)']);
+            
+            // Step 2-6 (與 V8 相同)
             ['2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題'].forEach(id => newAnswers[id] = randomInt(0, 4));
             ['3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴'].forEach(id => newAnswers[id] = randomInt(0, 4));
             newAnswers['3.4_專心時間'] = randomInt(0, 10);
@@ -973,7 +1107,9 @@
             newAnswers['6.5_子女'] = randomChoice(['有', '無']);
             newAnswers['6.6_寵物相關背景'] = randomChoice(['是', '否']);
             newAnswers['6.7_月收入'] = randomChoice(['NT$ 30,000 以下', 'NT$ 30,001 - 50,000', 'NT$ 50,001 - 80,000', 'NT$ 80,001 以上']);
+            
             showToast("已填入隨機答案，請檢查最後一頁並提交！", "info");
+            
             setState({
                 answers: newAnswers,
                 currentStep: TOTAL_STEPS - 1
@@ -981,14 +1117,13 @@
         }
 
         // --- 您的 Google Apps Script 網址 ---
-        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlH8bjbDHlYx-c_KXMT5G6aDHSEe7qjmV958ycFjBbjQqvqTXw1g7rf0D6TbJi5s25sQ/exec'; 
+        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwxAfcjhB92PJTLv7bjSq_eVsal-GUfimA2jw3cM4ZR_PDM18GNaN7UGUQ3x70la_6ODw/exec'; 
 
         // --- *** 修改：最終提交邏輯 *** ---
         async function handleFinalSubmit() {
-            // (此函數現在由 Modal 內的按鈕觸發)
             if (state.submissionStatus === 'submitting') return;
             
-            // 預設值檢查 (來自 V6)
+            // 預設值檢查
             const likertIds = [
                 '2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題',
                 '3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴'
@@ -996,20 +1131,19 @@
             likertIds.forEach(id => {
                 if (state.answers[id] === undefined) state.answers[id] = '2'; 
             });
-            const petCount = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
-            for(let i=1; i<=5; i++) {
-                const id = `1.3_Age_Pet${i}`;
-                if (i <= petCount && state.answers[id] === undefined) { 
-                    state.answers[id] = '0';
-                }
+            // *** 修改：年齡預設值檢查 ***
+            if (state.answers['1.3_Age_Oldest'] === undefined) state.answers['1.3_Age_Oldest'] = '0';
+            const petCountValue = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
+            if (petCountValue > 0 && state.answers['1.3_Age_Youngest'] === undefined) {
+                 state.answers['1.3_Age_Youngest'] = '0';
             }
+
              if (state.answers['5.3_願意購買金額'] === undefined) state.answers['5.3_願意購買金額'] = '0';
             const budgetIds = ['5.4_開心使用', '5.4_安全使用', '5.4_節省時間', '5.4_持久耐用', '5.4_容易清潔'];
             budgetIds.forEach(id => {
                 if (state.answers[id] === undefined) state.answers[id] = '0'; 
             });
 
-            // 顯示 Loading 頁面
             setState({ page: "end", submissionStatus: 'submitting' });
 
             const durationSeconds = state.startTime ? Math.round((Date.now() - state.startTime) / 1000) : 0;
@@ -1019,7 +1153,11 @@
                 'Duration': durationSeconds + ' 秒',
                 'UniqueID': state.uniqueID,
                 '1.1_寵物類型': state.answers['1.1_寵物類型'] || 'N/A',
-                '1.2_飼養数量': state.answers['1.2_飼養数量'] || 'N/A',
+                // *** 修改：轉換 1.2 的值 ***
+                '1.2_飼養数量': petCountValueToText(state.answers['1.2_飼養数量'] || '0'), 
+                // *** 修改：加入新的年齡欄位 ***
+                '1.3_Age_Oldest': ageValueToText(state.answers['1.3_Age_Oldest'] || '0'),
+                '1.3_Age_Youngest': (petCountValue > 0) ? ageValueToText(state.answers['1.3_Age_Youngest'] || '0') : '', // 如果只有一隻，送空值
                 '1.4_居住型態': state.answers['1.4_居住型態'] || 'N/A',
                 '2.1_視為家人': likertValueToText(state.answers['2.1_視為家人']),
                 '2.2_情感慰藉': likertValueToText(state.answers['2.2_情感慰藉']),
@@ -1032,6 +1170,7 @@
                 '3.1_充滿活力': likertValueToText(state.answers['3.1_充滿活力']),
                 '3.2_擔心獨處': likertValueToText(state.answers['3.2_擔心獨處']),
                 '3.3_願意陪伴': likertValueToText(state.answers['3.3_願意陪伴']),
+                '3.4_專心時間': 'N/A', // 稍後轉換
                 '4.1_食品保健花費': 'N/A',
                 '4.2_玩具娛樂花費': 'N/A',
                 '4.3_科技用品數量': 'N/A',
@@ -1051,21 +1190,11 @@
                 '6.5_子女': state.answers['6.5_子女'] || 'N/A',
                 '6.6_寵物相關背景': state.answers['6.6_寵物相關背景'] || 'N/A',
                 '6.7_月收入': state.answers['6.7_月收入'] || 'N/A',
-
-                // *** 新增：受訪意願欄位 ***
                 '7.1_願意受訪': state.interviewConsent || 'N/A',
                 '7.2_聯絡資訊': state.contactInfo || ''
             };
             
-            // [ 資料轉換 (來自 V6) ]
-            for (let i = 1; i <= 5; i++) {
-                const id = `1.3_Age_Pet${i}`;
-                if (i <= petCount) {
-                    dataToSend[id] = ageValueToText(state.answers[id] || '0'); 
-                } else {
-                    dataToSend[id] = ''; 
-                }
-            }
+            // [ 資料轉換 (與 V8 類似，移除 Pet1-5) ]
             const v3_4 = state.answers['3.4_專心時間'] || '0';
             dataToSend['3.4_專心時間'] = (v3_4 == 10) ? '5+' : (v3_4 * 0.5).toString();
             const v4_1 = state.answers['4.1_食品保健花費'] || '0';
@@ -1084,41 +1213,27 @@
             
             console.log("Submitting Payload:", dataToSend);
             
-            if (GOOGLE_SHEET_SCRIPT_URL.includes('!!!') || !GOOGLE_SHEET_SCRIPT_URL.startsWith('https:')) {
+            if (GOOGLE_SHEET_SCRIPT_URL.includes('!!!') || !GOOGLE_SHEET_SCRIPT_URL.startsWith('https:')) { /* ... (來自 V8) ... */ 
                 console.error("尚未設定 Google Apps Script URL！");
-                setState({ 
-                    submissionStatus: "error", 
-                    answers: { ...state.answers, errorMessage: '尚未設定 Google Apps Script URL' }
-                });
+                setState({ submissionStatus: "error", answers: { ...state.answers, errorMessage: '尚未設定 Google Apps Script URL' } });
                 return;
             }
 
-            try {
-                // [ Fetch 邏輯 (來自 V7) ]
+            try { /* ... (來自 V8) ... */ 
                 const formBody = new URLSearchParams(dataToSend).toString();
-                
                 await fetch(GOOGLE_SHEET_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    cache: 'no-cache',
+                    method: 'POST', mode: 'no-cors', cache: 'no-cache',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formBody 
                 });
-                
-                setTimeout(() => {
-                    setState({ submissionStatus: "success" });
-                }, 1000); // 延遲 1 秒顯示成功
-
+                setTimeout(() => { setState({ submissionStatus: "success" }); }, 1000);
             } catch (error) {
                 console.error("提交到 Google Sheet 失敗 (fetch 本身出錯):", error);
-                setState({ 
-                    submissionStatus: "error", 
-                    answers: { ...state.answers, errorMessage: error.toString() }
-                });
+                setState({ submissionStatus: "error", answers: { ...state.answers, errorMessage: error.toString() } });
             }
         }
 
-        // --- 首次加載時渲染 (來自 V6, 未變更) ---
+        // --- 首次加載時渲染 (來自 V8) ---
         document.addEventListener('DOMContentLoaded', () => {
             render();
             const debugButton = document.getElementById('debugFillButton');
