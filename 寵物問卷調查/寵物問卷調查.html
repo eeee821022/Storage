@@ -72,11 +72,10 @@
     </div>
 
     <!-- 快速測試按鈕 -->
-    <!--
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
-    -->
+    
 
     <script>
         // --- 獲取或設定唯一識別碼 ---
@@ -93,7 +92,7 @@
         let state = {
             page: 'start', // start, survey, interviewSurvey, end
             currentStep: 0,
-            answers: {},
+            answers: {}, // 'Reference' 欄位也會存在這裡
             submissionStatus: 'idle', // idle, submitting, success, error
             startTime: null, 
             uniqueID: getOrSetUniqueID(),
@@ -105,7 +104,7 @@
         // --- 問卷結構 ---
         const TOTAL_STEPS = 6;
         const REQUIRED_QUESTIONS_BY_STEP = [
-            ['1.1_寵物類型', '1.2_飼養数量', '1.4_居住型態', /* '1.3_Age_Oldest' 會動態加入 */], 
+            ['1.1_寵物類型', '1.2_飼養數量', '1.4_居住型態', /* '1.3_Age_Oldest' 會動態加入 */], 
             ['2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題'], // Step 2
             ['3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴', '3.4_專心時間'], // Step 3
             ['4.1_食品保健花費', '4.2_玩具娛樂花費', '4.3_科技用品數量', '4.4_最高產品金額'], // Step 4
@@ -115,8 +114,9 @@
 
         // --- 問題文字對照表 (QUESTION_MAP) ---
         const QUESTION_MAP = {
+            'Reference': '問卷提供者/來由', // *** 新增 ***
             '1.1_寵物類型': '1.1 您的寵物類型是？',
-            '1.2_飼養数量': '1.2 您總共飼養了幾隻犬/貓？',
+            '1.2_飼養數量': '1.2 您總共飼養了幾隻犬/貓？',
             '1.3_Age_Oldest': '1.3 最年長寵物年齡', 
             '1.3_Age_Youngest': '1.3 最年幼寵物年齡',
             '1.4_居住型態': '1.4 您的居住型態為？',
@@ -237,22 +237,31 @@
         }
 
         // --- 頁面渲染函數 (start, end, survey) ---
+        
+        // *** 修改: renderStartPage ***
         function renderStartPage() {
             return `
-                <div class="p-8 md:p-12 text-center space-y-6">
+                <div class="p-8 md:p-12 text-center space-y-8">
                     <i class="fas fa-paw text-6xl text-blue-500"></i>
                     <h1 class="text-3xl font-bold text-gray-800">台灣寵物飼主健康管理與娛樂需求之市場調查</h1>
-                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                        您好！誠摯地邀請您參與這份關於「寵物健康管理與娛樂互動」的市場調查問卷。
-                        本問卷全程採匿名方式進行，預計花費您 5-8 分鐘的時間。
-                    </p>
-                    <p class="text-sm text-gray-500">(僅限目前正在台灣飼養犬、貓的飼主填寫)</p>
-                    <button id="startButton" class="btn btn-primary btn-lg text-lg">
-                        <i class="fas fa-play h-5 w-5 mr-2"></i> 開始填寫
-                    </button>
+                    
+                    <div class="w-full max-w-md mx-auto text-left space-y-4">
+                        <div>
+                            <label for="reference-input" class="font-medium text-gray-700 text-lg">問卷提供者或是來由</label>
+                            <input type="text" id="reference-input" data-id="Reference" class="text-input mt-2" placeholder="請輸入提供者/來由 (例如：朋友名稱、FB社團...)">
+                            <p id="reference-error" class="text-red-500 text-sm mt-1 hidden">請務必填寫此欄位</p>
+                        </div>
+                        
+                        <button id="startButton" class="btn btn-primary btn-lg text-lg w-full">
+                            <i class="fas fa-play h-5 w-5 mr-2"></i> 開始填寫
+                        </button>
+                    </div>
+
+                    <p class="text-sm text-gray-500 pt-4">(僅限目前正在台灣飼養犬、貓的飼主填寫)</p>
                 </div>
             `;
         }
+
         function renderEndPage() {
             // *** MOD V10: 提交中 (submitting) 狀態會顯示載入畫面 ***
             if (state.submissionStatus === 'submitting') {
@@ -535,7 +544,7 @@
                         </div>
                     </div>
                     
-                    ${createSlider('1.2_飼養数量', '1.2 您總共飼養了幾隻犬/貓？', 0, 2, 1, 
+                    ${createSlider('1.2_飼養數量', '1.2 您總共飼養了幾隻犬/貓？', 0, 2, 1, 
                         petCountValueToText,
                         0 // 預設值為 0 (代表 1 隻)
                     )}
@@ -789,11 +798,14 @@
                 }
 
                 if (answer === undefined || answer === null || answer === '') {
-                     if (id === '1.3_Age_Youngest' && (state.answers['1.2_飼養数量'] || '0') === '0') continue;
+                     if (id === '1.3_Age_Youngest' && (state.answers['1.2_飼養數量'] || '0') === '0') continue;
                      if (id === '7.2_聯絡資訊' && state.interviewConsent !== 'Yes') continue; 
                 }
                 try {
-                    if (id === '1.2_飼養数量') {
+                    // *** 新增: 處理 Reference ***
+                    if (id === 'Reference') {
+                        answer = state.answers['Reference'] || 'N/A';
+                    } else if (id === '1.2_飼養數量') {
                         answer = petCountValueToText(answer);
                     } else if (id === '1.3_Age_Oldest' || id === '1.3_Age_Youngest') {
                         answer = ageValueToText(answer);
@@ -870,21 +882,50 @@
         }
 
         // --- 事件監聽器 ---
+        
+        // *** 修改: attachStartListeners ***
         function attachStartListeners() {
              document.getElementById('startButton').onclick = () => {
-                setState({ page: 'survey', startTime: Date.now() });
+                const input = document.getElementById('reference-input');
+                const errorEl = document.getElementById('reference-error');
+                const referenceValue = input.value.trim();
+                
+                if (referenceValue === '') {
+                    errorEl.classList.remove('hidden');
+                    input.classList.add('border-red-500');
+                    input.focus();
+                } else {
+                    errorEl.classList.add('hidden');
+                    input.classList.remove('border-red-500');
+                    // 將 Reference 存入 state.answers
+                    state.answers['Reference'] = referenceValue;
+                    setState({ page: 'survey', startTime: Date.now() });
+                }
             };
-        }
-        function attachEndListeners() {
-            document.getElementById('restartButton').onclick = () => {
-                // 重置狀態
-                state = {
-                    page: 'start', currentStep: 0, answers: {},
-                    submissionStatus: 'idle', startTime: null, uniqueID: state.uniqueID, // 保留 uniqueID
-                    showInterviewModal: false, interviewConsent: null, contactInfo: ''
+            
+            // 當使用者開始輸入時，隱藏錯誤訊息
+            const input = document.getElementById('reference-input');
+            if(input) {
+                input.oninput = () => {
+                    document.getElementById('reference-error').classList.add('hidden');
+                    input.classList.remove('border-red-500');
                 };
-                render();
-            };
+            }
+        }
+        
+        function attachEndListeners() {
+            const restartButton = document.getElementById('restartButton');
+            if (restartButton) {
+                restartButton.onclick = () => {
+                    // 重置狀態
+                    state = {
+                        page: 'start', currentStep: 0, answers: {},
+                        submissionStatus: 'idle', startTime: null, uniqueID: state.uniqueID, // 保留 uniqueID
+                        showInterviewModal: false, interviewConsent: null, contactInfo: ''
+                    };
+                    render();
+                };
+            }
 
             const mbtiButton = document.getElementById('mbtiButton');
             if (mbtiButton) {
@@ -932,7 +973,7 @@
                         valueEl.textContent = valueTextFn(value);
                     }
                     
-                    if (id === '1.2_飼養数量') {
+                    if (id === '1.2_飼養數量') {
                         renderDynamicAgeSliders(value);
                     }
                     
@@ -1029,7 +1070,12 @@
             // 更新 text, number inputs
             document.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
                 const id = input.dataset.id;
-                if (state.answers[id]) input.value = state.answers[id];
+                // *** 修改: 確保 'Reference' 欄位在 start 頁面被正確填入 ***
+                if (id === 'Reference' && state.page === 'start') {
+                    if (state.answers[id]) input.value = state.answers[id];
+                } else if (state.page === 'survey') { // 只在 survey 頁面更新
+                    if (state.answers[id]) input.value = state.answers[id];
+                }
             });
 
             // 更新 textarea
@@ -1049,7 +1095,7 @@
                     slider.value = state.answers[id] !== undefined ? state.answers[id] : 2; // 預設 2 (普通)
                 } else if (id.startsWith('5.4_')) {
                     slider.value = state.answers[id] !== undefined ? state.answers[id] : 0; // 預設 0
-                } else if (id === '1.2_飼養数量') {
+                } else if (id === '1.2_飼養數量') {
                      slider.value = state.answers[id] !== undefined ? state.answers[id] : 0; // 預設 0 (1隻)
                 } else {
                     if (state.answers[id]) {
@@ -1080,7 +1126,7 @@
 
             // 在 Step 1 呼叫 renderDynamicAgeSliders 來處理初始狀態
             if (state.currentStep === 0 && state.page === 'survey') {
-                const petCountValue = state.answers['1.2_飼養数量'] || 0;
+                const petCountValue = state.answers['1.2_飼養數量'] || 0;
                 renderDynamicAgeSliders(petCountValue);
             }
 
@@ -1132,7 +1178,7 @@
             const requiredIds = [...REQUIRED_QUESTIONS_BY_STEP[stepIndex]]; 
 
             if (stepIndex === 0) {
-                const petCountValue = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
+                const petCountValue = parseInt(state.answers['1.2_飼養數量'] || 0, 10);
                 requiredIds.push('1.3_Age_Oldest');
                 if (petCountValue > 0) {
                     requiredIds.push('1.3_Age_Youngest');
@@ -1209,10 +1255,13 @@
             const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
             let newAnswers = {};
 
+            // *** 新增: 隨機填寫 Reference ***
+            newAnswers['Reference'] = randomChoice(['朋友A', 'FB寵物社團', '測試員']);
+
             // Step 1
             newAnswers['1.1_寵物類型'] = randomChoice(['犬', '貓']);
             const petCountValue = randomInt(0, 2);
-            newAnswers['1.2_飼養数量'] = petCountValue;
+            newAnswers['1.2_飼養數量'] = petCountValue;
             newAnswers['1.3_Age_Oldest'] = randomInt(0, 4);
             if (petCountValue > 0) {
                 newAnswers['1.3_Age_Youngest'] = randomInt(0, newAnswers['1.3_Age_Oldest']);
@@ -1255,7 +1304,7 @@
 
         // --- Google Apps Script 網址 ---
         // !!! 確保這個網址是您更新並重新部署過的 V10 腳本網址 !!!
-        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxi0ESuhpYQveWLBb7DGAEXEkxjPofHnI50_xP_p6RkkVLO4RGkYqRMKxFOJbCoGOrvpQ/exec'; 
+        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2EmnsUB72aISrSLzd7q5cZcbgBUlp67lMcBnnSY0vgo9RESZMa6k8TCXiS6vbxsf0vw/exec'; 
 
         // --- *** MOD V10: 第一次提交 (僅 Step 1-6) *** ---
         async function handleFirstSubmit() {
@@ -1312,16 +1361,16 @@
         // isFinalSubmit = true 代表包含 Q1-Q4
         async function sendDataToGoogle(isFinalSubmit = false) {
             
-            // --- 確保所有預設值都已填入 ---
+            // --- 確保所有預設值都已填入 (這段邏輯不變) ---
             const likertIds = [
                 '2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題',
                 '3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴'
             ];
             likertIds.forEach(id => {
-                if (state.answers[id] === undefined) state.answers[id] = '2'; // 預設 '普通'
+                if (state.answers[id] === undefined) state.answers[id] = '2';
             });
             if (state.answers['1.3_Age_Oldest'] === undefined) state.answers['1.3_Age_Oldest'] = '0';
-            const petCountValue = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
+            const petCountValue = parseInt(state.answers['1.2_飼養數量'] || 0, 10);
             if (petCountValue > 0 && state.answers['1.3_Age_Youngest'] === undefined) {
                  state.answers['1.3_Age_Youngest'] = '0';
             }
@@ -1330,16 +1379,15 @@
             budgetIds.forEach(id => {
                 if (state.answers[id] === undefined) state.answers[id] = '0'; 
             });
-            // --- 預設值結束 ---
 
             const durationSeconds = state.startTime ? Math.round((Date.now() - state.startTime) / 1000) : 0;
 
-            // 準備要發送的資料 (dataToSend)
             const dataToSend = {
                 'Duration': durationSeconds + ' 秒',
                 'UniqueID': state.uniqueID,
+                'Reference': state.answers['Reference'] || '',
                 '1.1_寵物類型': state.answers['1.1_寵物類型'] || 'N/A',
-                '1.2_飼養数量': petCountValueToText(state.answers['1.2_飼養数量'] || '0'), 
+                '1.2_飼養數量': petCountValueToText(state.answers['1.2_飼養數量'] || '0'), 
                 '1.3_Age_Oldest': ageValueToText(state.answers['1.3_Age_Oldest'] || '0'),
                 '1.3_Age_Youngest': (petCountValue > 0) ? ageValueToText(state.answers['1.3_Age_Youngest'] || '0') : '',
                 '1.4_居住型態': state.answers['1.4_居住型態'] || 'N/A',
@@ -1374,9 +1422,8 @@
                 '6.5_子女': state.answers['6.5_子女'] || 'N/A',
                 '6.6_寵物相關背景': state.answers['6.6_寵物相關背景'] || 'N/A',
                 '6.7_月收入': state.answers['6.7_月收入'] || 'N/A',
-                '7.1_願意受訪': state.interviewConsent || (isFinalSubmit ? 'Yes' : 'N/A'), // 如果是最終提交，一定是 'Yes'
+                '7.1_願意受訪': state.interviewConsent || (isFinalSubmit ? 'Yes' : 'N/A'),
                 '7.2_聯絡資訊': state.contactInfo || '',
-                // *** MOD V10: 根據 isFinalSubmit 決定是否傳送 Q1-Q4 ***
                 'Q1_情境連結': isFinalSubmit ? (state.answers['Q1_情境連結'] || '') : '',
                 'Q2_當前痛點': isFinalSubmit ? (state.answers['Q2_當前痛點'] || '') : '',
                 'Q3_未滿足需求': isFinalSubmit ? (state.answers['Q3_未滿足需求'] || '') : '',
@@ -1400,33 +1447,40 @@
                 dataToSend[id] = budgetSliderValueToText(state.answers[id] || '0');
             });
             
-            console.log(`Submitting Payload (isFinal=${isFinalSubmit}):`, dataToSend);
+            console.log(`準備提交資料 (isFinal=${isFinalSubmit}):`, dataToSend);
             
             if (GOOGLE_SHEET_SCRIPT_URL.includes('!!!') || !GOOGLE_SHEET_SCRIPT_URL.startsWith('https:')) {
-                console.error("尚未設定 Google Apps Script URL！");
+                console.error("錯誤：尚未設定有效的 Google Apps Script URL！");
                 state.answers.errorMessage = '尚未設定 Google Apps Script URL';
                 return false; // 返回失敗
             }
 
             try {
-                const formBody = new URLSearchParams(dataToSend).toString();
-                await fetch(GOOGLE_SHEET_SCRIPT_URL, {
-                    method: 'POST', mode: 'no-cors', cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formBody 
+                // 使用 fetch 發送數據
+                fetch(GOOGLE_SHEET_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // **重要**：這會導致瀏覽器控制台出現錯誤，但這是正常現象！
+                    cache: 'no-cache',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(dataToSend).toString()
                 });
                 
+                // 因為是 'no-cors'，我們無法得知是否真的成功，只能假設請求已發出
+                console.log("資料已發送到 Google Apps Script。請到 GS 的『執行』紀錄中確認結果。");
+                
                 // 等待一小段時間確保 no-cors 請求已送出
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 800));
                 return true; // 返回成功
 
             } catch (error) {
-                console.error("提交到 Google Sheet 失敗 (fetch 本身出錯):", error);
+                // 這個 catch 區塊通常只在網路問題或 URL 格式錯誤時觸發
+                console.error("Fetch 請求本身發生錯誤:", error);
                 state.answers.errorMessage = error.toString();
                 return false; // 返回失敗
             }
         }
-
         // --- 首次加載時渲染 ---
         document.addEventListener('DOMContentLoaded', () => {
             render();
@@ -1438,4 +1492,3 @@
     </script>
 </body>
 </html>
-
