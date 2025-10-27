@@ -56,11 +56,13 @@
         .modal-content { background-color: white; border-radius: 1rem; padding: 2rem; width: 90%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
         .text-input { display: block; width: 100%; border: 2px solid #e2e8f0; border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 1rem; color: #374151; transition: all 0.2s ease-in-out; }
         .text-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        textarea.text-input { min-height: 100px; }
         #answer-summary { background-color: white; border: 1px solid #d1d5db; border-radius: 0.75rem; padding: 1rem; max-height: 240px; overflow-y: auto; text-align: left; line-height: 1.6; }
         #answer-summary div { padding: 0.25rem 0; border-bottom: 1px dashed #e5e7eb; }
         #answer-summary div:last-child { border-bottom: none; }
         #answer-summary strong { color: #1f2937; }
         #answer-summary span { color: #1d4ed8; font-weight: 500; }
+        #answer-summary span pre { font-family: inherit; margin: 0; white-space: pre-wrap; word-wrap: break-word; }
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
@@ -69,16 +71,15 @@
         <!-- 應用程式內容將由 JavaScript 動態渲染 -->
     </div>
 
-    <!-- 快速測試按鈕 (已註解) -->
-    <!-- 
+    <!-- 快速測試按鈕 -->
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
-    -->
+    
 
     <script>
         // --- 獲取或設定唯一識別碼 ---
-        function getOrSetUniqueID() { /* ... (來自 V8) ... */ 
+        function getOrSetUniqueID() {
             let id = localStorage.getItem('petSurveyUniqueID_v2');
             if (!id) {
                 id = 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
@@ -89,21 +90,20 @@
 
         // --- 應用程式狀態 ---
         let state = {
-            page: 'start', 
+            page: 'start', // start, survey, interviewSurvey, end
             currentStep: 0,
             answers: {},
-            submissionStatus: 'idle',
+            submissionStatus: 'idle', // idle, submitting, success, error
             startTime: null, 
             uniqueID: getOrSetUniqueID(),
             showInterviewModal: false,
-            interviewConsent: null,
+            interviewConsent: null, // null, 'Yes', 'No'
             contactInfo: ''
         };
 
-        // --- *** 修改：問卷結構 *** ---
+        // --- 問卷結構 ---
         const TOTAL_STEPS = 6;
         const REQUIRED_QUESTIONS_BY_STEP = [
-            // *** 修改：Step 1 移除 Pet1-5, 加入 Oldest/Youngest (稍後動態判斷) ***
             ['1.1_寵物類型', '1.2_飼養数量', '1.4_居住型態', /* '1.3_Age_Oldest' 會動態加入 */], 
             ['2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題'], // Step 2
             ['3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴', '3.4_專心時間'], // Step 3
@@ -112,11 +112,10 @@
             ['6.1_性別', '6.2_年齡', '6.3_單身', '6.4_獨居', '6.5_子女', '6.6_寵物相關背景', '6.7_月收入'] // Step 6
         ];
 
-        // --- *** 修改：問題文字對照表 (QUESTION_MAP) *** ---
+        // --- 問題文字對照表 (QUESTION_MAP) ---
         const QUESTION_MAP = {
             '1.1_寵物類型': '1.1 您的寵物類型是？',
             '1.2_飼養数量': '1.2 您總共飼養了幾隻犬/貓？',
-            // *** 修改：移除 Pet1-5, 加入 Oldest/Youngest ***
             '1.3_Age_Oldest': '1.3 最年長寵物年齡', 
             '1.3_Age_Youngest': '1.3 最年幼寵物年齡',
             '1.4_居住型態': '1.4 您的居住型態為？',
@@ -152,21 +151,23 @@
             '6.6_寵物相關背景': '6.6 您是否有寵物相關背景?',
             '6.7_月收入': '6.7 您個人平均月收入？',
             '7.1_願意受訪': '7.1 願意接受訪問嗎？',
-            '7.2_聯絡資訊': '7.2 聯絡資訊'
+            '7.2_聯絡資訊': '7.2 聯絡資訊',
+            'Q1_情境連結': 'Q1. 平日生活作息與掛念',
+            'Q2_當前痛點': 'Q2. 目前嘗試的方法與效果',
+            'Q3_未滿足需求': 'Q3. 難以做到的地方',
+            'Q4_產品概念': 'Q4. 對新產品的想法'
         };
-
 
         // --- 轉換輔助函數 ---
         const LIKERT_MAP = ['非常不同意', '不同意', '普通', '同意', '非常同意'];
         const likertValueToText = (v) => LIKERT_MAP[parseInt(v, 10)] || '普通';
         const AGE_RANGE_MAP = ['0-1歲', '1-3歲', '3-6歲', '6-9歲', '10歲以上'];
         const ageValueToText = (v) => AGE_RANGE_MAP[parseInt(v, 10)] || '0-1歲';
-        const budgetSliderValueToText = (v) => { /* ... (來自 V8) ... */ 
+        const budgetSliderValueToText = (v) => {
             const value = parseInt(v, 10) * 500;
             if (value === 0) return 'NT$ 0';
             return value > 0 ? `NT$ +${value.toLocaleString()}` : `NT$ -${Math.abs(value).toLocaleString()}`;
         };
-        // *** 新增：1.2 拉桿的文字轉換 ***
         const petCountValueToText = (v) => {
             const index = parseInt(v, 10);
             if (index === 0) return '1 隻';
@@ -179,13 +180,12 @@
         const createDynamicFunction = (fnStr) => {
             return new Function('v', `
                 const LIKERT_MAP = ['非常不同意', '不同意', '普通', '同意', '非常同意'];
-                const AGE_RANGE_MAP = ['0-1歲', '1-3歲', '3-6歲', '6-9歲', '10歲以上'];
+                const AGE_RANGE_MAP = ['0-1歲', '1.3歲', '3-6歲', '6-9歲', '10歲以上'];
                 const budgetSliderValueToText = (v) => {
                     const value = parseInt(v, 10) * 500;
                     if (value === 0) return 'NT$ 0';
                     return value > 0 ? \`NT$ +\${value.toLocaleString()}\` : \`NT$ -\${Math.abs(value).toLocaleString()}\`;
                 };
-                // *** 新增 petCountValueToText ***
                 const petCountValueToText = (v) => {
                     const index = parseInt(v, 10);
                     if (index === 0) return '1 隻';
@@ -202,7 +202,7 @@
 
 
         // --- 渲染主要應用程式 ---
-        function render() { /* ... (來自 V8) ... */ 
+        function render() {
             const app = document.getElementById('app');
             app.innerHTML = ''; 
             switch (state.page) {
@@ -213,23 +213,30 @@
                 case 'survey':
                     app.innerHTML = renderSurveyPage();
                     attachSurveyListeners();
+                    // *** MOD V10: 彈窗現在由 survey 頁面疊加 ***
                     if (state.showInterviewModal) {
                         app.innerHTML += renderInterviewModal();
                         attachModalListeners();
                     }
                     break;
+                case 'interviewSurvey':
+                    app.innerHTML = renderInterviewSurveyPage();
+                    attachInterviewSurveyListeners();
+                    break;
                 case 'end':
                     app.innerHTML = renderEndPage();
+                    // *** MOD V10: 只有在非提交中狀態才綁定結束按鈕 ***
                     if (state.submissionStatus !== 'submitting') {
                         attachEndListeners();
                     }
                     break;
             }
+            // 確保 DOM 狀態在渲染後更新
             updateDOMState();
         }
 
         // --- 頁面渲染函數 (start, end, survey) ---
-        function renderStartPage() { /* ... (來自 V8) ... */ 
+        function renderStartPage() {
             return `
                 <div class="p-8 md:p-12 text-center space-y-6">
                     <i class="fas fa-paw text-6xl text-blue-500"></i>
@@ -245,7 +252,8 @@
                 </div>
             `;
         }
-        function renderEndPage() { /* ... (來自 V8) ... */ 
+        function renderEndPage() {
+            // *** MOD V10: 提交中 (submitting) 狀態會顯示載入畫面 ***
             if (state.submissionStatus === 'submitting') {
                 return `
                 <div class="p-8 md:p-12 text-center space-y-6">
@@ -256,16 +264,14 @@
             `;
             } else if (state.submissionStatus === 'success') {
                 
-                // --- 修改開始: 根據是否接受訪談，顯示不同按鈕 ---
                 let downloadSection = '';
-                let actionButtons = ''; // 用於存放「重新填寫」和「MBTI」按鈕
+                let actionButtons = '';
                 let message = '';
 
+                // *** MOD V10: 根據 'interviewConsent' 狀態顯示不同訊息 ***
                 if (state.interviewConsent === 'Yes') {
                     // --- 狀況 2: 接受訪談 (Yes) ---
                     message = '再次感謝您願意提供聯絡資訊！';
-                    
-                    // --- 修改：顯示「重新填寫」和「MBTI測驗」按鈕 ---
                     actionButtons = `
                         <button id="restartButton" class="btn btn-secondary">
                             <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
@@ -274,8 +280,6 @@
                             <i class="fas fa-paw h-4 w-4 mr-2"></i> 寵物MBTI測驗
                         </button>
                     `;
-                    
-                    // --- 修改：恢復顯示下載區塊，並使用原始按鈕文字 ---
                     downloadSection = `
                         <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
                             <h3 class="text-xl font-semibold text-gray-800 mb-4">問卷答案摘要</h3>
@@ -288,10 +292,8 @@
                     `;
 
                 } else {
-                    // --- 狀況 1: 拒絕訪談 (No) ---
+                    // --- 狀況 1: 拒絕訪談 (No) 或尚未決定 (null, 但已成功) ---
                     message = '問卷到此全部結束。再次誠摯地感謝您撥出寶貴的時間提供您的意見！';
-                    
-                    // 顯示「重新填寫」和「MBTI測驗」按鈕
                     actionButtons = `
                         <button id="restartButton" class="btn btn-secondary">
                             <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
@@ -300,11 +302,8 @@
                             <i class="fas fa-paw h-4 w-4 mr-2"></i> 寵物MBTI測驗
                         </button>
                     `;
-                    
-                    // 不顯示下載區塊
                     downloadSection = '';
                 }
-                // --- 修改結束 ---
 
                 return `
                 <div class="p-8 md:p-12 text-center space-y-6">
@@ -318,14 +317,13 @@
                     <p class="text-lg text-gray-600 max-w-2xl mx-auto">
                         ${message}
                     </p>
-                    <!-- 修改: 將按鈕放入 flex 容器中 -->
                     <div class="flex justify-center gap-4 flex-wrap">
                         ${actionButtons}
                     </div>
                     ${downloadSection}
                 </div>
             `;
-            } else {
+            } else { // 'error'
                 return `
                 <div class="p-8 md:p-12 text-center space-y-6">
                     <div class="error-icon"><i class="fas fa-times"></i></div>
@@ -339,7 +337,7 @@
             `;
             }
         }
-        function renderSurveyPage() { /* ... (來自 V8) ... */ 
+        function renderSurveyPage() {
             const progress = ((state.currentStep + 1) / TOTAL_STEPS) * 100;
             return `
                 <div class="p-4 bg-gray-50 border-b border-gray-200">
@@ -364,12 +362,13 @@
                 </div>
             `;
         }
-        function renderInterviewModal() { /* ... (來自 V8) ... */ 
+        function renderInterviewModal() {
+            // *** MOD V10: 這是疊加在 survey 頁面上的彈窗 ***
             return `
                 <div id="interview-modal" class="modal-overlay">
                     <div class="modal-content space-y-6">
                         <h2 class="text-2xl font-bold text-gray-800 text-center">感謝您的填寫！</h2>
-                        <p class="text-lg text-gray-600 text-center">我們誠摯邀請您參與後續的訪談，<br>請問您是否願意接受訪問嗎？</p>
+                        <p class="text-lg text-gray-600 text-center">我們誠摯邀請您參與後續的訪談，<br>請問您是否願意接受深度訪問嗎？</p>
                         <div id="interview-step-1" class="flex justify-around gap-4">
                             <button id="interview-no" class="btn btn-secondary w-full"><i class="fas fa-times h-4 w-4 mr-2"></i> 不用了，謝謝</button>
                             <button id="interview-yes" class="btn btn-primary w-full"><i class="fas fa-check h-4 w-4 mr-2"></i> 願意</button>
@@ -381,15 +380,35 @@
                                 <input type="text" id="contact-input" class="text-input mt-1" placeholder="例如：0912-345-678 王先生">
                                 <p id="contact-error" class="text-red-500 text-sm mt-1 hidden">請勿空白</p>
                             </div>
-                            <button id="interview-submit-contact" class="btn btn-primary w-full">送出聯絡資訊並提交問卷</button>
+                            <button id="interview-submit-contact" class="btn btn-primary w-full">下一步</button>
                         </div>
                     </div>
                 </div>
             `;
         }
+
+        // --- 渲染訪談問答頁 ---
+        function renderInterviewSurveyPage() {
+            return `
+                <div class="p-6 md:p-10 space-y-8" style="max-height: 70vh; overflow-y: auto;">
+                    <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">訪談補充問題</h2>
+                    <p class="text-gray-600">感謝您！我們想在訪談前，先請教您幾個開放性問題，讓我們能更深入了解您的想法。</p>
+                    
+                    ${createTextArea('Q1_情境連結', 'Q1. 可以聊聊您平日的生活作息嗎？當您在忙碌或需要外出一整天時，您心裡通常最掛念寵物的什麼事？')}
+                    ${createTextArea('Q2_當前痛點', 'Q2. 為了讓牠在家不無聊，或是確保牠有足夠的運動量，您目前都嘗試過哪些方法或買過哪些東西？效果怎麼樣？')}
+                    ${createTextArea('Q3_未滿足需求', 'Q3. 您覺得在「確保寵物身心健康」這件事上，有沒有什麼是您一直想做，但因為時間、精力或沒有合適工具而很難做到的地方？')}
+                    ${createTextArea('Q4_產品概念', 'Q4. 聽完您的分享，我們其實正在構思一款可以在您忙碌時也可以陪伴寵物運動、娛樂的居家產品。您聽到這個概念，第一個想法是什麼？您會期待或擔心什麼？')}
+                </div>
+                <div class="p-6 bg-gray-50 border-t border-gray-200 flex justify-end items-center">
+                    <button id="finalInterviewSubmitButton" class="btn btn-primary">
+                        完成並提交所有問卷 <i class="fas fa-check h-4 w-4 ml-2"></i>
+                    </button>
+                </div>
+            `;
+        }
         
         // --- 渲染問卷步驟內容 ---
-        function renderStepContent(step) { /* ... (來自 V8) ... */ 
+        function renderStepContent(step) {
              switch (step) {
                 case 0: return renderStep1();
                 case 1: return renderStep2();
@@ -402,7 +421,7 @@
         }
         
         // --- 輔助函數 ---
-        function createSlider(id, label, min, max, step, valueTextFn, defaultValue) { /* ... (來自 V8) ... */ 
+        function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
             const currentValue = state.answers[id] || defaultValue || min;
             return `
                 <div class="space-y-2 py-2"> 
@@ -415,7 +434,7 @@
                 </div>
             `;
         }
-        function createRadioGroup(id, label, options, gridClass = 'grid-cols-1 sm:grid-cols-2') { /* ... (來自 V8) ... */ 
+        function createRadioGroup(id, label, options, gridClass = 'grid-cols-1 sm:grid-cols-2') {
             return `
                 <div class="space-y-3">
                     <label class="font-medium text-gray-700 text-lg">${label}</label>
@@ -430,7 +449,7 @@
                 </div>
             `;
         }
-        function createYesNoBlock(id, label, yesText = '是', noText = '否', yesIcon = 'fa-check', noIcon = 'fa-times') { /* ... (來自 V8) ... */ 
+        function createYesNoBlock(id, label, yesText = '是', noText = '否', yesIcon = 'fa-check', noIcon = 'fa-times') {
              return `
                 <div class="space-y-3">
                     <label class="font-medium text-gray-700 text-lg">${label}</label>
@@ -449,8 +468,8 @@
                 </div>
             `;
         }
-        function createLikertSlider(id, label) { /* ... (來自 V8) ... */ 
-            const currentValue = state.answers[id] !== undefined ? state.answers[id] : 2;
+        function createLikertSlider(id, label) {
+            const currentValue = state.answers[id] !== undefined ? state.answers[id] : 2; // 預設 '普通'
             const currentText = likertValueToText(currentValue);
             const valueTextFnString = likertValueToText.toString();
             return `
@@ -464,7 +483,7 @@
                 </div>
             `;
         }
-        function createBudgetSlider(id, label) { /* ... (來自 V8) ... */ 
+        function createBudgetSlider(id, label) {
             const currentValue = state.answers[id] !== undefined ? state.answers[id] : 0;
             const currentText = budgetSliderValueToText(currentValue);
             const valueTextFnString = budgetSliderValueToText.toString();
@@ -481,9 +500,20 @@
             `;
         }
 
+        // --- 建立 <textarea> ---
+        function createTextArea(id, label) {
+            const currentValue = state.answers[id] || '';
+            return `
+                <div class="space-y-3 py-2">
+                    <label for="${id}" class="font-medium text-gray-700 text-lg">${label}</label>
+                    <textarea id="${id}" data-id="${id}" class="text-input w-full" rows="4" placeholder="請在此輸入您的想法...">${currentValue}</textarea>
+                    <p id="error-${id}" class="text-red-500 text-sm mt-1 hidden">請勿空白</p>
+                </div>
+            `;
+        }
+
         // --- 步驟 1-6 的渲染函數 ---
         
-        // --- *** 修改：renderStep1 *** ---
         function renderStep1() {
              return `
                 <div class="page-section active space-y-6">
@@ -504,13 +534,11 @@
                         </div>
                     </div>
                     
-                    <!-- *** 修改：1.2 拉桿範圍和文字 *** -->
                     ${createSlider('1.2_飼養数量', '1.2 您總共飼養了幾隻犬/貓？', 0, 2, 1, 
-                        petCountValueToText, // 使用新的文字轉換函數
+                        petCountValueToText,
                         0 // 預設值為 0 (代表 1 隻)
                     )}
 
-                    <!-- *** 修改：1.3 的容器 *** -->
                     <div class="space-y-4">
                         <label class="font-medium text-gray-700 text-lg">1.3 您的寵物目前分別年齡為幾歲？</label>
                         <p class="text-sm text-gray-500">請為您家中最年長 (和最年幼) 的寵物設定年齡區間。</p>
@@ -525,7 +553,7 @@
                 </div>
             `;
         }
-        function renderStep2() { /* ... (來自 V8) ... */ 
+        function renderStep2() {
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第二部分：您與寵物的關係</h2>
@@ -543,7 +571,7 @@
                 </div>
             `;
         }
-        function renderStep3() { /* ... (來自 V8) ... */ 
+        function renderStep3() {
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第三部分：寵物日常照護與陪伴</h2>
@@ -564,7 +592,7 @@
                 </div>
             `;
         }
-        function renderStep4() { /* ... (來自 V8) ... */ 
+        function renderStep4() {
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第四部分：寵物生活品質投入</h2>
@@ -599,7 +627,7 @@
                 </div>
             `;
         }
-        function renderStep5() { /* ... (來自 V8) ... */ 
+        function renderStep5() {
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第五部分：消費考量</h2>
@@ -642,7 +670,7 @@
                 </div>
             `;
         }
-        function renderStep6() { /* ... (來自 V8) ... */ 
+        function renderStep6() {
              return `
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第六部分：個人基本資訊</h2>
@@ -669,13 +697,13 @@
                     ${createYesNoBlock('6.6_寵物相關背景', '6.6 您是否有寵物相關背景 (例如：獸醫、美容、訓練等)?', '是', '否')}
 
                     ${createRadioGroup('6.7_月收入', '6.7 您個人平均月收入大約是多少？', 
-                        ['無閒錢', '小康', '富裕', '多到沒地方花']
+                        ['NT$ 30,000 以下', 'NT$ 30,001 - 50,000', 'NT$ 50,001 - 80,000', 'NT$ 80,001 以上']
                     )}
                 </div>
             `;
         }
         
-        // --- *** 新增：渲染動態年齡拉桿 *** ---
+        // --- 渲染動態年齡拉桿 ---
         function renderDynamicAgeSliders(petCountValue) {
             const container = document.getElementById('dynamic-age-sliders');
             if (!container) return;
@@ -685,7 +713,7 @@
 
             if (countIndex === 0) { // 只有 1 隻
                 const id = '1.3_Age_Oldest';
-                const label = '寵物最大 現況'; // 您的要求
+                const label = '寵物最大 現況';
                 html = createSlider(id, label, 0, 4, 1, ageValueToText, 0); 
             } else { // 2 隻或 2+ 隻
                 const idOldest = '1.3_Age_Oldest';
@@ -701,7 +729,6 @@
             // 為新產生的拉桿加上事件監聽和初始值
             container.querySelectorAll('input[type="range"]').forEach(slider => {
                 const id = slider.dataset.id;
-                // 設定初始值 (如果 state 中有值)
                 if (state.answers[id]) {
                      slider.value = state.answers[id];
                 } else {
@@ -709,7 +736,6 @@
                      state.answers[id] = '0'; // 將預設值存入 state
                 }
                 
-                // 綁定 input 事件
                 slider.oninput = (e) => {
                     const currentId = e.target.dataset.id;
                     const value = e.target.value;
@@ -721,13 +747,12 @@
                         valueEl.textContent = valueTextFn(value);
                     }
                 };
-                // 觸發一次 input 事件以更新顯示文字
                 slider.dispatchEvent(new Event('input', { bubbles: true }));
             });
         }
 
-        // --- 更新 5.4 預算總和 (來自 V8) ---
-        function updateBudgetTotal() { /* ... (來自 V8) ... */ 
+        // --- 更新 5.4 預算總和 ---
+        function updateBudgetTotal() {
             const budgetIds = [
                 '5.4_開心使用', '5.4_安全使用', '5.4_節省時間', '5.4_持久耐用', '5.4_容易清潔'
             ];
@@ -749,15 +774,21 @@
             }
         }
 
-        // --- 渲染答案摘要 (來自 V8) ---
-        function renderAnswerSummary() { /* ... (來自 V8) ... */ 
+        // --- 渲染答案摘要 ---
+        function renderAnswerSummary() {
             const container = document.getElementById('answer-summary');
             if (!container) return;
             let html = '<div class="space-y-1 text-sm">';
             for (const [id, question] of Object.entries(QUESTION_MAP)) {
                 let answer = state.answers[id];
+                
+                // 如果是 Qs 且未同意，則跳過
+                if (id.startsWith('Q') && state.interviewConsent !== 'Yes') {
+                    continue; 
+                }
+
                 if (answer === undefined || answer === null || answer === '') {
-                     if (id === '1.3_Age_Youngest' && (state.answers['1.2_飼養数量'] || '0') === '0') continue; // 如果只有一隻，跳過 youngest
+                     if (id === '1.3_Age_Youngest' && (state.answers['1.2_飼養数量'] || '0') === '0') continue;
                      if (id === '7.2_聯絡資訊' && state.interviewConsent !== 'Yes') continue; 
                 }
                 try {
@@ -783,19 +814,20 @@
                         answer = state.interviewConsent; 
                     } else if (id === '7.2_聯絡資訊') {
                         answer = state.contactInfo; 
+                    } else if (id.startsWith('Q')) { 
+                        answer = `<pre>${answer}</pre>`; 
                     }
                 } catch (e) {
                     console.warn(`轉換答案時出錯 (ID: ${id}):`, e);
                     answer = state.answers[id] || 'N/A';
                 }
-                html += `<div><strong>${question}:</strong> <span>${answer}</span></div>`;
+                html += `<div><strong>${question}:</strong> <span>${answer || 'N/A'}</span></div>`;
             }
             html += '</div>';
             container.innerHTML = html;
         }
 
-        // --- 處理 PNG 下載 (來自 V8) ---
-        // --- *** 修正：handleDownloadPng *** ---
+        // --- 處理 PNG 下載 ---
         async function handleDownloadPng() { 
             const button = document.getElementById('downloadPngButton');
             const summaryElement = document.getElementById('answer-summary');
@@ -804,18 +836,12 @@
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin h-4 w-4 mr-2"></i> 圖片產生中...';
 
-            // --- 修正開始 ---
-            // 1. 儲存原始樣式
             const originalMaxHeight = summaryElement.style.maxHeight;
             const originalOverflowY = summaryElement.style.overflowY;
-
-            // 2. 暫時移除樣式限制，讓所有內容可見
             summaryElement.style.maxHeight = 'none';
             summaryElement.style.overflowY = 'visible';
-            // --- 修正結束 ---
 
             try {
-                // 3. 擷取現在完整展開的元素
                 const canvas = await html2canvas(summaryElement, { 
                     scale: 2, 
                     useCORS: true, 
@@ -829,72 +855,57 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-
-                // --- 修改開始: 移除下載後的跳轉邏輯 ---
-                // (setTimeout 和 window.top.location.href 已被移除)
-                // --- 修改結束 ---
-
             } catch (err) {
                 console.error("PNG 產生失敗:", err);
                 button.innerHTML = '<i class="fas fa-times h-4 w-4 mr-2"></i> 產生失敗，請重試';
             } finally {
-                // --- 修改：恢復 finally 區塊 ---
-                // 4. 無論成功或失敗，都恢復原始樣式
                 summaryElement.style.maxHeight = originalMaxHeight;
                 summaryElement.style.overflowY = originalOverflowY;
-
-                // 恢復按鈕狀態
                 button.disabled = false;
-                // 只有在非失敗時才恢復文字，避免覆蓋"產生失敗"的訊息
                 if (!button.innerHTML.includes('產生失敗')) {
                     button.innerHTML = '<i class="fas fa-download h-4 w-4 mr-2"></i> 下載答案摘要 (PNG)';
                 }
-                // --- 修改結束 ---
             }
         }
 
-
         // --- 事件監聽器 ---
-        function attachStartListeners() { /* ... (來自 V8) ... */ 
+        function attachStartListeners() {
              document.getElementById('startButton').onclick = () => {
                 setState({ page: 'survey', startTime: Date.now() });
             };
         }
-        function attachEndListeners() { /* ... (來自 V8) ... */ 
+        function attachEndListeners() {
             document.getElementById('restartButton').onclick = () => {
+                // 重置狀態
                 state = {
                     page: 'start', currentStep: 0, answers: {},
-                    submissionStatus: 'idle', startTime: null, uniqueID: state.uniqueID,
+                    submissionStatus: 'idle', startTime: null, uniqueID: state.uniqueID, // 保留 uniqueID
                     showInterviewModal: false, interviewConsent: null, contactInfo: ''
                 };
                 render();
             };
 
-            // --- 修改開始: 加入 MBTI 按鈕監聽 ---
             const mbtiButton = document.getElementById('mbtiButton');
             if (mbtiButton) {
                 mbtiButton.onclick = () => {
-                    // window.location.href = 'https://tinyurl.com/2uh8kcva';
-                    // --- 修正: 使用 window.top.location.href 來跳出 iFrame ---
                     window.top.location.href = 'https://tinyurl.com/2uh8kcva';
                 };
             }
-            // --- 修改結束 ---
 
             const downloadButton = document.getElementById('downloadPngButton');
             if (downloadButton) {
-                renderAnswerSummary();
+                renderAnswerSummary(); // 確保摘要已渲染
                 downloadButton.onclick = handleDownloadPng;
             }
         }
         
-        // --- *** 修改：attachSurveyListeners *** ---
         function attachSurveyListeners() {
             document.getElementById('prevButton').onclick = () => {
                 if (state.currentStep > 0) {
                     setState({ currentStep: state.currentStep - 1 });
                 }
             };
+            // *** MOD V10: 下一步按鈕的邏輯已修改 ***
             document.getElementById('nextButton').onclick = handleNextOrSubmit;
             
             document.querySelectorAll('input[type="radio"]').forEach(input => {
@@ -906,7 +917,6 @@
             });
             
             document.querySelectorAll('input[type="range"]').forEach(slider => {
-                // *** 修改：動態年齡拉桿的監聽在 renderDynamicAgeSliders 中綁定 ***
                 if (slider.id.startsWith('1.3_Age_')) return; 
 
                 slider.oninput = (e) => {
@@ -921,7 +931,6 @@
                         valueEl.textContent = valueTextFn(value);
                     }
                     
-                    // *** 修改：當 1.2 變動時，呼叫 renderDynamicAgeSliders ***
                     if (id === '1.2_飼養数量') {
                         renderDynamicAgeSliders(value);
                     }
@@ -941,11 +950,51 @@
             });
         }
         
-        function attachModalListeners() { /* ... (來自 V8) ... */ 
+        // --- 訪談問答頁的監聽 ---
+        function attachInterviewSurveyListeners() {
+            document.getElementById('finalInterviewSubmitButton').onclick = () => {
+                // 1. 驗證並儲存答案
+                const ids = ['Q1_情境連結', 'Q2_當前痛點', 'Q3_未滿足需求', 'Q4_產品概念'];
+                let allValid = true;
+                ids.forEach(id => {
+                    const textarea = document.getElementById(id);
+                    const errorEl = document.getElementById(`error-${id}`);
+                    if (textarea.value.trim() === '') {
+                        errorEl.classList.remove('hidden');
+                        allValid = false;
+                    } else {
+                        errorEl.classList.add('hidden');
+                        state.answers[id] = textarea.value.trim();
+                    }
+                });
+
+                if (allValid) {
+                    // 2. *** MOD V10: 呼叫最終提交 (第二次提交) ***
+                    handleFinalSubmit();
+                } else {
+                    showToast("您有尚未填寫的題目喔！", "error");
+                }
+            };
+
+            // 儲存用戶輸入
+            document.querySelectorAll('#app textarea').forEach(textarea => {
+                textarea.oninput = (e) => {
+                    state.answers[e.target.dataset.id] = e.target.value;
+                };
+            });
+        }
+
+        // --- *** MOD V10: 修改 Modal 監聽器 *** ---
+        function attachModalListeners() { 
             document.getElementById('interview-no').onclick = () => {
                 state.interviewConsent = 'No';
-                setState({ showInterviewModal: false });
-                handleFinalSubmit();
+                // *** MOD V10: 拒絕。不需再次提交，直接跳轉到 'end' 頁的 'success' 狀態 ***
+                // (renderEndPage 會根據 interviewConsent='No' 顯示正確的拒絕訊息)
+                setState({ 
+                    showInterviewModal: false, 
+                    page: 'end', 
+                    submissionStatus: 'success' 
+                });
             };
             document.getElementById('interview-yes').onclick = () => {
                 state.interviewConsent = 'Yes';
@@ -960,41 +1009,48 @@
                 } else {
                     errorEl.classList.add('hidden');
                     state.contactInfo = input.value.trim();
-                    setState({ showInterviewModal: false });
-                    handleFinalSubmit();
+                    
+                    // *** MOD V10: 同意。跳轉到訪談問答頁 (interviewSurvey) ***
+                    setState({ page: 'interviewSurvey', showInterviewModal: false });
                 }
             };
         }
 
         // --- 狀態更新與驗證 ---
-        function setState(newState) { /* ... (來自 V8) ... */ 
+        function setState(newState) {
             saveCurrentStepAnswers();
             state = { ...state, ...newState };
+            console.log("New State: ", state.page, state.submissionStatus, state.showInterviewModal);
             render();
         }
         
-        // --- *** 修改：updateDOMState *** ---
         function updateDOMState() {
-            // 更新 text, number inputs (維持不變)
+            // 更新 text, number inputs
             document.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
                 const id = input.dataset.id;
                 if (state.answers[id]) input.value = state.answers[id];
+            });
+
+            // 更新 textarea
+            document.querySelectorAll('textarea').forEach(textarea => {
+                const id = textarea.dataset.id;
+                if (state.answers[id]) textarea.value = state.answers[id];
             });
             
             // 更新 range sliders (排除動態年齡拉桿)
             document.querySelectorAll('input[type="range"]').forEach(slider => {
                 const id = slider.dataset.id;
-                if (id.startsWith('1.3_Age_')) return; // 動態年齡拉桿由 renderDynamicAgeSliders 處理初始值
+                if (id.startsWith('1.3_Age_')) return; 
 
                 const defaultValue = slider.closest('[data-default-value]') ? slider.closest('[data-default-value]').dataset.defaultValue : undefined;
                 
                 if (id.startsWith('2.') || id.startsWith('3.')) {
-                    slider.value = state.answers[id] !== undefined ? state.answers[id] : 2;
+                    slider.value = state.answers[id] !== undefined ? state.answers[id] : 2; // 預設 2 (普通)
                 } else if (id.startsWith('5.4_')) {
-                    slider.value = state.answers[id] !== undefined ? state.answers[id] : 0;
-                } else if (id === '1.2_飼養数量') { // 處理 1.2 的初始值
+                    slider.value = state.answers[id] !== undefined ? state.answers[id] : 0; // 預設 0
+                } else if (id === '1.2_飼養数量') {
                      slider.value = state.answers[id] !== undefined ? state.answers[id] : 0; // 預設 0 (1隻)
-                } else { // 其他 (如 4.x, 5.3)
+                } else {
                     if (state.answers[id]) {
                         slider.value = state.answers[id];
                     } else if (defaultValue) {
@@ -1005,7 +1061,7 @@
                 slider.dispatchEvent(new Event('input', { bubbles: true }));
             });
             
-            // 更新 radio buttons (維持不變)
+            // 更新 radio buttons
             const radioIds = new Set(Object.keys(state.answers).filter(k => 
                 document.querySelector(`input[type="radio"][data-id="${k}"]`) ||
                 document.querySelector(`input[type="radio"][name="${k}"]`)
@@ -1021,18 +1077,18 @@
                 }
             });
 
-            // *** 修改：在 Step 1 呼叫 renderDynamicAgeSliders 來處理初始狀態 ***
-            if (state.currentStep === 0) {
-                const petCountValue = state.answers['1.2_飼養数量'] || 0; // 取得 1.2 的值
-                renderDynamicAgeSliders(petCountValue); // 根據 1.2 的值渲染年齡拉桿並設定初始值
+            // 在 Step 1 呼叫 renderDynamicAgeSliders 來處理初始狀態
+            if (state.currentStep === 0 && state.page === 'survey') {
+                const petCountValue = state.answers['1.2_飼養数量'] || 0;
+                renderDynamicAgeSliders(petCountValue);
             }
 
-            // 更新預算總和 (維持不變)
-            if (state.currentStep === 4) {
+            // 更新預算總和
+            if (state.currentStep === 4 && state.page === 'survey') {
                 updateBudgetTotal();
             }
         }
-        function updateRadioSelection(id) { /* ... (來自 V8) ... */ 
+        function updateRadioSelection(id) {
             const group = document.querySelector(`[data-radio-group="${id}"]`);
             if (group) {
                 group.querySelectorAll('.radio-option, .pet-choice').forEach(label => {
@@ -1045,31 +1101,40 @@
                 });
             }
         }
-        function saveCurrentStepAnswers() { /* ... (來自 V8) ... */ 
-            const stepContainer = document.querySelector('.page-section.active');
-            if (!stepContainer) return;
-            stepContainer.querySelectorAll('input[type="text"], input[type="number"], input[type="range"]').forEach(input => {
-                // *** 修改：確保 ID 存在才儲存 ***
+        function saveCurrentStepAnswers() {
+            // *** MOD V10: 確保只在 survey 和 interviewSurvey 頁面儲存 ***
+            if (state.page !== 'survey' && state.page !== 'interviewSurvey') return;
+
+            const container = document.getElementById('app');
+            if (!container) return;
+
+            // 儲存 inputs 和 ranges
+            container.querySelectorAll('input[type="text"], input[type="number"], input[type="range"]').forEach(input => {
                 if (input.dataset.id) {
                      state.answers[input.dataset.id] = input.value;
                 }
             });
-            stepContainer.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+            // 儲存 textareas
+            container.querySelectorAll('textarea').forEach(textarea => {
+                 if (textarea.dataset.id) {
+                     state.answers[textarea.dataset.id] = textarea.value;
+                 }
+            });
+            // 儲存 radios
+            container.querySelectorAll('input[type="radio"]:checked').forEach(input => {
                 const id = input.dataset.id || input.name;
                 state.answers[id] = input.value;
             });
         }
         
-        // --- *** 修改：isStepValid *** ---
         function isStepValid(stepIndex) {
-            const requiredIds = [...REQUIRED_QUESTIONS_BY_STEP[stepIndex]]; // 複製一份，避免修改原陣列
+            const requiredIds = [...REQUIRED_QUESTIONS_BY_STEP[stepIndex]]; 
 
-            // *** 修改：動態加入 Step 1 的年齡驗證 ***
             if (stepIndex === 0) {
                 const petCountValue = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
-                requiredIds.push('1.3_Age_Oldest'); // 最年長是必填
-                if (petCountValue > 0) { // 如果是 2 或 2+
-                    requiredIds.push('1.3_Age_Youngest'); // 最年幼也是必填
+                requiredIds.push('1.3_Age_Oldest');
+                if (petCountValue > 0) {
+                    requiredIds.push('1.3_Age_Youngest');
                 }
             }
 
@@ -1083,14 +1148,13 @@
                     } else {
                         console.warn(`Validation failed for step ${stepIndex + 1}: ${id} is missing or empty.`);
                         isValid = false;
-                        // break; // 可以取消註解，提早結束檢查
                     }
                 }
             }
             return isValid;
         }
 
-        function validateAllAnswers() { /* ... (來自 V8) ... */ 
+        function validateAllAnswers() {
             for (let i = 0; i < TOTAL_STEPS; i++) {
                 if (!isStepValid(i)) {
                     return { valid: false, firstInvalidStep: i };
@@ -1098,23 +1162,31 @@
             }
             return { valid: true };
         }
-        function handleNextOrSubmit() { /* ... (來自 V8) ... */ 
+
+        // --- *** MOD V10: 修改 "下一步/提交" 邏輯 *** ---
+        function handleNextOrSubmit() {
             saveCurrentStepAnswers();
+            
             if (state.currentStep < TOTAL_STEPS - 1) {
+                // 還沒到最後一步，正常換頁
                 setState({ currentStep: state.currentStep + 1 });
                 const card = document.querySelector('.quiz-card');
                 if (card) card.scrollTop = 0;
             } else {
+                // --- 這是最後一步 (Step 6) ---
                 const validationResult = validateAllAnswers();
                 if (validationResult.valid) {
-                    setState({ showInterviewModal: true });
+                    // *** MOD V10: 驗證通過，執行第一次提交 ***
+                    handleFirstSubmit();
                 } else {
+                    // 驗證失敗
                     showToast(`您在第 ${validationResult.firstInvalidStep + 1} 部分有未填寫的題目喔！`, "error");
                     setState({ currentStep: validationResult.firstInvalidStep });
                 }
             }
         }
-        function showToast(message, type = 'info') { /* ... (來自 V8) ... */ 
+
+        function showToast(message, type = 'info') {
             let toast = document.getElementById('toast-notification');
             if (toast) { toast.remove(); }
             toast = document.createElement('div');
@@ -1130,7 +1202,7 @@
             }, 2500);
         }
 
-        // --- *** 修改：快速填寫隨機答案 *** ---
+        // --- 快速填寫隨機答案 ---
         function fillWithRandomAnswers() {
             const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
             const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -1138,15 +1210,15 @@
 
             // Step 1
             newAnswers['1.1_寵物類型'] = randomChoice(['犬', '貓']);
-            const petCountValue = randomInt(0, 2); // 0: '1', 1: '2', 2: '2+'
+            const petCountValue = randomInt(0, 2);
             newAnswers['1.2_飼養数量'] = petCountValue;
-            newAnswers['1.3_Age_Oldest'] = randomInt(0, 4); // 最年長必填
-            if (petCountValue > 0) { // 如果是 2 或 2+
-                newAnswers['1.3_Age_Youngest'] = randomInt(0, newAnswers['1.3_Age_Oldest']); // 最年幼 <= 最年長
+            newAnswers['1.3_Age_Oldest'] = randomInt(0, 4);
+            if (petCountValue > 0) {
+                newAnswers['1.3_Age_Youngest'] = randomInt(0, newAnswers['1.3_Age_Oldest']);
             }
             newAnswers['1.4_居住型態'] = randomChoice(['單間(3-10坪)', '多間(含客廳)', '透天(獨棟)', '別墅(有庭院)']);
             
-            // Step 2-6 (與 V8 相同)
+            // Step 2-6
             ['2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題'].forEach(id => newAnswers[id] = randomInt(0, 4));
             ['3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴'].forEach(id => newAnswers[id] = randomInt(0, 4));
             newAnswers['3.4_專心時間'] = randomInt(0, 10);
@@ -1154,7 +1226,7 @@
             newAnswers['4.2_玩具娛樂花費'] = randomInt(0, 30);
             newAnswers['4.3_科技用品數量'] = randomInt(0, 5);
             newAnswers['4.4_最高產品金額'] = randomInt(0, 30);
-            newAnswers['5.1_不好經驗'] = randomChoice(['經常有', '偶爾有', '幾乎沒有', '從未購買過昂貴用品']);
+            newAnswers['5.1_不好經驗'] = randomChoice(['經常有', '偶爾有', '幾乎没有', '從未購買過昂貴用品']);
             newAnswers['5.2_願意添購'] = randomChoice(['是', '否']);
             newAnswers['5.3_願意購買金額'] = randomInt(0, 30);
             ['5.4_開心使用', '5.4_安全使用', '5.4_節省時間', '5.4_持久耐用', '5.4_容易清潔'].forEach(id => newAnswers[id] = randomInt(-4, 4)); 
@@ -1166,43 +1238,98 @@
             newAnswers['6.6_寵物相關背景'] = randomChoice(['是', '否']);
             newAnswers['6.7_月收入'] = randomChoice(['NT$ 30,000 以下', 'NT$ 30,001 - 50,000', 'NT$ 50,001 - 80,000', 'NT$ 80,001 以上']);
             
+            // 隨機填寫 Qs (用於測試)
+            newAnswers['Q1_情境連結'] = 'e.g 孤單、搗亂、睡一天、缺乏運動';
+            newAnswers['Q2_當前痛點'] = 'e.g 玩具、爬架、跑步輪';
+            newAnswers['Q3_未滿足需求'] = 'e.g 訓練活動、消耗白天時的體力';
+            newAnswers['Q4_產品概念'] = 'e.g 自由奔跑跳躍、自動陪玩、自動打掃';
+
             showToast("已填入隨機答案，請檢查最後一頁並提交！", "info");
             
             setState({
                 answers: newAnswers,
-                currentStep: TOTAL_STEPS - 1
+                currentStep: TOTAL_STEPS - 1 // 停在最後一頁
             });
         }
 
-        // --- 您的 Google Apps Script 網址 ---
-        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyv4jKzd1FojlC57usFrOKWscRItAfHNeb-OiXXYjwYbTa2LBkpdNhXtaPb_Z4Uuu0pWg/exec'; 
+        // --- Google Apps Script 網址 ---
+        // !!! 確保這個網址是您更新並重新部署過的 V10 腳本網址 !!!
+        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxi0ESuhpYQveWLBb7DGAEXEkxjPofHnI50_xP_p6RkkVLO4RGkYqRMKxFOJbCoGOrvpQ/exec'; 
 
-        // --- *** 修改：最終提交邏輯 *** ---
-        async function handleFinalSubmit() {
+        // --- *** MOD V10: 第一次提交 (僅 Step 1-6) *** ---
+        async function handleFirstSubmit() {
             if (state.submissionStatus === 'submitting') return;
             
-            // 預設值檢查
+            // 顯示載入畫面 (符合需求 1 & 2)
+            setState({ page: "end", submissionStatus: 'submitting' });
+
+            // 執行發送 (不含 Q1-Q4)
+            const success = await sendDataToGoogle(false);
+
+            if (success) {
+                // 提交成功，顯示訪談 Modal (符合需求 3)
+                // 我們跳回 'survey' 頁面，並設定 showInterviewModal = true
+                setState({ 
+                    page: 'survey', 
+                    submissionStatus: 'idle', // 重置提交狀態
+                    showInterviewModal: true 
+                });
+            } else {
+                // 提交失敗，停留在 'end' 頁面 (會顯示錯誤訊息)
+                setState({ 
+                    submissionStatus: "error", 
+                    answers: { ...state.answers, errorMessage: '首次提交失敗' }
+                });
+            }
+        }
+
+        // --- *** MOD V10: 第二次提交 (含 Q1-Q4) *** ---
+        async function handleFinalSubmit() {
+            if (state.submissionStatus === 'submitting') return;
+
+            // 顯示載入畫面
+            setState({ page: "end", submissionStatus: 'submitting' });
+
+            // 執行發送 (包含 Q1-Q4) (符合需求 5)
+            const success = await sendDataToGoogle(true);
+
+            if (success) {
+                // 提交成功，顯示 'end' 頁的成功訊息 (符合需求 6)
+                // renderEndPage 會根據 interviewConsent='Yes' 顯示正確訊息
+                setState({ submissionStatus: "success" });
+            } else {
+                // 提交失敗
+                setState({ 
+                    submissionStatus: "error", 
+                    answers: { ...state.answers, errorMessage: '最終提交失敗' }
+                });
+            }
+        }
+
+
+        // --- *** MOD V10: 抽離出的共用提交函數 *** ---
+        // isFinalSubmit = true 代表包含 Q1-Q4
+        async function sendDataToGoogle(isFinalSubmit = false) {
+            
+            // --- 確保所有預設值都已填入 ---
             const likertIds = [
                 '2.1_視為家人', '2.2_情感慰藉', '2.3_對寵說話', '2.4_擔心想念', '2.5_快樂來源', '2.6_像孩子', '2.7_填補空缺', '2.8_日常話題',
                 '3.1_充滿活力', '3.2_擔心獨處', '3.3_願意陪伴'
             ];
             likertIds.forEach(id => {
-                if (state.answers[id] === undefined) state.answers[id] = '2'; 
+                if (state.answers[id] === undefined) state.answers[id] = '2'; // 預設 '普通'
             });
-            // *** 修改：年齡預設值檢查 ***
             if (state.answers['1.3_Age_Oldest'] === undefined) state.answers['1.3_Age_Oldest'] = '0';
             const petCountValue = parseInt(state.answers['1.2_飼養数量'] || 0, 10);
             if (petCountValue > 0 && state.answers['1.3_Age_Youngest'] === undefined) {
                  state.answers['1.3_Age_Youngest'] = '0';
             }
-
              if (state.answers['5.3_願意購買金額'] === undefined) state.answers['5.3_願意購買金額'] = '0';
             const budgetIds = ['5.4_開心使用', '5.4_安全使用', '5.4_節省時間', '5.4_持久耐用', '5.4_容易清潔'];
             budgetIds.forEach(id => {
                 if (state.answers[id] === undefined) state.answers[id] = '0'; 
             });
-
-            setState({ page: "end", submissionStatus: 'submitting' });
+            // --- 預設值結束 ---
 
             const durationSeconds = state.startTime ? Math.round((Date.now() - state.startTime) / 1000) : 0;
 
@@ -1211,11 +1338,9 @@
                 'Duration': durationSeconds + ' 秒',
                 'UniqueID': state.uniqueID,
                 '1.1_寵物類型': state.answers['1.1_寵物類型'] || 'N/A',
-                // *** 修改：轉換 1.2 的值 ***
                 '1.2_飼養数量': petCountValueToText(state.answers['1.2_飼養数量'] || '0'), 
-                // *** 修改：加入新的年齡欄位 ***
                 '1.3_Age_Oldest': ageValueToText(state.answers['1.3_Age_Oldest'] || '0'),
-                '1.3_Age_Youngest': (petCountValue > 0) ? ageValueToText(state.answers['1.3_Age_Youngest'] || '0') : '', // 如果只有一隻，送空值
+                '1.3_Age_Youngest': (petCountValue > 0) ? ageValueToText(state.answers['1.3_Age_Youngest'] || '0') : '',
                 '1.4_居住型態': state.answers['1.4_居住型態'] || 'N/A',
                 '2.1_視為家人': likertValueToText(state.answers['2.1_視為家人']),
                 '2.2_情感慰藉': likertValueToText(state.answers['2.2_情感慰藉']),
@@ -1228,7 +1353,7 @@
                 '3.1_充滿活力': likertValueToText(state.answers['3.1_充滿活力']),
                 '3.2_擔心獨處': likertValueToText(state.answers['3.2_擔心獨處']),
                 '3.3_願意陪伴': likertValueToText(state.answers['3.3_願意陪伴']),
-                '3.4_專心時間': 'N/A', // 稍後轉換
+                '3.4_專心時間': 'N/A',
                 '4.1_食品保健花費': 'N/A',
                 '4.2_玩具娛樂花費': 'N/A',
                 '4.3_科技用品數量': 'N/A',
@@ -1248,11 +1373,16 @@
                 '6.5_子女': state.answers['6.5_子女'] || 'N/A',
                 '6.6_寵物相關背景': state.answers['6.6_寵物相關背景'] || 'N/A',
                 '6.7_月收入': state.answers['6.7_月收入'] || 'N/A',
-                '7.1_願意受訪': state.interviewConsent || 'N/A',
-                '7.2_聯絡資訊': state.contactInfo || ''
+                '7.1_願意受訪': state.interviewConsent || (isFinalSubmit ? 'Yes' : 'N/A'), // 如果是最終提交，一定是 'Yes'
+                '7.2_聯絡資訊': state.contactInfo || '',
+                // *** MOD V10: 根據 isFinalSubmit 決定是否傳送 Q1-Q4 ***
+                'Q1_情境連結': isFinalSubmit ? (state.answers['Q1_情境連結'] || '') : '',
+                'Q2_當前痛點': isFinalSubmit ? (state.answers['Q2_當前痛點'] || '') : '',
+                'Q3_未滿足需求': isFinalSubmit ? (state.answers['Q3_未滿足需求'] || '') : '',
+                'Q4_產品概念': isFinalSubmit ? (state.answers['Q4_產品概念'] || '') : ''
             };
             
-            // [ 資料轉換 (與 V8 類似，移除 Pet1-5) ]
+            // [ 資料轉換 ]
             const v3_4 = state.answers['3.4_專心時間'] || '0';
             dataToSend['3.4_專心時間'] = (v3_4 == 10) ? '5+' : (v3_4 * 0.5).toString();
             const v4_1 = state.answers['4.1_食品保健花費'] || '0';
@@ -1269,29 +1399,34 @@
                 dataToSend[id] = budgetSliderValueToText(state.answers[id] || '0');
             });
             
-            console.log("Submitting Payload:", dataToSend);
+            console.log(`Submitting Payload (isFinal=${isFinalSubmit}):`, dataToSend);
             
-            if (GOOGLE_SHEET_SCRIPT_URL.includes('!!!') || !GOOGLE_SHEET_SCRIPT_URL.startsWith('https:')) { /* ... (來自 V8) ... */ 
+            if (GOOGLE_SHEET_SCRIPT_URL.includes('!!!') || !GOOGLE_SHEET_SCRIPT_URL.startsWith('https:')) {
                 console.error("尚未設定 Google Apps Script URL！");
-                setState({ submissionStatus: "error", answers: { ...state.answers, errorMessage: '尚未設定 Google Apps Script URL' } });
-                return;
+                state.answers.errorMessage = '尚未設定 Google Apps Script URL';
+                return false; // 返回失敗
             }
 
-            try { /* ... (來自 V8) ... */ 
+            try {
                 const formBody = new URLSearchParams(dataToSend).toString();
                 await fetch(GOOGLE_SHEET_SCRIPT_URL, {
                     method: 'POST', mode: 'no-cors', cache: 'no-cache',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formBody 
                 });
-                setTimeout(() => { setState({ submissionStatus: "success" }); }, 1000);
+                
+                // 等待一小段時間確保 no-cors 請求已送出
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                return true; // 返回成功
+
             } catch (error) {
                 console.error("提交到 Google Sheet 失敗 (fetch 本身出錯):", error);
-                setState({ submissionStatus: "error", answers: { ...state.answers, errorMessage: error.toString() } });
+                state.answers.errorMessage = error.toString();
+                return false; // 返回失敗
             }
         }
 
-        // --- 首次加載時渲染 (來自 V8) ---
+        // --- 首次加載時渲染 ---
         document.addEventListener('DOMContentLoaded', () => {
             render();
             const debugButton = document.getElementById('debugFillButton');
@@ -1302,6 +1437,3 @@
     </script>
 </body>
 </html>
-
-
-
