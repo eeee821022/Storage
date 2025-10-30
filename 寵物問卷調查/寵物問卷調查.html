@@ -72,11 +72,11 @@
     </div>
 
     <!-- 快速測試按鈕 -->
-    <!--
+    <!-- 
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
-     -->
+    --> 
 
     <script>
         // --- 獲取或設定唯一識別碼 ---
@@ -432,10 +432,13 @@
         }
         
         // --- 輔助函數 ---
+        
+        // *** 修改: createSlider ***
+        // 幫 wrapper div 加上 id="container-${id}"
         function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
             const currentValue = state.answers[id] || defaultValue || min;
             return `
-                <div class="space-y-2 py-2"> 
+                <div class="space-y-2 py-2" id="container-${id}"> 
                     <div class="flex justify-between items-center">
                         <label class="font-medium text-gray-700">${label}</label>
                         <span id="slider-value-${id}" class="text-lg font-bold text-blue-600">${valueTextFn(currentValue)}</span>
@@ -483,32 +486,22 @@
             const currentValue = state.answers[id] !== undefined ? state.answers[id] : 2; // 預設 '普通'
             const currentText = likertValueToText(currentValue);
             const valueTextFnString = likertValueToText.toString();
-            return `
-                <div class="space-y-2 py-3">
-                    <div class="flex justify-between items-center space-x-3 mb-2">
-                        <label class="font-medium text-gray-700">${label}</label>
-                        <span id="slider-value-${id}" class="text-lg font-bold text-blue-600 flex-shrink-0">${currentText}</span>
-                    </div>
-                    <input type="range" data-id="${id}" id="${id}" min="0" max="4" step="1" value="${currentValue}"
-                           data-valuetextfn="${encodeURIComponent(valueTextFnString)}">
-                </div>
-            `;
+            // *** 修改: 呼叫 createSlider ***
+            return createSlider(id, label, 0, 4, 1, createDynamicFunction(valueTextFnString), currentValue);
         }
         function createBudgetSlider(id, label) {
             const currentValue = state.answers[id] !== undefined ? state.answers[id] : 0;
             const currentText = budgetSliderValueToText(currentValue);
             const valueTextFnString = budgetSliderValueToText.toString();
-            return `
-                <div class="space-y-2 py-3">
-                    <div class="flex justify-between items-center space-x-3 mb-2">
-                        <label class="font-medium text-gray-700">${label}</label>
-                        <span id="slider-value-${id}" class="text-lg font-bold text-blue-600">${currentText}</span>
-                    </div>
-                    <input type="range" class="budget-slider" data-id="${id}" id="${id}" min="-4" max="4" step="1" value="${currentValue}"
-                           data-type="budget-slider"
-                           data-valuetextfn="${encodeURIComponent(valueTextFnString)}">
-                </div>
-            `;
+            // *** 修改: 呼叫 createSlider 並客製化 ***
+            // createSlider 會回傳 <div id="container-ID">...</div>
+            // 我們需要取得該 HTML，並修改 <input> 標籤
+            let sliderHTML = createSlider(id, label, -4, 4, 1, createDynamicFunction(valueTextFnString), currentValue);
+            sliderHTML = sliderHTML.replace(
+                '<input type="range" data-id', 
+                '<input type="range" class="budget-slider" data-type="budget-slider" data-id'
+            );
+            return sliderHTML;
         }
 
         // --- 建立 <textarea> ---
@@ -802,6 +795,12 @@
                      if (id === '1.3_Age_Youngest' && (state.answers['1.2_飼養數量'] || '0') === '0') continue;
                      if (id === '7.2_聯絡資訊' && state.interviewConsent !== 'Yes') continue; 
                 }
+
+                // *** 新增: 如果 5.2 是 "否"，則跳過 5.3 ***
+                if (id === '5.3_願意購買金額' && state.answers['5.2_願意添購'] === '否') {
+                    continue;
+                }
+
                 try {
                     // *** 新增: 處理 Reference ***
                     if (id === 'Reference') {
@@ -882,6 +881,31 @@
             }
         }
 
+        // --- *** 新增: 5.3 顯隱/重設 輔助函數 *** ---
+        function toggleQuestion5_3(value) {
+            const container5_3 = document.getElementById('container-5.3_願意購買金額');
+            const slider5_3 = document.getElementById('5.3_願意購買金額');
+
+            if (value === '是') {
+                // 顯示 5.3
+                if (container5_3) container5_3.classList.remove('hidden');
+            } else { // '否' 或 undefined (預設)
+                // 隱藏 5.3
+                if (container5_3) container5_3.classList.add('hidden');
+                
+                // 將 5.3 的值重設為 '0'
+                state.answers['5.3_願意購買金額'] = '0';
+                
+                // 同步更新 UI 上的滑桿 (即使是隱藏的)
+                if (slider5_3) {
+                    slider5_3.value = '0';
+                    // 觸發 input 事件來更新顯示的文字為 $0
+                    slider5_3.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+        }
+
+
         // --- 事件監聽器 ---
         
         // *** 修改: attachStartListeners ***
@@ -942,6 +966,7 @@
             }
         }
         
+        // *** 修改: attachSurveyListeners ***
         function attachSurveyListeners() {
             document.getElementById('prevButton').onclick = () => {
                 if (state.currentStep > 0) {
@@ -956,6 +981,12 @@
                     const id = e.target.dataset.id || e.target.name;
                     state.answers[id] = e.target.value;
                     updateRadioSelection(id);
+
+                    // --- [新增 5.3 連動邏輯] ---
+                    if (id === '5.2_願意添購') {
+                        toggleQuestion5_3(e.target.value);
+                    }
+                    // --- [新增結束] ---
                 };
             });
             
@@ -1067,6 +1098,7 @@
             render();
         }
         
+        // *** 修改: updateDOMState ***
         function updateDOMState() {
             // 更新 text, number inputs
             document.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
@@ -1106,6 +1138,11 @@
                     }
                 }
                 
+                // *** 修改: 5.3 的預設值由 toggleQuestion5_3 控制，這裡確保 '0' 被正確寫入 ***
+                if (id === '5.3_願意購買金額' && state.answers[id] === undefined) {
+                    slider.value = '0';
+                }
+
                 slider.dispatchEvent(new Event('input', { bubbles: true }));
             });
             
@@ -1134,6 +1171,13 @@
             // 更新預算總和
             if (state.currentStep === 4 && state.page === 'survey') {
                 updateBudgetTotal();
+                
+                // --- [新增 5.3 顯隱邏輯] ---
+                // 確保在頁面 (重新) 渲染時，5.3 的可見性是正確的
+                // ( '是' 顯示, '否' 或 undefined 隱藏 )
+                const value5_2 = state.answers['5.2_願意添購'];
+                toggleQuestion5_3(value5_2);
+                // --- [新增結束] ---
             }
         }
         function updateRadioSelection(id) {
@@ -1175,6 +1219,7 @@
             });
         }
         
+        // *** 修改: isStepValid ***
         function isStepValid(stepIndex) {
             const requiredIds = [...REQUIRED_QUESTIONS_BY_STEP[stepIndex]]; 
 
@@ -1186,12 +1231,25 @@
                 }
             }
 
+            // --- [新增 5.3 驗證邏輯] ---
+            // 如果在第 5 頁 (index 4)，且 5.2 回答 "否"
+            if (stepIndex === 4 && state.answers['5.2_願意添購'] === '否') {
+                // 則將 5.3 從必填清單中移除
+                const index = requiredIds.indexOf('5.3_願意購買金額');
+                if (index > -1) {
+                    requiredIds.splice(index, 1);
+                }
+            }
+            // --- [新增結束] ---
+
+
             let isValid = true;
             for (const id of requiredIds) {
                 const answer = state.answers[id];
                 if (answer === undefined || answer === null || answer === '') {
                     // 檢查是否為允許空白的特殊情況 (如金額為 0)
-                    if ((id.startsWith('5.4_') || id === '5.3_願意購買金額' || id.startsWith('1.3_Age_')) && answer === '0') {
+                    // *** 修改: 5.3 允許 '0' ***
+                    if ((id.startsWith('5.4_') || id === '5.3_願意購買金額' || id.startsWith('1.3_Age_')) && (answer === '0' || answer === 0)) {
                        // 0 is valid for these
                     } else {
                         console.warn(`Validation failed for step ${stepIndex + 1}: ${id} is missing or empty.`);
@@ -1215,6 +1273,12 @@
         function handleNextOrSubmit() {
             saveCurrentStepAnswers();
             
+            // *** 修改: 檢查當前頁是否有效 ***
+            if (!isStepValid(state.currentStep)) {
+                showToast(`您在第 ${state.currentStep + 1} 部分有未填寫的題目喔！`, "error");
+                return;
+            }
+
             if (state.currentStep < TOTAL_STEPS - 1) {
                 // 還沒到最後一步，正常換頁
                 setState({ currentStep: state.currentStep + 1 });
@@ -1222,6 +1286,7 @@
                 if (card) card.scrollTop = 0;
             } else {
                 // --- 這是最後一步 (Step 6) ---
+                // 再次檢查所有答案 (雖然前面已逐頁檢查，但以防萬一)
                 const validationResult = validateAllAnswers();
                 if (validationResult.valid) {
                     // *** MOD V10: 驗證通過，執行第一次提交 ***
@@ -1279,7 +1344,12 @@
             newAnswers['4.4_最高產品金額'] = randomInt(0, 30);
             newAnswers['5.1_不好經驗'] = randomChoice(['經常有', '偶爾有', '幾乎没有', '從未購買過昂貴用品']);
             newAnswers['5.2_願意添購'] = randomChoice(['是', '否']);
-            newAnswers['5.3_願意購買金額'] = randomInt(0, 30);
+            // *** 修改: 根據 5.2 決定 5.3 ***
+            if (newAnswers['5.2_願意添購'] === '是') {
+                newAnswers['5.3_願意購買金額'] = randomInt(1, 30); // 如果是 "是"，給一個非 0 的值
+            } else {
+                newAnswers['5.3_願意購買金額'] = '0'; // 如果是 "否"，設為 0
+            }
             ['5.4_開心使用', '5.4_安全使用', '5.4_節省時間', '5.4_持久耐用', '5.4_容易清潔'].forEach(id => newAnswers[id] = randomInt(-4, 4)); 
             newAnswers['6.1_性別'] = randomChoice(['男性', '女性', '其他']);
             newAnswers['6.2_年齡'] = randomChoice(['24歲以下', '25 - 34歲', '35 - 44歲', '45 - 54歲', '55歲以上']);
@@ -1375,6 +1445,7 @@
             if (petCountValue > 0 && state.answers['1.3_Age_Youngest'] === undefined) {
                  state.answers['1.3_Age_Youngest'] = '0';
             }
+            // *** 修改: 確保 5.3 預設為 '0' ***
              if (state.answers['5.3_願意購買金額'] === undefined) state.answers['5.3_願意購買金額'] = '0';
             const budgetIds = ['5.4_開心使用', '5.4_安全使用', '5.4_節省時間', '5.4_持久耐用', '5.4_容易清潔'];
             budgetIds.forEach(id => {
@@ -1442,8 +1513,16 @@
             dataToSend['4.3_科技用品數量'] = (v4_3 >= 5) ? '5+ 種' : `${v4_3} 種`;
             const v4_4 = state.answers['4.4_最高產品金額'] || '0';
             dataToSend['4.4_最高產品金額'] = (v4_4 == 0) ? '$0' : (v4_4 >= 30 ? '$30,000+' : `$${v4_4 * 1000}`);
+            
+            // *** 修改: 處理 5.3 ***
             const v5_3 = state.answers['5.3_願意購買金額'] || '0';
-            dataToSend['5.3_願意購買金額'] = (v5_3 == 0) ? '$0' : (v5_3 >= 30 ? '$30,000+' : `$${v5_3 * 1000}`);
+            // 如果 5.2 是 "否"，則 5.3 強制為 N/A (或 $0)，即使它有值
+            if (state.answers['5.2_願意添購'] === '否') {
+                dataToSend['5.3_願意購買金額'] = '$0'; // 或是 'N/A'
+            } else {
+                dataToSend['5.3_願意購買金額'] = (v5_3 == 0) ? '$0' : (v5_3 >= 30 ? '$30,000+' : `$${v5_3 * 1000}`);
+            }
+
             budgetIds.forEach(id => {
                 dataToSend[id] = budgetSliderValueToText(state.answers[id] || '0');
             });
