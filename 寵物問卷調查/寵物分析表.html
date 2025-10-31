@@ -26,7 +26,7 @@
         .small-chart-container {
             position: relative;
             width: 100%;
-            height: 120px; /* 每個小圖表有固定高度 (長條圖) */
+            /* 修正：移除固定高度，交給 JS 動態計算 */
         }
         
         /* --- 篩選器樣式 --- */
@@ -161,14 +161,12 @@
 
         /* --- Sankey 專用樣式 (優化) --- */
         #sankeyChart svg { 
-            /* 修正 1.2: 讓 SVG 寬度充滿容器，但內部 D3 繪製區域縮小以容納標籤 */
             width: 100%; 
             height: 100%; 
             max-height: 600px; /* 限制桑基圖最大高度 */
         }
         .sankey-link {
             fill: none;
-            /* stroke: #000; <-- 移除預設黑色 */
             stroke-opacity: 0.4; /* 調整透明度，讓流動感更強 */
             transition: stroke-opacity 0.2s;
         }
@@ -181,7 +179,7 @@
             cursor: pointer;
             border-radius: 4px; /* 增加圓角 */
             transition: fill-opacity 0.2s;
-            /* 修正 3：移除節點框線 */
+            /* 修正：移除節點框線 */
             stroke-width: 0; 
         }
         /* 修正 Sankey 標籤，讓圖例取代原本的標籤 */
@@ -195,6 +193,14 @@
             margin-bottom: 0.25rem;
             word-break: break-word;
         }
+
+        /* --- 單欄分析排版修正樣式 --- */
+        .small-chart-header {
+             /* 確保標題和圖例對齊 */
+             min-height: 20px;
+             line-height: 1.2;
+        }
+
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -725,6 +731,9 @@
         
         // --- 初始化 ---
         window.addEventListener('DOMContentLoaded', () => {
+            // ** 修正 1.1: 設定預設 Apps Script 網址 **
+            const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSC-co1UtcQ0V2faXXuPIr5F7s3pri4ukLq9Tyu5unMfeVseAHsr_F04D0yzDssU-wbA/exec';
+
             // 修正 1.2: 移除載入按鈕相關的 DOM 元素
             document.getElementById('setupInstructions').classList.remove('max-w-4xl', 'mx-auto', 'mb-8', 'p-6', 'bg-blue-50', 'border-2', 'border-blue-200', 'rounded-lg');
             document.getElementById('setupInstructions').innerHTML = `<h2 class="text-xl font-bold text-blue-800 mb-4">📋 設定狀態</h2><p class="text-gray-700">資料將於頁面開啟時自動載入。如需變更資料來源，請修改程式碼內 <code>DEFAULT_SCRIPT_URL</code> 變數。</p>`;
@@ -793,9 +802,6 @@
                 updateSankeyChart();
             });
 
-            // ** 修正 1.3: 移除載入按鈕事件，改為自動調用 **
-            // document.getElementById('loadDataButton').addEventListener('click', ...); 
-            
             // ** 修正 1.4: 頁面載入後自動載入數據 **
             initDashboard(DEFAULT_SCRIPT_URL);
         });
@@ -815,28 +821,18 @@
             try {
                 loadingMessage.textContent = '正在從 Google Sheet 擷取資料...';
                 
-                // 修正 1.5: 移除舊的 debugInfo 邏輯 (因為我們沒有 input 欄位)
-                // document.getElementById('debugInfoContainer').classList.remove('hidden');
-                // debugInfo.innerHTML = '<p class="font-bold text-blue-700">開始載入資料...</p>';
-                // debugInfo.innerHTML += `<p class="mt-2 text-xs break-all">🔗 網址: ${scriptUrl}</p>`;
-
                 const url = scriptUrl;
                 const response = await fetch(url);
                 if (!response.ok) {
-                    // debugInfo.innerHTML += `<p class="text-red-600 ml-4">❌ HTTP ${response.status} 錯誤</p>`;
                     throw new Error(`伺服器錯誤: ${response.status}`);
                 }
                 const jsonData = await response.json();
                 if (jsonData.error) {
-                    // debugInfo.innerHTML += `<p class="text-red-600 ml-4">❌ Apps Script 錯誤: ${jsonData.error}</p>`;
                     throw new Error(`Apps Script 錯誤: ${jsonData.error}`);
                 }
                 if (!Array.isArray(jsonData) || jsonData.length === 0) {
-                    // debugInfo.innerHTML += `<p class="text-red-600 ml-4">❌ 未收到任何資料。請檢查 Apps Script 中的欄位範圍是否正確。</p>`;
                     throw new Error('未收到任何資料或資料格式不符。');
                 }
-                // debugInfo.innerHTML += `<p class="text-green-600 ml-4">✅ 成功擷取 ${jsonData.length} 筆資料</p>`;
-                // debugInfo.innerHTML += `<p class="text-blue-600 ml-4">🔍 偵測到 ${Object.keys(jsonData[0]).length} 個欄位</p>`;
                 return jsonData;
             } catch (error) {
                 // 修正 2.2: 如果載入失敗，顯示錯誤資訊，並將 loading 隱藏
@@ -1034,7 +1030,7 @@
                     panel.appendChild(itemDiv);
                 });
                 
-                // ** 修正 3：確認篩選器會更新兩個圖表 **
+                // ** 修正 3：確認篩選器會更新三個圖表 **
                 panel.querySelector('.select-all-btn').addEventListener('click', (e) => {
                     e.preventDefault();
                     panel.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
@@ -1600,7 +1596,17 @@
                             color: '#333', 
                             font: { weight: 'bold', size: DATALABELS_FONT_SIZE } // ** 使用全局變數 **
                         },
-                        tooltip: { enabled: true, mode: 'index', intersect: false },
+                        tooltip: { 
+                            enabled: true, 
+                            mode: 'index', 
+                            intersect: false,
+                            // ** 修正 Tooltip 顯示 **
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: { weight: 'bold', size: 14 }, 
+                            footerFont: { weight: 'bold', size: 12 },
+                            mode: 'nearest', 
+                            position: 'nearest' 
+                        },
                         legend: { display: false }
                     }
                 }
@@ -1624,12 +1630,14 @@
                 const valStr = String(value).trim();
                 const prefix = getQuestionPrefix(key);
                 
+                // 1. 優先檢查 (問題前綴 + 選項值) 的組合 e.g., '6.5_有'
                 const keyedColor = FIXED_ANSWER_COLORS[prefix + '_' + valStr];
                 if (keyedColor) return keyedColor;
                 
+                // 2. 接著檢查單純的選項值
                 if (FIXED_ANSWER_COLORS[valStr]) return FIXED_ANSWER_COLORS[valStr];
 
-                // 如果都沒有固定色，使用通用調色盤
+                // 3. 都不匹配時，使用通用調色盤
                 const uniqueValues = [...new Set(rawData.map(d => String(d[key]).trim()))];
                 const categoryIndex = uniqueValues.indexOf(valStr);
                 return CATEGORICAL_PALETTE[categoryIndex % CATEGORICAL_PALETTE.length];
@@ -1971,39 +1979,18 @@
             
             // ** 修正 5.0: 調整每個小圖表的高度，使其更緊湊 **
             const singleBarHeight = 100 * BAR_CATEGORY_PERCENTAGE; // 根據粗度調整 Bar 區域高度
-            const wrapperHeight = Math.max(singleBarHeight + 35, 60); // 確保最小高度
+            const chartAreaHeight = Math.max(singleBarHeight, 20); // 圖表區域的最小高度
+            // 整體 wrapper 的高度 = 圖表區 + X軸刻度 (35px) + 上下 padding/margin (5px)
+            const headerHeight = 30; // 為標題和圖例預留 30px 的空間
+            const wrapperHeight = chartAreaHeight + 35 + 5 + headerHeight; 
 
             // 為每一個勾選的欄位建立一個圖表
             selectedColumns.forEach((colKey, index) => {
                 const chartId = `smallChart-${index}`;
                 const legendId = `smallLegend-${index}`;
-                
-                // ** 還原：avgId **
                 const avgId = `smallAvg-${index}`;
 
-                // 1. 建立 HTML 結構
-                const chartWrapper = document.createElement('div');
-                // ** 修正 1：移除圓角和陰影，加上邊框 **
-                chartWrapper.className = 'bg-white p-4'; 
-                if (index > 0) {
-                    chartWrapper.className += ' border-t border-gray-200'; // 加上分隔線
-                }
-                
-                chartWrapper.innerHTML = `
-                    <!-- ** 還原：帶平均數的標題 ** -->
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-lg font-bold text-gray-800">${colKey}</h3>
-                        <span id="${avgId}" class="text-sm font-medium text-blue-700"></span>
-                    </div>
-                    <div id="${legendId}" class="flex flex-wrap gap-x-3 gap-y-1 justify-start mb-2"></div>
-                    <div class="small-chart-container" style="height: ${wrapperHeight}px;">
-                        <canvas id="${chartId}"></canvas>
-                    </div>
-                `;
-                container.appendChild(chartWrapper);
-
                 // 2. 準備資料
-                // ** 還原：yLabels **
                 const yLabels = [colKey]; 
                 let groupLabels = [...new Set(filteredData.map(d => d[colKey]))];
                 
@@ -2016,7 +2003,7 @@
                     if(firstValue) isGroupKeyNumeric = parseNumericValue(firstValue[colKey]).isNumeric;
                 }
 
-                // ** 修正：使用固定顏色地圖和優先檢查邏輯 **
+                // ** 顏色映射邏輯 (與主圖表一致) **
                 let activePalette;
                 if (isGroupKeyNumeric && groupLabels.length > 3) activePalette = GRADIENT_PALETTE; 
                 else activePalette = CATEGORICAL_PALETTE;
@@ -2025,31 +2012,25 @@
                 let paletteIndex = 0;
                 groupLabels.forEach((val) => {
                     const valStr = String(val).trim();
-                    const prefix = getQuestionPrefix(colKey); // <-- 修正 1.2: 取得題號前綴
+                    const prefix = getQuestionPrefix(colKey);
                     
-                    // 1. 優先檢查 (問題前綴 + 選項值) 的組合 e.g., '6.5_有'
-                    const keyedColor = FIXED_ANSWER_COLORS[prefix + '_' + valStr]; // <-- 修正 1.2: 使用前綴查找
+                    const keyedColor = FIXED_ANSWER_COLORS[prefix + '_' + valStr]; 
                     if (keyedColor) {
                         colorMap[String(val)] = keyedColor;
-                    // 2. 接著檢查單純的選項值
                     } else if (FIXED_ANSWER_COLORS[valStr]) {
                         colorMap[String(val)] = FIXED_ANSWER_COLORS[valStr];
                     } else {
-                        // 3. 都不匹配時，使用漸層或類別調色盤
                         colorMap[String(val)] = activePalette[paletteIndex % activePalette.length]; 
                         paletteIndex++;
                     }
                 });
-                // ** 修正結束 **
 
                 const total = filteredData.filter(d => d[colKey] !== undefined && d[colKey] !== null).length;
                 const totalForPercent = total > 0 ? total : 1;
                 
-                // ** 還原：為長條圖準備資料 **
                 const datasets = groupLabels.map(groupVal => {
                     const count = filteredData.filter(d => String(d[colKey]) === String(groupVal)).length;
                     const dataValue = isPercent ? (count / totalForPercent) * 100 : count;
-                    // ** 修正：使用 colorMap 取得顏色 **
                     const color = colorMap[String(groupVal)] || CATEGORICAL_PALETTE[0]; 
                     return {
                         label: groupVal,
@@ -2063,27 +2044,53 @@
                 });
 
 
+                // 1. 建立 HTML 結構 (優化排版)
+                const chartWrapper = document.createElement('div');
+                chartWrapper.className = 'bg-white pt-2 pb-1 px-4'; // 減少垂直 padding
+                if (index > 0) {
+                    chartWrapper.className += ' border-t border-gray-200'; 
+                }
+                
+                // 標題/平均數/圖例 整合在一個 flex 容器中
+                chartWrapper.innerHTML = `
+                    <div class="small-chart-header flex justify-between items-start pt-1">
+                        <div class="flex items-baseline space-x-2">
+                            <h3 class="text-base font-bold text-gray-800 leading-none">${colKey}</h3>
+                            <span id="${avgId}" class="text-sm font-medium text-blue-700 leading-none"></span>
+                        </div>
+                        <div id="${legendId}" class="flex flex-wrap gap-x-2 gap-y-0.5 justify-end"></div>
+                    </div>
+                    <!-- 修正：將 chartAreaHeight 寫入，確保高度緊湊 -->
+                    <div class="small-chart-container" style="height: ${wrapperHeight}px;">
+                        <canvas id="${chartId}"></canvas>
+                    </div>
+                `;
+                container.appendChild(chartWrapper);
+
                 // 3. 建立新圖表 (長條圖)
                 const ctx = document.getElementById(chartId).getContext('2d');
                 smallCharts[chartId] = new Chart(ctx, {
-                    type: 'bar', // ** 類型改回 bar **
+                    type: 'bar', 
                     data: { 
-                        labels: yLabels, // ** 標籤移到這裡 **
+                        labels: yLabels, 
                         datasets: datasets 
                     },
                     options: {
-                        indexAxis: 'y', // ** 還原 **
+                        indexAxis: 'y', 
                         responsive: true,
                         maintainAspectRatio: false,
-                        layout: { padding: { left: -10 } }, // 隱藏 Y 軸標籤
+                        layout: { 
+                            padding: { left: -10 } // 隱藏 Y 軸標籤
+                        }, 
                         scales: {
                             x: {
                                 display: true,
                                 stacked: true,
                                 max: isPercent ? 100 : undefined,
-                                // ** 修正 2.1: 隱藏 X 軸標題，但顯示刻度數字 (ticks) **
+                                // 修正 2.1: 隱藏 X 軸標題，但顯示刻度數字 (ticks)
                                 ticks: {
-                                    display: true // <--- 改為 true
+                                    display: true, 
+                                    font: { size: 10 }
                                 },
                                 title: { 
                                     display: false // 隱藏軸標題
@@ -2092,28 +2099,27 @@
                             y: {
                                 stacked: true,
                                 display: false, // 隱藏 Y 軸
-                                barPercentage: BAR_PERCENTAGE,  // ** 修正 3.4: 使用設定值 **
-                                categoryPercentage: BAR_CATEGORY_PERCENTAGE // ** 修正 3.4: 使用設定值 **
+                                barPercentage: BAR_PERCENTAGE, 
+                                categoryPercentage: BAR_CATEGORY_PERCENTAGE 
                             }
                         },
                         plugins: {
                             datalabels: {
-                                display: true, // ** 修正：永遠顯示 (用於筆數或佔比) **
+                                display: true, 
                                 color: '#fff',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-                                font: { weight: 'bold', size: DATALABELS_FONT_SIZE }, // ** 修正 3.4: 使用設定值 **
+                                font: { weight: 'bold', size: DATALABELS_FONT_SIZE },
                                 formatter: (value, context) => {
-                                    if (value === 0) return ''; // 隱藏 0
+                                    if (value === 0) return ''; 
                                     
                                     if (isPercent) {
-                                        if (value < 8) return ''; // 佔比太小不顯示
+                                        if (value < 8) return ''; 
                                         return Math.round(value) + '%';
                                     } else {
-                                        // 筆數模式：檢查佔比是否太小
                                         const allData = context.chart.data.datasets.map(ds => ds.data[0]);
                                         const total = allData.reduce((sum, val) => sum + val, 0);
-                                        if (total > 0 && (value / total) < 0.08) return ''; // 筆數佔比太小不顯示
-                                        return value; // 顯示筆數
+                                        if (total > 0 && (value / total) < 0.08) return ''; 
+                                        return value; 
                                     }
                                 }
                             },
@@ -2141,13 +2147,13 @@
                 // 4. 填入圖例
                 const legendContainer = document.getElementById(legendId);
                 let legendHTML = '';
-                datasets.forEach((dataset, index) => { // ** 還原：讀取長條圖的 dataset **
+                datasets.forEach((dataset) => { 
                     const label = dataset.label;
                     const color = dataset.borderColor;
-                    legendHTML += `<div class="flex items-center legend-item" data-chart-id="${chartId}" data-dataset-index="${index}">
-                                     <span class="w-3 h-3 mr-1" style="background-color: ${color}; border-radius: 2px;"></span>
-                                     <span class="text-sm text-gray-700">${label}</span>
-                                   </div>`;
+                    legendHTML += `<div class="flex items-center legend-item">
+                                     <span class="w-3 h-3 mr-1 flex-shrink-0" style="background-color: ${color}; border-radius: 2px;"></span>
+                                     <span class="text-xs text-gray-700">${label}</span>
+                                   </div>`; // 圖例文字縮小為 text-xs
                 });
                 legendContainer.innerHTML = legendHTML;
                 
