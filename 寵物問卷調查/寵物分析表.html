@@ -1,0 +1,2217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>樞紐分析儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <!-- Font Awesome for swap icon/settings icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- ** 引入 D3.js 和 D3-Sankey (新增) ** -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <!-- ** 截圖功能 ** -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            transition: height 0.3s ease-in-out;
+            min-height: 500px;
+        }
+        /* -- 還原：單一欄位圖表容器 (長條圖) -- */
+        .small-chart-container {
+            position: relative;
+            width: 100%;
+            height: 120px; /* 每個小圖表有固定高度 (長條圖) */
+        }
+        
+        /* --- 篩選器樣式 --- */
+        .filter-dropdown summary {
+            cursor: pointer; padding: 0.5rem 1rem; border: 1px solid #d1d5db;
+            border-radius: 0.375rem; background-color: white;
+            transition: background-color 0.2s, border-color 0.2s;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .filter-dropdown summary:hover { background-color: #f9fafb; }
+        .filter-dropdown[open] summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .filter-dropdown .filter-panel {
+            max-height: 250px; overflow-y: auto; border: 1px solid #d1d5db; border-top: none;
+            padding: 0.75rem; background-color: white; z-index: 10; position: absolute;
+            width: 100%; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem;
+        }
+        .filter-dropdown { position: relative; }
+        
+        /* 多重選取框樣式 */
+        .multi-select-box {
+            border: 1px solid #d1d5db; border-radius: 0.375rem;
+            padding: 0.5rem; max-height: 150px; overflow-y: auto;
+            background-color: white;
+        }
+        .multi-select-box label { display: block; margin-bottom: 0.25rem; }
+        
+        .question-annotation {
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: #4b5563;
+            min-height: 40px;
+            font-style: italic;
+        }
+        .filter-active {
+            background-color: #fefce8 !important; /* bg-yellow-50 */
+            border-color: #fde047 !important; /* border-yellow-300 */
+            font-weight: 600; /* semibold */
+        }
+        
+        /* --- 標記樣式 (箭頭/分位數/平均) --- */
+        #markerContainer {
+             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+             pointer-events: none; overflow: hidden;
+        }
+        /* 1. 上方圖例箭頭 (藍色) */
+        .chart-arrow {
+            position: absolute; display: none; pointer-events: none; z-index: 10;
+            width: 0; height: 0;
+            border-left: 6px solid transparent; border-right: 6px solid transparent; 
+            border-top: 8px solid #2563eb; /* blue-600 */
+            transform: translateX(-50%);
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+        }
+        /* 2. 下方分位數標記 (紅色/粉色) */
+        .quantile-marker {
+            position: absolute; display: none; pointer-events: none; z-index: 10;
+            width: 0; height: 0;
+            border-left: 6px solid transparent; border-right: 6px solid transparent;
+            border-bottom: 8px solid #dc2626; /* red-600 */
+            transform: translateX(-50%);
+        }
+        .quantile-marker-q2 { /* 中位數 Q2 */
+            border-left-width: 8px; border-right-width: 8px;
+            border-bottom-width: 10px;
+            border-bottom-color: #f472b6; /* pink-400 */
+        }
+         /* 3. 平均數標籤 (長條圖末端) */
+        .average-label {
+            position: absolute; display: none; pointer-events: none; z-index: 10;
+            background-color: rgba(0, 0, 0, 0.0); /* 透明背景 */
+            color: white; /* 白色文字 */
+            padding: 2px 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transform: translate(-95%, -50%); /* 往左推 95%，垂直置中 */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* 文字陰影 */
+        }
+        /* --- 結束標記樣式 --- */
+
+        /* 圖例樣式 */
+        #arrowSelectContainer label { font-size: 0.875rem; font-weight: 600; color: #4b5563; }
+        #arrowSelect { margin-left: 0.5rem; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; }
+        .legend-item { cursor: pointer; transition: opacity 0.2s; }
+        .legend-item-hidden { opacity: 0.5; text-decoration: line-through; }
+        
+        /* -- 收折區塊樣式 -- */
+        details summary {
+            cursor: pointer;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e3a8a; /* text-blue-900 */
+            background-color: #eef2ff; /* bg-indigo-50 */
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        details[open] summary {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        details summary:hover {
+            background-color: #e0e7ff; /* bg-indigo-100 */
+        }
+        details > div {
+            border: 1px solid #e0e7ff;
+            border-top: none;
+            padding: 1.5rem;
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+        }
+
+        /* --- 設定 Modal 樣式 --- */
+        .modal {
+            display: none; position: fixed; z-index: 50; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(0,0,0,0.4); 
+        }
+        .modal-content {
+            background-color: #fefefe; margin: 10% auto; padding: 20px;
+            border: 1px solid #888; width: 90%; max-width: 500px;
+            border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .close-button {
+            color: #aaa; float: right; font-size: 28px; font-weight: bold;
+            line-height: 1; cursor: pointer; transition: color 0.2s;
+        }
+        .close-button:hover, .close-button:focus { color: #000; text-decoration: none; }
+
+        /* --- Sankey 專用樣式 (優化) --- */
+        #sankeyChart svg { 
+            /* 修正 1.2: 讓 SVG 寬度充滿容器，但內部 D3 繪製區域縮小以容納標籤 */
+            width: 100%; 
+            height: 100%; 
+            max-height: 600px; /* 限制桑基圖最大高度 */
+        }
+        .sankey-link {
+            fill: none;
+            /* stroke: #000; <-- 移除預設黑色 */
+            stroke-opacity: 0.4; /* 調整透明度，讓流動感更強 */
+            transition: stroke-opacity 0.2s;
+        }
+        .sankey-link:hover {
+            stroke-opacity: 0.7; /* 滑鼠懸停時更明顯 */
+        }
+        .sankey-node rect {
+            fill-opacity: 1; /* 節點實色 */
+            shape-rendering: crispEdges;
+            cursor: pointer;
+            border-radius: 4px; /* 增加圓角 */
+            transition: fill-opacity 0.2s;
+            /* 修正 3：移除節點框線 */
+            stroke-width: 0; 
+        }
+        /* 修正 Sankey 標籤，讓圖例取代原本的標籤 */
+        .sankey-node text {
+            display: none; /* 隱藏 D3 內建的標籤 */
+        }
+        /* 新增 Sankey 圖例樣式 */
+        .sankey-legend-item {
+            font-size: 0.875rem;
+            color: #4b5563;
+            margin-bottom: 0.25rem;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    
+    <!-- 頂部設定按鈕 -->
+    <div class="fixed top-4 right-4 z-40">
+        <!-- ** 修正：使用 w-10 h-10 確保正圓形 ** -->
+        <button id="settingsButton" class="w-10 h-10 flex justify-center items-center bg-white rounded-full shadow-lg text-blue-600 hover:bg-gray-50 transition" title="設定"><i class="fas fa-cog text-xl"></i></button>
+    </div>
+
+    <!-- 設定 Modal 視窗 -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeSettingsModal">&times;</span>
+            <h2 class="text-2xl font-bold text-blue-800 mb-6">圖表外觀設定</h2>
+
+            <div class="space-y-6">
+                <!-- 1. 數值標籤字體大小 -->
+                <div>
+                    <label for="datalabelsSize" class="block text-lg font-medium text-gray-700 mb-2">
+                        數值標籤字體大小 (<span id="datalabelsSizeValue">13</span> px)
+                    </label>
+                    <input type="range" id="datalabelsSize" min="8" max="16" value="13" step="1" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                    <p class="text-sm text-gray-500 mt-1">控制長條圖上百分比/筆數文字的大小。</p>
+                </div>
+                
+                <!-- 2. BAR 的粗度 (Category Percentage / Bar Percentage) -->
+                <div>
+                    <label for="barThickness" class="block text-lg font-medium text-gray-700 mb-2">
+                        長條圖粗度 (Bar Thickness: <span id="barThicknessValue">0.5</span>)
+                    </label>
+                    <!-- ** 修正：預設值改為 0.5，step 改為 0.05 ** -->
+                    <input type="range" id="barThickness" min="0.3" max="1.0" value="0.5" step="0.05" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                    <p class="text-sm text-gray-500 mt-1">1.0 為緊密排列，0.3 為最大間距。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-800">樞紐分析儀表板</h1>
+            <p class="text-gray-600 mt-2">動態長條圖分析</p>
+        </header>
+
+        <!-- 設定步驟 -->
+        <div id="setupInstructions" class="max-w-4xl mx-auto mb-8 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg">
+            <h2 class="text-xl font-bold text-blue-800 mb-4">📋 設定狀態</h2>
+            <p class="text-gray-700">資料將於頁面開啟時自動載入。如需變更資料來源，請修改程式碼內 <code>DEFAULT_SCRIPT_URL</code> 變數。</p>
+        </div>
+
+        <!-- 載入中 -->
+        <!-- 修正 2.1: 初始時移除 hidden，讓載入畫面顯示 -->
+        <div id="loading" class="text-center p-8"> 
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="mt-4 text-lg" id="loadingMessage">正在載入資料，請稍候...</p>
+            <!-- 修正 2.3: 新增錯誤資訊顯示區塊 (初始隱藏) -->
+            <div id="debugInfoContainer" class="hidden mt-4 max-w-xl mx-auto">
+                <h3 class="font-bold text-gray-700">載入日誌:</h3>
+                <div id="debugInfo" class="mt-2 text-sm text-red-600 text-left bg-white p-4 rounded shadow border border-gray-200"></div>
+            </div>
+        </div>
+
+        <!-- 儀表板 -->
+        <main id="dashboard" class="hidden lg:grid lg:grid-cols-3 lg:gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- 
+                  =================================
+                  區塊 1: 樞紐分析 (交叉比較)
+                  =================================
+                -->
+                <details id="pivotSection" open>
+                    <!-- 修正名稱 -->
+                    <summary>樞紐分析</summary>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-white rounded-lg shadow-md">
+                            <div class="flex flex-col md:flex-row items-start md:items-center gap-4 mb-4">
+                                <div class="w-full md:flex-1">
+                                    <div id="yAxisQuestion" class="question-annotation">請選擇「列」欄位...</div>
+                                    <label for="yAxisSelect" class="block text-sm font-medium text-gray-700">樞紐分析「列」</label>
+                                    <select id="yAxisSelect" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                                </div>
+                                <div class="w-full md:w-auto flex justify-center">
+                                    <button id="swapAxesButton" class="p-2 mt-0 md:mt-10 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition" title="交換「列」與「欄」"><i class="fas fa-exchange-alt"></i></button>
+                                </div>
+                                <div class="w-full md:flex-1">
+                                    <div id="colorByQuestion" class="question-annotation">請選擇「欄」欄位...</div>
+                                    <label for="colorBySelectContainer" class="block text-sm font-medium text-gray-700">樞紐分析「欄」</label>
+                                    <!-- 「欄」的容器 (單選) -->
+                                    <div id="colorBySelectContainer" class="mt-1">
+                                        <select id="colorBySelect" class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                            <option value="none">不分組 (單一顏色)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <label for="valueSelect" class="block text-sm font-medium text-gray-700">樞紐分析「值」 (Value)</label>
+                                <select id="valueSelect" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="count" selected>筆數 (COUNTA)</option>
+                                    <option value="percent">各列佔比 (%)</option>
+                                </select>
+                                <!-- ** 修正 2：移除共用提示 ** -->
+                                <!-- <p class="mt-1 text-xs text-gray-500">此選項會同時套用到下方的「單一欄位分析」。</p> -->
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+                            <div id="chartHeader" class="flex justify-between items-start mb-2">
+                                <h3 id="yAxisChartTitle" class="text-lg font-bold text-gray-800"></h3>
+                                <div id="customLegendContainer" class="text-right space-y-2">
+                                    <h3 id="cAxisChartTitle" class="text-lg font-bold text-gray-800"></h3>
+                                    <div id="customLegend" class="flex flex-wrap gap-x-4 gap-y-1 justify-end"></div>
+                                    <div id="arrowSelectContainer" class="text-right mt-2 hidden">
+                                        <label for="arrowSelect">箭頭:</label>
+                                        <select id="arrowSelect"><option value="">請選擇</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="mainChart"></canvas>
+                                <!-- 容器：放置所有標記 (箭頭/分位數/平均) -->
+                                <div id="markerContainer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+                
+                <!-- 
+                  =================================
+                  區塊 3: 桑基圖 (Sankey Diagram)
+                  =================================
+                -->
+                <details id="sankeySection" open>
+                    <!-- 修正名稱 -->
+                    <summary>桑基分析</summary>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-white rounded-lg shadow-md">
+                            <div class="flex flex-col md:flex-row items-start md:items-center gap-4 mb-4">
+                                <div class="w-full md:flex-1">
+                                    <label for="sankeySourceSelect" class="block text-sm font-medium text-gray-700">流動「來源」 (Source)</label>
+                                    <select id="sankeySourceSelect" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                                </div>
+                                <!-- 新增桑基圖交換按鈕 -->
+                                <div class="w-full md:w-auto flex justify-center">
+                                    <button id="swapSankeyAxesButton" class="p-2 mt-0 md:mt-10 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition" title="交換「來源」與「目標」"><i class="fas fa-exchange-alt"></i></button>
+                                </div>
+                                <div class="w-full md:flex-1">
+                                    <label for="sankeyTargetSelect" class="block text-sm font-medium text-gray-700">流動「目標」 (Target)</label>
+                                    <select id="sankeyTargetSelect" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <label for="sankeyMinThreshold" class="block text-sm font-medium text-gray-700">最小筆數門檻 (Min Count: <span id="sankeyMinThresholdValue">3</span>)</label>
+                                <input type="range" id="sankeyMinThreshold" min="1" max="10" value="3" step="1" 
+                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                                <p class="text-xs text-gray-500 mt-1">低於此門檻的連線將被忽略，以簡化圖表。</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">資料流動路徑</h3>
+                            <!-- 桑基圖例 -->
+                            <div class="flex flex-col md:flex-row justify-between mb-4">
+                                <div id="sankeySourceLegend" class="w-full md:w-1/2 pr-4 space-y-1">
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-2" id="sourceLegendTitle">來源圖例 (Source)</h4>
+                                </div>
+                                <div id="sankeyTargetLegend" class="w-full md:w-1/2 pl-4 space-y-1 md:text-right">
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-2" id="targetLegendTitle">目標圖例 (Target)</h4>
+                                </div>
+                            </div>
+
+                            <div id="sankeyChart" class="w-full overflow-x-auto">
+                                <!-- D3 繪製 SVG 區塊 -->
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+
+                <!-- 
+                  =================================
+                  區塊 2: 單一欄位分析 (儀表板)
+                  =================================
+                -->
+                <details id="smallMultiplesSection" class="mt-6">
+                    <!-- 修正名稱 -->
+                    <summary>單欄分析</summary>
+                    <div>
+                        <!-- ** 修正 2：新增獨立的「值」切換器 ** -->
+                        <div class="p-4 bg-white rounded-lg shadow-md mb-6">
+                            <div class="mb-4">
+                                <label for="smallValueSelect" class="block text-sm font-medium text-gray-700">樞紐分析「值」 (Value)</label>
+                                <select id="smallValueSelect" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="count" selected>筆數 (COUNTA)</option>
+                                    <option value="percent">各列佔比 (%)</option>
+                                </select>
+                            </div>
+
+                            <label class="block text-sm font-medium text-gray-700 mb-2">請選擇要分析的欄位 (可複選)</label>
+                            
+                            <!-- ** 新增 Q2 & Q3：功能按鈕 ** -->
+                            <div class="flex flex-wrap gap-2 mb-2">
+                                <button id="sm-select-all" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">全選</button>
+                                <button id="sm-deselect-all" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">全部清除</button>
+                                <button id="sm-download-screenshot" class="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 ml-auto">
+                                    <i class="fas fa-camera mr-1"></i> 下載截圖
+                                </button>
+                            </div>
+                            <div id="sm-screenshot-status" class="text-sm text-green-700 hidden mb-2"></div>
+                            
+                            <div id="smallMultiplesControls" class="multi-select-box">
+                                <!-- JS 會動態填入此處 -->
+                            </div>
+                        </div>
+                        
+                        <!-- 放置多個小圖表 -->
+                        <!-- ** 修正 1：移除間距 ** -->
+                        <div id="smallMultiplesContainer" class="space-y-0">
+                            <!-- JS 會動態填入圖表 -->
+                        </div>
+                    </div>
+                </details>
+                
+            </div>
+            
+            <!-- 
+              =================================
+              側邊欄: 篩選器 (共用)
+              =================================
+            -->
+            <div class="lg:col-span-1">
+                <div class="bg-white p-4 rounded-lg shadow-md sticky top-8">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">智慧篩選 (可複選)</h3>
+                    <div id="filtersContainer" class="space-y-4 max-h-[80vh] overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+
+        // ** 修正 1.1: 設定預設 Apps Script 網址 **
+        const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSC-co1UtcQ0V2faXXuPIr5F7s3pri4ukLq9Tyu5unMfeVseAHsr_F04D0yzDssU-wbA/exec';
+        
+        // --- 設定預設值 (已修改) ---
+        let DATALABELS_FONT_SIZE = 13; // 預設改為 13px
+        let BAR_CATEGORY_PERCENTAGE = 0.5; // 預設改為 0.5
+        let BAR_PERCENTAGE = 0.5; // 預設改為 0.5
+
+        // 1. 高對比度的「類別」調色盤 (用於文字類別，或少量的數值類別)
+        const CATEGORICAL_PALETTE = ['#1e40af','#dc2626','#16a34a','#ea580c','#9333ea','#0891b2','#ca8a04','#db2777','#65a30d','#7c3aed','#0d9488','#c026d3','#475569','#f59e0b','#059669','#be185d'];
+        // 2. 「冷至暖」漸層調色盤 (用於 4 個以上的數值類別)
+        const GRADIENT_PALETTE = ['#2563eb','#3b82f6','#06b6d4','#10b981','#84cc16','#eab308','#f59e0b','#f97316','#ef4444','#dc2626']; // 10-step cold-to-warm
+        
+        // ** FIXED_ANSWER_COLORS: 根據「分析題目圖例整理」文件全面更新 **
+        const FIXED_ANSWER_COLORS = {
+            // 1.1 寵物類型
+            "犬": "#9AD8F5", // 已將 #FB8500 更改為 #9AD8F5
+            "貓": "#F35555",
+            
+            // 1.2 飼養數量
+            "1 隻": "#9AD8F5",
+            "2 隻": "#023047",
+            "2+ 隻": "#F35555", 
+            
+            // 1.3 年齡
+            "0-1歲": "#9AD8F5",
+            "1-3歲": "#22BDB5",
+            "3-6歲": "#023047",
+            "6-9歲": "#FFB703",
+            "10歲以上": "#F35555",
+            
+            // 1.4 居住型態
+            "單間(3-10坪)": "#9AD8F5",
+            "多間(含客廳)": "#22BDB5",
+            "透天(獨棟)": "#FFB703",
+            "別墅(有庭院)": "#F35555",
+
+            // 2.x, 3.x (Likert Scale)
+            "1": "#9AD8F5", 
+            "2": "#22BDB5", 
+            "3": "#023047", 
+            "4": "#FFB703",
+            "5": "#F35555",
+
+            // 3.4 專心時間 (數值)
+            "3.4_0": "#BED1DB", // 使用題目鍵前綴以避免與 4.1 衝突
+            "3.4_0.5": "#9AD8F5",
+            "3.4_1": "#5ECBD5",
+            "3.4_1.5": "#22BDB5",
+            "3.4_2": "#12777E",
+            "3.4_2.5": "#023047",
+            "3.4_3": "#425236",
+            "3.4_3.5": "#817425",
+            "3.4_4": "#FFB703",
+            "3.4_4.5": "#F9862C",
+            "3.4_5": "#F35555",
+            
+            // 4.1 食品保健花費 (數值)
+            "4.1_0": "#BED1DB",
+            "4.1_500": "#9AD8F5",
+            "4.1_1000": "#5ECBD5",
+            "4.1_1500": "#22BDB5",
+            "4.1_2000": "#12777E",
+            "4.1_2500": "#023047",
+            "4.1_3000": "#425236",
+            "4.1_3500": "#817425",
+            "4.1_4000": "#FFB703",
+            "4.1_4500": "#F9862C",
+            "4.1_5000": "#F35555",
+
+            // 4.3 科技用品數量
+            "4.3_0": "#9AD8F5", 
+            "4.3_1": "#22BDB5", 
+            "4.3_2": "#023047", 
+            "4.3_3": "#FFB703", 
+            "4.3_4": "#F9862C", 
+            "4.3_5": "#F35555",
+            
+            // 5.1 不好經驗
+            "5.1_3": "#9AD8F5",
+            "5.1_2": "#22BDB5",
+            "5.1_1": "#FFB703",
+            "5.1_0": "#F35555",
+            
+            // 5.2 願意添購
+            "是": "#9AD8F5", // 已將 #FB8500 更改為 #9AD8F5
+            "否": "#F35555",
+            
+            // 5.4 願意購買金額 (標籤為 -2000 到 2000)
+            "-2000": "#F35555",
+            "-1500": "#F9862C",
+            "-1000": "#FFB703",
+            "-500": "#817425",
+            "0": "#023047", // 這裡的 "0" 與 3.4/4.1 的 "0" 顏色不同，但 5.4 題組優先使用，因此不加前綴
+            "500": "#12777E", // 同樣不加前綴，交給 CUSTOM_SORT_ORDERS 處理
+            "1000": "#22BDB5",
+            "1500": "#5ECBD5",
+            "2000": "#9AD8F5",
+            
+            // 6.1 性別
+            "男性": "#9AD8F5", // 已將 #FB8500 更改為 #9AD8F5
+            "女性": "#F35555",
+            
+            // 6.2 年齡
+            "24歲以下": "#9AD8F5", // 已將 #FB8500 更改為 #9AD8F5
+            "25 - 34歲": "#22BDB5",
+            "35 - 44歲": "#023047",
+            "45 - 54歲": "#FFB703",
+            "55歲以上": "#F35555",
+            
+            // 6.3, 6.4, 6.5, 6.6 (是/否)
+            "6.3_是": "#9AD8F5", // 已將 #FB8500 更改為 #9AD8F5
+            "6.3_否": "#F35555",
+            "6.4_是": "#9AD8F5", // 已將 #FB8500 更改為 #9AD8F5
+            "6.4_否": "#F35555",
+            "6.5_有": "#9AD8F5", 
+            "6.5_無": "#F35555", 
+            "6.6_是": "#9AD8F5", // 已將 #FB8500 更改為 #9AD8F5
+            "6.6_否": "#F35555",
+            
+            // 6.7 月收入
+            "無閒錢": "#9AD8F5",
+            "小康": "#22BDB5",
+            "富裕": "#FFB703",
+            "多到沒地方花": "#F35555"
+        };
+        
+        const QUESTION_MAP = {'1.1_寵物類型':'您目前飼養的寵物類型為？','1.2_飼養數量':'您目前飼養的寵物數量為？','1.3_Age_Oldest':'您目前飼養的寵物中，最年長的年紀為？','1.3_Age_Youngest':'您目前飼養的寵物中，最年幼的年紀為？','1.4_居住型態':'您目前的居住型態為？','2.1_視為家人':'我視我的寵物為家人','2.2_情感慰藉':'寵物是我的重要情感慰藉','2.3_對寵說話':'我經常對我的寵物說話','2.4_擔心想念':'當我不在寵物身邊時，我會擔心或想念牠','2.5_快樂來源':'寵物是我快樂的重要來源','2.6_像孩子':'我常覺得我的寵物像我的孩子','2.7_填補空缺':'寵物填補了我生活中的空缺','2.8_日常話題':'寵物是我日常生活中的重要話題','3.1_充滿活力':'我希望我的寵物總是充滿活力','3.2_擔心獨處':'我擔心寵物獨處時感到孤單或焦慮','3.3_願意陪伴':'我願意花更多時間陪伴我的寵物','3.4_專心時間':'我每天都會有一段專心陪伴寵物的時間','4.1_食品保健花費':'您平均每月在寵物「食品與保健品」上花費多少？','4.2_玩具娛樂花費':'您平均每月在寵物「玩具與娛樂用品」上花費多少？','4.3_科技用品數量':'您目前擁有多少「寵物科技用品」（如：自動餵食器、飲水器、寵物攝影機、智能玩具等）？','4.4_最高產品金額':'您願意為單一「寵物科技產品」支付的最高金額約為？','5.1_不好經驗':'您過去是否有使用寵物科技產品的不良經驗？','5.2_願意添購':'未來 6 個月內，您是否考慮添購 neuen 「寵物科技產品」？','5.3_願意購買金額':'若有一款「寵物陪伴機器人」，您願意購買的金額範圍是？','5.4_開心使用':'我樂於看到寵物開心使用科技產品','5.4_安全使用':'我最擔心寵物科技產品的安全性','5.4_節省時間':'我希望寵物科技產品能幫我節省照顧時間','5.4_持久耐用':'我重視寵物科技產品的持久耐用性','5.4_容易清潔':'我希望寵物科技產品容易清潔','6.1_性別':'您的性別','6.2_年齡':'您的年齡','6.3_單身':'您目前的婚姻狀況','6.4_獨居':'您目前是否獨居','6.5_子女':'您目前是否有子女同住','6.6_寵物相關背景':'您是否具有寵物相關背景（如：獸醫、寵物美容、訓練師等）？','6.7_月收入':'您的個人平均月收入'};
+        
+        // ** CUSTOM_SORT_ORDERS: 根據「分析題目圖例整理」文件全面更新 **
+        const CUSTOM_SORT_ORDERS = {
+            '1.1_寵物類型': ["犬", "貓"],
+            '1.2_飼養數量': ["1 隻", "2 隻", "2+ 隻"],
+            '1.3_Age_Oldest': ["0-1歲", "1-3歲", "3-6歲", "6-9歲", "10歲以上"],
+            '1.3_Age_Youngest': ["0-1歲", "1-3歲", "3-6歲", "6-9歲", "10歲以上"],
+            '1.4_居住型態': ["單間(3-10坪)", "多間(含客廳)", "透天(獨棟)", "別墅(有庭院)"],
+            
+            // Likert Scale (2.x, 3.x)
+            '2.1_視為家人': ["1", "2", "3", "4", "5"],
+            '2.2_情感慰藉': ["1", "2", "3", "4", "5"],
+            '2.3_對寵說話': ["1", "2", "3", "4", "5"],
+            '2.4_擔心想念': ["1", "2", "3", "4", "5"],
+            '2.5_快樂來源': ["1", "2", "3", "4", "5"],
+            '2.6_像孩子': ["1", "2", "3", "4", "5"],
+            '2.7_填補空缺': ["1", "2", "3", "4", "5"],
+            '2.8_日常話題': ["1", "2", "3", "4", "5"],
+            '3.1_充滿活力': ["1", "2", "3", "4", "5"],
+            '3.2_擔心獨處': ["1", "2", "3", "4", "5"],
+            '3.3_願意陪伴': ["1", "2", "3", "4", "5"],
+            
+            // 3.4 專心時間
+            '3.4_專心時間': ["0", "0.5", "1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "5"],
+            
+            // 4.1 食品保健花費
+            '4.1_食品保健花費': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000"],
+            
+            // 4.3 科技用品數量
+            '4.3_科技用品數量': ["0", "1", "2", "3", "4", "5"],
+            
+            // 5.1 不好經驗 (0-3 排序)
+            '5.1_不好經驗': ["0", "1", "2", "3"],
+            
+            // 5.2 願意添購
+            '5.2_願意添購': ["是", "否"],
+            
+            // 5.4 題組 (移除 NT$ 和 +)
+            '5.4_開心使用': ["-2000", "-1500", "-1000", "-500", "0", "500", "1000", "1500", "2000"],
+            '5.4_安全使用': ["-2000", "-1500", "-1000", "-500", "0", "500", "1000", "1500", "2000"],
+            '5.4_節省時間': ["-2000", "-1500", "-1000", "-500", "0", "500", "1000", "1500", "2000"],
+            '5.4_持久耐用': ["-2000", "-1500", "-1000", "-500", "0", "500", "1000", "1500", "2000"],
+            '5.4_容易清潔': ["-2000", "-1500", "-1000", "-500", "0", "500", "1000", "1500", "2000"],
+            
+            // 6.x 個人基本資訊
+            '6.1_性別': ["男性", "女性"],
+            '6.2_年齡': ["24歲以下", "25 - 34歲", "35 - 44歲", "45 - 54歲", "55歲以上"],
+            '6.3_單身': ["是", "否"],
+            '6.4_獨居': ["是", "否"],
+            '6.5_子女': ["有", "無"],
+            '6.6_寵物相關背景': ["是", "否"],
+            '6.7_月收入': ["無閒錢", "小康", "富裕", "多到沒地方花"]
+        };
+        
+        // --- 佔比模式 25/50/75% 虛線外掛 ---
+        const percentageGridLinesPlugin = {
+            id: 'percentageGridLines',
+            afterDraw: (chart) => {
+                // ** 修正：檢查圖表 ID，只在主圖表上運作 **
+                if (chart.canvas.id !== 'mainChart') return;
+                
+                const valueType = document.getElementById('valueSelect')?.value;
+                if (valueType !== 'percent') {
+                    return; // 只在佔比模式下繪製
+                }
+                const ctx = chart.ctx;
+                const xAxis = chart.scales.x;
+                const yAxis = chart.scales.y;
+                const lines = [25, 50, 75]; // 25%, 50%, 75%
+
+                ctx.save();
+                ctx.strokeStyle = '#e0e0e0'; // 淡淡的灰色
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]); // 虛線
+
+                lines.forEach(value => {
+                    const xPos = xAxis.getPixelForValue(value);
+                    ctx.beginPath();
+                    ctx.moveTo(xPos, yAxis.top);
+                    ctx.lineTo(xPos, yAxis.bottom);
+                    ctx.stroke();
+                });
+
+                ctx.restore();
+            }
+        };
+        Chart.register(percentageGridLinesPlugin); // 註冊外掛
+
+        // --- Helper 函數 ---
+        function parseNumericValue(val) {
+            const valStr = String(val).trim(); // ** 修正：Trim 空白 **
+            // 移除 NT$ 或其他貨幣符號
+            const cleanedStr = valStr.replace(/[$NT$]/g, '').trim(); 
+            
+            const hasPlusSuffix = cleanedStr.endsWith('+') || cleanedStr.includes('以上');
+            // 匹配包含正負號、空格或逗號的數字
+            const numMatch = cleanedStr.match(/([+-]?[\s]*[\d,]+(\.\d+)?)/); 
+            
+            if (numMatch) {
+                const numStr = numMatch[1].replace(/[,]/g, '').replace(/\s/g, '');
+                const num = parseFloat(numStr);
+                if (!isNaN(num)) {
+                    // 對於有 + 號結尾或「以上」的，標記為有後綴
+                    if (hasPlusSuffix && num >= 0) {
+                        return { num: num, hasPlus: true, original: valStr, isNumeric: true };
+                    }
+                    return { num: num, hasPlus: false, original: valStr, isNumeric: true };
+                }
+            }
+            return { num: null, hasPlus: false, original: valStr, isNumeric: false };
+        }
+        function smartSort(a, b) {
+            const valA = parseNumericValue(a);
+            const valB = parseNumericValue(b);
+            if (!valA.isNumeric && !valB.isNumeric) {
+                return String(a).localeCompare(String(b));
+            }
+            if (!valA.isNumeric) return 1;
+            if (!valB.isNumeric) return -1;
+            if (valA.hasPlus && !valB.hasPlus) return 1;
+            if (!valA.hasPlus && valB.hasPlus) return -1;
+            if (valA.num !== valB.num) {
+                return valA.num - valB.num;
+            }
+            return valA.original.localeCompare(valB.original);
+        }
+
+        // ** 修正 1.1：新增取得題目前綴的函數 **
+        function getQuestionPrefix(key) {
+            // Extracts '1.1' from '1.1_寵物類型', or '6.5' from '6.5_子女'
+            const match = key.match(/^(\d+\.\d+)/);
+            return match ? match[1] : key; // Return the prefix or the whole key if no match
+        }
+
+        // ** 新增 Q1：Debounce 函數 **
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        let chart; // 主圖表 (樞紐)
+        let rawData = [];
+        let allColumns = [];
+        let controls = {};
+        let isUpdatingFilters = false;
+        let smallCharts = {}; // ** 儲存小圖表的物件 **
+        
+        // --- 初始化 ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // 修正 1.2: 移除載入按鈕相關的 DOM 元素
+            document.getElementById('setupInstructions').classList.remove('max-w-4xl', 'mx-auto', 'mb-8', 'p-6', 'bg-blue-50', 'border-2', 'border-blue-200', 'rounded-lg');
+            document.getElementById('setupInstructions').innerHTML = `<h2 class="text-xl font-bold text-blue-800 mb-4">📋 設定狀態</h2><p class="text-gray-700">資料將於頁面開啟時自動載入。如需變更資料來源，請修改程式碼內 <code>DEFAULT_SCRIPT_URL</code> 變數。</p>`;
+            
+            const settingsModal = document.getElementById('settingsModal');
+            const settingsButton = document.getElementById('settingsButton');
+            const closeSettingsModal = document.getElementById('closeSettingsModal');
+            const datalabelsSize = document.getElementById('datalabelsSize');
+            const datalabelsSizeValue = document.getElementById('datalabelsSizeValue');
+            const barThickness = document.getElementById('barThickness');
+            const barThicknessValue = document.getElementById('barThicknessValue');
+            
+            // 桑基圖控制項
+            const sankeySourceSelect = document.getElementById('sankeySourceSelect');
+            const sankeyTargetSelect = document.getElementById('sankeyTargetSelect');
+            const sankeyMinThreshold = document.getElementById('sankeyMinThreshold');
+            const sankeyMinThresholdValue = document.getElementById('sankeyMinThresholdValue');
+            // 新增桑基圖交換按鈕
+            const swapSankeyAxesButton = document.getElementById('swapSankeyAxesButton');
+
+            settingsButton.addEventListener('click', () => settingsModal.style.display = 'block');
+            closeSettingsModal.addEventListener('click', () => settingsModal.style.display = 'none');
+            window.addEventListener('click', (event) => {
+                if (event.target === settingsModal) {
+                    settingsModal.style.display = 'none';
+                }
+            });
+
+            // 初始化設定值顯示 (使用全域變數的預設值)
+            datalabelsSize.value = DATALABELS_FONT_SIZE;
+            datalabelsSizeValue.textContent = DATALABELS_FONT_SIZE;
+            barThickness.value = BAR_CATEGORY_PERCENTAGE;
+            barThicknessValue.textContent = BAR_CATEGORY_PERCENTAGE.toFixed(1);
+            sankeyMinThresholdValue.textContent = sankeyMinThreshold.value;
+
+            // 綁定設定調整事件
+            datalabelsSize.addEventListener('input', () => {
+                DATALABELS_FONT_SIZE = parseInt(datalabelsSize.value);
+                datalabelsSizeValue.textContent = DATALABELS_FONT_SIZE;
+                if (chart) updateChartSettings(true); 
+                updateSmallMultiplesSettings(true); 
+            });
+
+            barThickness.addEventListener('input', () => {
+                BAR_CATEGORY_PERCENTAGE = parseFloat(barThickness.value);
+                BAR_PERCENTAGE = parseFloat(barThickness.value);
+                barThicknessValue.textContent = BAR_CATEGORY_PERCENTAGE.toFixed(1);
+                if (chart) updateChartSettings(true); 
+                updateSmallMultiplesSettings(true); 
+            });
+            
+            // 綁定 Sankey 控制項事件
+            sankeySourceSelect.addEventListener('change', updateSankeyChart);
+            sankeyTargetSelect.addEventListener('change', updateSankeyChart);
+            sankeyMinThreshold.addEventListener('input', () => {
+                sankeyMinThresholdValue.textContent = sankeyMinThreshold.value;
+                debounce(updateSankeyChart, 300)();
+            });
+            
+            // 桑基圖交換按鈕事件
+            swapSankeyAxesButton.addEventListener('click', () => {
+                const sourceValue = sankeySourceSelect.value;
+                const targetValue = sankeyTargetSelect.value;
+                sankeySourceSelect.value = targetValue;
+                sankeyTargetSelect.value = sourceValue;
+                updateSankeyChart();
+            });
+
+            // ** 修正 1.3: 移除載入按鈕事件，改為自動調用 **
+            // document.getElementById('loadDataButton').addEventListener('click', ...); 
+            
+            // ** 修正 1.4: 頁面載入後自動載入數據 **
+            initDashboard(DEFAULT_SCRIPT_URL);
+        });
+
+        document.addEventListener('click', (e) => {
+            const openFilters = document.querySelectorAll('.filter-dropdown[open]');
+            openFilters.forEach(filter => {
+                if (!filter.contains(e.target)) {
+                    filter.open = false;
+                }
+            });
+        });
+
+        async function loadData(scriptUrl) {
+            const debugInfo = document.getElementById('debugInfo');
+            const loadingMessage = document.getElementById('loadingMessage');
+            try {
+                loadingMessage.textContent = '正在從 Google Sheet 擷取資料...';
+                
+                // 修正 1.5: 移除舊的 debugInfo 邏輯 (因為我們沒有 input 欄位)
+                // document.getElementById('debugInfoContainer').classList.remove('hidden');
+                // debugInfo.innerHTML = '<p class="font-bold text-blue-700">開始載入資料...</p>';
+                // debugInfo.innerHTML += `<p class="mt-2 text-xs break-all">🔗 網址: ${scriptUrl}</p>`;
+
+                const url = scriptUrl;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    // debugInfo.innerHTML += `<p class="text-red-600 ml-4">❌ HTTP ${response.status} 錯誤</p>`;
+                    throw new Error(`伺服器錯誤: ${response.status}`);
+                }
+                const jsonData = await response.json();
+                if (jsonData.error) {
+                    // debugInfo.innerHTML += `<p class="text-red-600 ml-4">❌ Apps Script 錯誤: ${jsonData.error}</p>`;
+                    throw new Error(`Apps Script 錯誤: ${jsonData.error}`);
+                }
+                if (!Array.isArray(jsonData) || jsonData.length === 0) {
+                    // debugInfo.innerHTML += `<p class="text-red-600 ml-4">❌ 未收到任何資料。請檢查 Apps Script 中的欄位範圍是否正確。</p>`;
+                    throw new Error('未收到任何資料或資料格式不符。');
+                }
+                // debugInfo.innerHTML += `<p class="text-green-600 ml-4">✅ 成功擷取 ${jsonData.length} 筆資料</p>`;
+                // debugInfo.innerHTML += `<p class="text-blue-600 ml-4">🔍 偵測到 ${Object.keys(jsonData[0]).length} 個欄位</p>`;
+                return jsonData;
+            } catch (error) {
+                // 修正 2.2: 如果載入失敗，顯示錯誤資訊，並將 loading 隱藏
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('dashboard').classList.add('hidden');
+                document.getElementById('setupInstructions').classList.remove('hidden');
+                const errorContainer = document.getElementById('debugInfo');
+                if (errorContainer) {
+                    errorContainer.innerHTML = `<p class="text-red-600 ml-4">❌ <strong>載入失敗: ${error.message}</strong></p>`;
+                    errorContainer.innerHTML += `<p class="text-red-700 ml-6 mt-2">請檢查：<br>1. 程式碼中 <code>DEFAULT_SCRIPT_URL</code> 網址是否正確。<br>2. Apps Script 部署權限是否設定為「任何人」。<br>3. Google Sheet 的欄位是否有資料。</p>`;
+                    document.getElementById('debugInfoContainer').classList.remove('hidden');
+                }
+                return [];
+            }
+        }
+
+        async function initDashboard(scriptUrl) {
+            rawData = await loadData(scriptUrl);
+            if (rawData.length > 0) {
+                allColumns = Object.keys(rawData[0]);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('setupInstructions').classList.remove('hidden'); // 顯示設定狀態
+                // 修正 2.4: 成功載入後，隱藏錯誤資訊
+                document.getElementById('debugInfoContainer').classList.add('hidden');
+                setupControls();
+                createChart(); // 建立主圖表
+                updateChart(); // 更新主圖表
+                updateSankeyChart(); // 建立桑基圖
+                updateSmallMultiples(); // 更新小圖表
+            }
+        }
+
+        function updateAnnotations() {
+            // ** 簡化：只更新主圖表的註釋 **
+            const yKey = controls.yAxisSelect.value;
+            const cKey = controls.colorBySelect.value;
+            const yEl = document.getElementById('yAxisQuestion');
+            const cEl = document.getElementById('colorByQuestion');
+            
+            yEl.textContent = QUESTION_MAP[yKey] || '未找到問題描述';
+            if (cKey === 'none') {
+                cEl.textContent = '未分組';
+            } else {
+                cEl.textContent = QUESTION_MAP[cKey] || '未找到問題描述';
+            }
+        }
+
+        function setupControls() {
+            controls.yAxisSelect = document.getElementById('yAxisSelect');
+            controls.colorBySelect = document.getElementById('colorBySelect'); // ** 簡化：固定為單選 **
+            controls.valueSelect = document.getElementById('valueSelect');
+            controls.smallValueSelect = document.getElementById('smallValueSelect'); // ** 修正 2：加入新的控制器 **
+            controls.swapButton = document.getElementById('swapAxesButton');
+            controls.arrowSelect = document.getElementById('arrowSelect');
+            
+            // Sankey Controls
+            controls.sankeySourceSelect = document.getElementById('sankeySourceSelect');
+            controls.sankeyTargetSelect = document.getElementById('sankeyTargetSelect');
+
+            // ** 簡化：移除 (總計) 選項 **
+            controls.yAxisSelect.innerHTML = '';
+            controls.colorBySelect.innerHTML = '<option value="none">不分組 (單一顏色)</option>';
+            controls.sankeySourceSelect.innerHTML = '<option value="">請選擇</option>';
+            controls.sankeyTargetSelect.innerHTML = '<option value="">請選擇</option>';
+
+            allColumns.forEach(key => {
+                controls.yAxisSelect.innerHTML += `<option value="${key}">${key}</option>`;
+                controls.colorBySelect.innerHTML += `<option value="${key}">${key}</option>`;
+                controls.sankeySourceSelect.innerHTML += `<option value="${key}">${key}</option>`;
+                controls.sankeyTargetSelect.innerHTML += `<option value="${key}">${key}</option>`;
+            });
+            
+            // ** 新增：設定「單一欄位分析」的複選框 **
+            const smallMultiplesControls = document.getElementById('smallMultiplesControls');
+            let multiSelectHTML = '';
+            allColumns.forEach(key => {
+                multiSelectHTML += `
+                    <label class="flex items-center">
+                        <input type="checkbox" value="${key}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 small-multiple-checkbox">
+                        <span class="ml-2 text-sm text-gray-900">${key}</span>
+                    </label>
+                `;
+            });
+            smallMultiplesControls.innerHTML = multiSelectHTML;
+            
+            // ** 綁定新複選框的事件 **
+            smallMultiplesControls.querySelectorAll('.small-multiple-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateSmallMultiples);
+            });
+            
+            // ** 新增 Q2 & Q3：綁定按鈕事件 **
+            document.getElementById('sm-select-all').addEventListener('click', () => {
+                smallMultiplesControls.querySelectorAll('.small-multiple-checkbox').forEach(cb => cb.checked = true);
+                updateSmallMultiples();
+            });
+            document.getElementById('sm-deselect-all').addEventListener('click', (e) => {
+                e.preventDefault();
+                smallMultiplesControls.querySelectorAll('.small-multiple-checkbox').forEach(cb => cb.checked = false);
+                updateSmallMultiples();
+            });
+            document.getElementById('sm-download-screenshot').addEventListener('click', downloadScreenshot);
+
+
+            // --- 篩選器 (共用) ---
+            const filtersContainer = document.getElementById('filtersContainer');
+            filtersContainer.innerHTML = '';
+            allColumns.forEach(colKey => {
+                const details = document.createElement('details');
+                details.className = 'filter-dropdown';
+                details.innerHTML = `<summary class="text-sm font-medium" title="${colKey}">${colKey}</summary><div class="filter-panel space-y-2" id="filter-${colKey}-panel"></div>`;
+                filtersContainer.appendChild(details);
+            });
+
+            // --- 綁定主圖表事件 ---
+            controls.yAxisSelect.addEventListener('change', () => { 
+                updateAnnotations(); 
+                updateChart(); 
+                updateSankeyChart(); // 篩選器變更也更新 Sankey
+            });
+            controls.colorBySelect.addEventListener('change', () => {
+                updateAnnotations();
+                updateChart();
+                updateSankeyChart(); // 篩選器變更也更新 Sankey
+            });
+            controls.swapButton.addEventListener('click', () => {
+                const yValue = controls.yAxisSelect.value;
+                const cValue = controls.colorBySelect.value;
+                controls.yAxisSelect.value = cValue;
+                controls.colorBySelect.value = yValue;
+                updateAnnotations();
+                updateChart();
+                updateSankeyChart(); // 篩選器變更也更新 Sankey
+            });
+            controls.arrowSelect.addEventListener('change', updateArrowPosition);
+
+            // ** 修正 2：「值」和「篩選器」需要*分開*更新兩個圖表區塊 **
+            controls.valueSelect.addEventListener('change', updateChart); // ** 只更新主圖表 **
+            controls.smallValueSelect.addEventListener('change', updateSmallMultiples); // ** 只更新小圖表 **
+
+            updateFilterOptions(true); // updateFilterOptions 內部會綁定篩選器的 change 事件
+            updateAnnotations();
+        }
+
+        
+        function updateFilterOptions(isInitial = false) {
+            if (isUpdatingFilters) return;
+            const selections = {};
+            allColumns.forEach(key => {
+                const panel = document.getElementById(`filter-${key}-panel`);
+                if (panel) {
+                    const checkedCbs = panel.querySelectorAll('input:checked');
+                    selections[key] = Array.from(checkedCbs).map(cb => cb.value);
+                }
+            });
+
+            allColumns.forEach(targetKey => {
+                let availableValues = [...new Set(rawData.map(d => d[targetKey]))];
+                
+                // ** 修正：使用 .trim() 進行排序列表比對 **
+                if (CUSTOM_SORT_ORDERS[targetKey]) {
+                    const customOrder = CUSTOM_SORT_ORDERS[targetKey];
+                    const getSortIndex = (val) => {
+                        const index = customOrder.indexOf(String(val).trim()); // ** Trim here **
+                        return index === -1 ? Infinity : index;
+                    };
+                    availableValues.sort((a, b) => getSortIndex(a) - getSortIndex(b));
+                } else {
+                    availableValues.sort(smartSort);
+                }
+                
+                const panel = document.getElementById(`filter-${targetKey}-panel`);
+                if (!panel) return;
+                const currentSelections = selections[targetKey] || [];
+                panel.innerHTML = '';
+                
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'flex gap-2 mb-2 sticky top-0 bg-white py-1';
+                buttonsDiv.innerHTML = `
+                    <button class="select-all-btn text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">全選</button>
+                    <button class="deselect-all-btn text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">清除</button>
+                `;
+                panel.appendChild(buttonsDiv);
+                
+                availableValues.forEach(val => {
+                    const valAsString = String(val);
+                    const checkboxId = `cb-${targetKey}-${valAsString.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                    const isChecked = isInitial || currentSelections.includes(valAsString);
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'flex items-center';
+                    itemDiv.innerHTML = `
+                        <input type="checkbox" id="${checkboxId}" value="${valAsString}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 filter-checkbox" ${isChecked ? 'checked' : ''}>
+                        <label for="${checkboxId}" class="ml-2 block text-sm text-gray-900">${valAsString}</label>
+                    `;
+                    panel.appendChild(itemDiv);
+                });
+                
+                // ** 修正 3：確認篩選器會更新兩個圖表 **
+                panel.querySelector('.select-all-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    panel.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+                    updateChart();
+                    updateSmallMultiples(); 
+                    updateSankeyChart(); // 篩選器變更也更新 Sankey
+                });
+                panel.querySelector('.deselect-all-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    panel.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                    updateChart();
+                    updateSmallMultiples(); 
+                    updateSankeyChart(); // 篩選器變更也更新 Sankey
+                });
+                panel.querySelectorAll('.filter-checkbox').forEach(cb => {
+                    cb.addEventListener('change', () => {
+                        updateChart();
+                        updateSmallMultiples(); 
+                        updateSankeyChart(); // 篩選器變更也更新 Sankey
+                    });
+                });
+            });
+        }
+
+        // --- 標記建立函數 (Marker Creation Functions) ---
+        // (這些只給主圖表使用)
+        function createOrUpdateArrows(count) {
+            const arrowContainer = document.getElementById('markerContainer');
+            if (!arrowContainer) return;
+            const existing = arrowContainer.querySelectorAll('.chart-arrow');
+            
+            for (let i = existing.length - 1; i >= count; i--) {
+                arrowContainer.removeChild(existing[i]);
+            }
+            for (let i = existing.length; i < count; i++) {
+                const arrowEl = document.createElement('div');
+                arrowEl.id = `chartArrow-${i}`;
+                arrowEl.className = 'chart-arrow';
+                arrowContainer.appendChild(arrowEl);
+            }
+        }
+        function createOrUpdateQuantileMarkers(count) {
+            const container = document.getElementById('markerContainer');
+            if (!container) return;
+            const markers = ['q1', 'q2', 'q3']; 
+            const existing = container.querySelectorAll('.quantile-marker');
+            const targetCount = count * markers.length;
+            for (let i = existing.length - 1; i >= targetCount; i--) container.removeChild(existing[i]);
+            for (let i = existing.length; i < targetCount; i++) {
+                const yIndex = Math.floor(i / markers.length);
+                const markerType = markers[i % markers.length];
+                const markerEl = document.createElement('div');
+                markerEl.id = `quantileMarker-${yIndex}-${markerType}`;
+                markerEl.className = `quantile-marker ${markerType === 'q2' ? 'quantile-marker-q2' : ''}`;
+                container.appendChild(markerEl);
+            }
+        }
+        function createOrUpdateAverageLabels(count) {
+            const container = document.getElementById('markerContainer');
+            if (!container) return;
+            const existing = container.querySelectorAll('.average-label');
+            for (let i = existing.length - 1; i >= count; i--) container.removeChild(existing[i]);
+            for (let i = existing.length; i < count; i++) {
+                const labelEl = document.createElement('div');
+                labelEl.id = `averageLabel-${i}`;
+                labelEl.className = 'average-label';
+                container.appendChild(labelEl);
+            }
+        }
+
+        // --- 標記更新函數 (Marker Update Functions) ---
+        // (這些只給主圖表使用)
+        function updateArrowPosition(hide = false) {
+            const container = document.getElementById('markerContainer');
+            if (!container) return;
+            const arrows = container.querySelectorAll('.chart-arrow');
+            if (hide) {
+                arrows.forEach(arrow => arrow.style.display = 'none');
+                return;
+            }
+            const selectEl = document.getElementById('arrowSelect');
+            const selectedLabelString = selectEl.value;
+            arrows.forEach(arrow => arrow.style.display = 'none'); 
+            if (!chart || !selectedLabelString) return;
+            const datasets = chart.data.datasets;
+            let datasetIndex = -1;
+            for (let i = 0; i < datasets.length; i++) {
+                if (String(datasets[i].label) === selectedLabelString) {
+                    datasetIndex = i;
+                    break;
+                }
+            }
+            if (datasetIndex === -1) return; 
+            const meta = chart.getDatasetMeta(datasetIndex);
+            if (!meta || !meta.data || meta.data.length === 0) return;
+            meta.data.forEach((element, index) => {
+                const arrowEl = document.getElementById(`chartArrow-${index}`);
+                if (!arrowEl || !element || typeof element.getProps !== 'function' || element.hidden) {
+                    if (arrowEl) arrowEl.style.display = 'none';
+                    return;
+                }
+                const props = element.getProps(['x', 'y', 'height', 'base'], true);
+                const hasVisibleWidth = props && (props.x > props.base + 0.01);
+                if (hasVisibleWidth) {
+                    const xPos = props.x;
+                    const yPos = props.y - (props.height / 2);
+                    const arrowHeight = 8;
+                    const margin = 2;
+                    arrowEl.style.left = `${xPos}px`;
+                    arrowEl.style.top = `${yPos - arrowHeight - margin}px`;
+                    arrowEl.style.display = 'block';
+                } else {
+                    arrowEl.style.display = 'none';
+                }
+            });
+        }
+        function updateQuantileMarkers(hide = false, yKey, groupKey, yLabels, filteredData) {
+            const container = document.getElementById('markerContainer');
+            if (!container) return;
+            const allMarkers = container.querySelectorAll('.quantile-marker');
+            allMarkers.forEach(marker => marker.style.display = 'none'); 
+            if (hide || !chart) return;
+            yLabels.forEach((yLabel, yIndex) => {
+                
+                // ** BUG 1 修正 (第二次)：使用 bar element 的屬性來定位 **
+                // 我們需要 bar element 的屬性來找到它的底部邊緣
+                let barProps = null;
+                for (let i = 0; i < chart.data.datasets.length; i++) {
+                    const meta = chart.getDatasetMeta(i);
+                    if (meta && meta.data[yIndex]) {
+                        const el = meta.data[yIndex];
+                        if (el && !el.hidden && typeof el.getProps === 'function') {
+                            // 找到了第一個可見的 bar，取得它的屬性
+                            barProps = el.getProps(['y', 'height'], true);
+                            break; // 找到就跳出迴圈
+                        }
+                    }
+                }
+
+                // 如果沒有可見的 bar，就無法放置 marker
+                if (!barProps) return; 
+
+                // barProps.y 是 bar 的中心 Y 軸位置
+                // barProps.height 是 bar 的厚度
+                const barBottomEdge = barProps.y + (barProps.height / 2);
+                // ** BUG 1 修正結束 **
+
+                let groupData = filteredData
+                    .filter(d => String(d[yKey]) === String(yLabel))
+                    .map(d => d[groupKey])
+                    .filter(val => val !== undefined && val !== null);
+                if (groupData.length === 0) return;
+                
+                // ** 修正：使用 .trim() 進行排序列表比對 **
+                const customOrder = CUSTOM_SORT_ORDERS[groupKey];
+                const sortedIndices = Array.from(Array(groupData.length).keys()).sort((a, b) => {
+                    if (customOrder) {
+                        const getSortIndex = (val) => {
+                            const index = customOrder.indexOf(String(val).trim()); // ** Trim here **
+                            return index === -1 ? Infinity : index;
+                        };
+                        return getSortIndex(groupData[a]) - getSortIndex(groupData[b]);
+                    }
+                    return smartSort(groupData[a], groupData[b]);
+                });
+                
+                const q1Index = sortedIndices[Math.floor(groupData.length * 0.25)];
+                const q2Index = sortedIndices[Math.floor(groupData.length * 0.50)];
+                const q3Index = sortedIndices[Math.floor(groupData.length * 0.75)];
+                const q1Value = groupData[q1Index];
+                const q2Value = groupData[q2Index];
+                const q3Value = groupData[q3Index];
+                const datasets = chart.data.datasets;
+                const q1DatasetIndex = datasets.findIndex(ds => String(ds.label) === String(q1Value));
+                const q2DatasetIndex = datasets.findIndex(ds => String(ds.label) === String(q2Value));
+                const q3DatasetIndex = datasets.findIndex(ds => String(ds.label) === String(q3Value));
+
+                // ** 修正 2：獲取長條區塊的中心點 X 軸位置 **
+                const getXPixel = (targetDatasetIndex) => {
+                    if (targetDatasetIndex === -1) return null;
+                    const datasetMeta = chart.getDatasetMeta(targetDatasetIndex);
+                    if (!datasetMeta || !datasetMeta.data[yIndex]) return null;
+                    const dataElement = datasetMeta.data[yIndex];
+                    if (dataElement.hidden || !dataElement.getProps) return null; 
+                    
+                    // 取得 bar segment 的中心點 X 軸位置
+                    return dataElement.getCenterPoint().x;
+                };
+                // ** 修正結束 **
+
+                const xPixels = { q1: getXPixel(q1DatasetIndex), q2: getXPixel(q2DatasetIndex), q3: getXPixel(q3DatasetIndex) };
+                ['q1', 'q2', 'q3'].forEach(q => {
+                    const markerEl = document.getElementById(`quantileMarker-${yIndex}-${q}`);
+                    // 箭頭距離長條底部邊緣 4px
+                    const markerMargin = 4; 
+                    if (markerEl && xPixels[q] !== null) {
+                        markerEl.style.left = `${xPixels[q]}px`;
+                        // ** 關鍵修正：使用 barBottomEdge **
+                        markerEl.style.top = `${barBottomEdge + markerMargin}px`; 
+                        markerEl.style.display = 'block';
+                    }
+                });
+            });
+        }
+        function updateAverageLabels(hide = false, yKey, groupKey, yLabels, filteredData) {
+            const container = document.getElementById('markerContainer');
+            if (!container) return;
+            const allLabels = container.querySelectorAll('.average-label');
+            allLabels.forEach(label => label.style.display = 'none');
+            if (hide || !chart) return;
+            yLabels.forEach((yLabel, yIndex) => {
+                let numericData = filteredData
+                    .filter(d => String(d[yKey]) === String(yLabel))
+                    .map(d => parseNumericValue(d[groupKey]))
+                    .filter(val => val.isNumeric)
+                    .map(val => val.num);
+                if (numericData.length === 0) return; 
+                const sum = numericData.reduce((a, b) => a + b, 0);
+                const average = sum / numericData.length;
+                const meta = chart.getDatasetMeta(0); 
+                if (!meta || !meta.data[yIndex]) return;
+                const element = meta.data[yIndex];
+                if (!element || typeof element.getProps !== 'function') return;
+                const lastDatasetMeta = chart.getDatasetMeta(chart.data.datasets.length - 1);
+                if (!lastDatasetMeta || !lastDatasetMeta.data[yIndex]) return;
+                const lastElement = lastDatasetMeta.data[yIndex];
+                const props = lastElement.getProps(['x', 'y', 'height'], true);
+                const yPixel = props.y; 
+                let xPixel = props.x; 
+                const valueType = controls.valueSelect.value;
+                if(valueType === 'percent') {
+                    xPixel = chart.scales.x.getPixelForValue(100);
+                }
+                const labelEl = document.getElementById(`averageLabel-${yIndex}`);
+                if (labelEl) {
+                    labelEl.textContent = `${average.toFixed(1)}`; 
+                    labelEl.style.left = `${xPixel}px`;
+                    labelEl.style.top = `${yPixel}px`;
+                    labelEl.style.display = 'block';
+                }
+            });
+        }
+
+        // ** 修正 3.0: 更新主圖表設定的函數 (加入 forceUpdate 參數) **
+        function updateChartSettings(forceUpdate = false) {
+            if (!chart) return;
+            
+            // ** 修正 1.1: 如果用戶調整了設定，我們強制將設定值寫入 Options **
+            chart.options.scales.y.barPercentage = BAR_PERCENTAGE;
+            chart.options.scales.y.categoryPercentage = BAR_CATEGORY_PERCENTAGE;
+            chart.options.plugins.datalabels.font.size = DATALABELS_FONT_SIZE;
+            
+            if (forceUpdate) {
+                 // 重新觸發完整更新，這會重新計算高度並重繪
+                 updateChart();
+                 updateSankeyChart(); // 重新繪製 Sankey 圖
+            } else {
+                chart.update();
+                const yKey = controls.yAxisSelect.value;
+                const groupKey = controls.colorBySelect.value;
+                // 注意：filteredData 在這裡可能不是最新的，但我們假設它足夠用於 marker 的大致定位
+                const isGroupKeyNumeric = groupKey !== 'none' && rawData.length > 0 && parseNumericValue(rawData[0][groupKey]).isNumeric; // 簡化判斷
+                setTimeout(() => triggerMarkerUpdates(yKey, groupKey, chart.data.labels, rawData, isGroupKeyNumeric), 50);
+            }
+        }
+
+        // --- 主更新函數 (樞紐分析) ---
+        function updateChart() {
+            if (!chart || !controls.yAxisSelect) return;
+            isUpdatingFilters = true;
+
+            const yKey = controls.yAxisSelect.value;
+            const groupKey = controls.colorBySelect.value;
+            const valueType = controls.valueSelect.value;
+            updateAnnotations();
+
+            // 抓取篩選 (與小圖表共用)
+            const activeFilters = getActiveFilters();
+            let filteredData = rawData.filter(d => {
+                return allColumns.every(key => {
+                    const filterValues = activeFilters[key];
+                    if (filterValues === undefined) return true;
+                    if (filterValues.length === 0) return false;
+                    return filterValues.includes(String(d[key]));
+                });
+            });
+
+            const getSortIndex = (val, customOrder) => {
+                const index = customOrder.indexOf(String(val).trim()); // ** 修正：Trim 空白 **
+                return index === -1 ? Infinity : index;
+            };
+
+            let yLabels = [...new Set(filteredData.map(d => d[yKey]))];
+            if (CUSTOM_SORT_ORDERS[yKey]) yLabels.sort((a, b) => getSortIndex(a, CUSTOM_SORT_ORDERS[yKey]) - getSortIndex(b, CUSTOM_SORT_ORDERS[yKey]));
+            else yLabels.sort(smartSort);
+            chart.data.labels = yLabels;
+
+            let groupLabels;
+            let colorMap = {};
+            const isPercent = valueType === 'percent';
+            
+            let isGroupKeyNumeric = false;
+            if (groupKey !== 'none' && filteredData.length > 0) {
+                const firstValue = filteredData.find(d => d[groupKey] !== null && d[groupKey] !== undefined);
+                if(firstValue) {
+                    isGroupKeyNumeric = parseNumericValue(firstValue[groupKey]).isNumeric;
+                }
+            }
+
+            if (groupKey !== 'none') {
+                groupLabels = [...new Set(filteredData.map(d => d[groupKey]))];
+                if (CUSTOM_SORT_ORDERS[groupKey]) groupLabels.sort((a, b) => getSortIndex(a, CUSTOM_SORT_ORDERS[groupKey]) - getSortIndex(b, CUSTOM_SORT_ORDERS[groupKey]));
+                else groupLabels.sort(smartSort);
+
+                // ** 修正：使用固定顏色地圖和優先檢查邏輯 **
+                let activePalette;
+                if (isGroupKeyNumeric && groupLabels.length > 3) activePalette = GRADIENT_PALETTE; 
+                else activePalette = CATEGORICAL_PALETTE;
+                
+                let paletteIndex = 0;
+                colorMap = {};
+                groupLabels.forEach((val) => {
+                    const valStr = String(val).trim();
+                    const prefix = getQuestionPrefix(groupKey); // <-- 取得題號前綴
+
+                    // 1. 優先檢查 (問題前綴 + 選項值) 的組合 e.g., '6.5_有'
+                    const keyedColor = FIXED_ANSWER_COLORS[prefix + '_' + valStr]; // <-- 使用前綴查找
+                    if (keyedColor) {
+                        colorMap[String(val)] = keyedColor;
+                    // 2. 接著檢查單純的選項值
+                    } else if (FIXED_ANSWER_COLORS[valStr]) {
+                        colorMap[String(val)] = FIXED_ANSWER_COLORS[valStr];
+                    } else {
+                        // 3. 都不匹配時，使用漸層或類別調色盤
+                        colorMap[String(val)] = activePalette[paletteIndex % activePalette.length];
+                        paletteIndex++;
+                    }
+                });
+                // ** 修正結束 **
+
+                const totalsPerYLabel = yLabels.map(yVal => {
+                    const total = filteredData.filter(d => String(d[yKey]) === String(yVal)).length;
+                    return total > 0 ? total : 1;
+                });
+
+                chart.data.datasets = groupLabels.map(groupVal => {
+                    const dataValues = yLabels.map((yVal, yIdx) => {
+                        const count = filteredData.filter(d => String(d[yKey]) === String(yVal) && String(d[groupKey]) === String(groupVal)).length;
+                        return isPercent ? (count / totalsPerYLabel[yIdx]) * 100 : count;
+                    });
+                    const originalLabel = [...new Set(rawData.map(d => d[groupKey]))].find(l => String(l) === String(groupVal)) ?? groupVal;
+                    // ** 修正：使用 colorMap 取得顏色 **
+                    const color = colorMap[String(groupVal)] || CATEGORICAL_PALETTE[0]; 
+                    return { 
+                        label: originalLabel, 
+                        data: dataValues, 
+                        backgroundColor: color + 'CC', 
+                        borderColor: color, 
+                        borderWidth: 0, 
+                        borderRadius: 0 
+                    };
+                });
+                
+                document.getElementById('yAxisChartTitle').textContent = yKey;
+                document.getElementById('cAxisChartTitle').textContent = groupKey;
+                
+            } else { // 無分組
+                const dataCounts = yLabels.map(yVal => filteredData.filter(d => String(d[yKey]) === String(yVal)).length);
+                chart.data.datasets = [{
+                    label: '筆數', data: dataCounts,
+                    backgroundColor: CATEGORICAL_PALETTE[0] + 'CC', borderColor: CATEGORICAL_PALETTE[0], 
+                    borderWidth: 0, // ** 修正：移除間距 **
+                    borderRadius: 0 // ** 新增：移除圓角 **
+                }];
+                document.getElementById('yAxisChartTitle').textContent = yKey;
+                document.getElementById('cAxisChartTitle').textContent = '';
+            }
+
+            // --- 更新圖表選項 (X軸, Tooltip, Datalabels) ---
+            chart.options.plugins.tooltip.callbacks = {
+                // ** 修正 2.1: 突出顯示當前 hover 的 dataset **
+                label: function(context) {
+                    let label = context.dataset.label || '';
+                    const rawCount = filteredData.filter(d => 
+                        String(d[yKey]) === String(chart.data.labels[context.dataIndex]) && 
+                        String(d[groupKey]) === String(context.dataset.label)
+                    ).length;
+
+                    if (label) {
+                        label += ': ';
+                    } else {
+                        label = '筆數: ';
+                    }
+
+                    if (isPercent) {
+                        label += context.parsed.x !== null ? context.parsed.x.toFixed(1) + '%' : 'N/A';
+                        label += ` (${rawCount}筆)`;
+                    } else {
+                        label += context.parsed.x !== null ? context.parsed.x : 'N/A';
+                    }
+                    return label;
+                },
+                // ** 新增 footer: 顯示當前 hover 的總數和百分比 **
+                footer: function(context) {
+                    const yValue = chart.data.labels[context[0].dataIndex];
+                    const total = filteredData.filter(d => String(d[yKey]) === String(yValue)).length;
+                    const totalText = total > 0 ? `總計: ${total} 筆` : '總計: N/A';
+                    return totalText;
+                }
+            };
+            
+            // ** 修正 2.2: 突出顯示 hover 的 bar **
+            chart.options.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            chart.options.plugins.tooltip.titleFont = { weight: 'bold', size: 14 }; // 確保標題粗體
+            chart.options.plugins.tooltip.footerFont = { weight: 'bold', size: 12 };
+            chart.options.plugins.tooltip.mode = 'nearest'; // 確保能抓到單獨的 bar
+            chart.options.plugins.tooltip.position = 'nearest'; 
+
+
+            if (isPercent) {
+                chart.options.scales.x.max = 100;
+                chart.options.scales.x.title.text = '各列佔比 (%)';
+                chart.options.plugins.datalabels.display = true;
+                // ** 修正 3.1: 使用全局設定的字體大小 **
+                chart.options.plugins.datalabels.font.size = DATALABELS_FONT_SIZE;
+                chart.options.plugins.datalabels.formatter = (value) => value > 5 ? Math.round(value) + '%' : '';
+            } else { // 筆數模式
+                chart.options.scales.x.max = undefined;
+                chart.options.scales.x.title.text = '筆數 (Count)';
+                chart.options.plugins.datalabels.display = false;
+            }
+            
+            // ** 修正 1.1: 套用長條粗度設定 (Pivot) **
+            chart.options.scales.y.barPercentage = BAR_PERCENTAGE;
+            chart.options.scales.y.categoryPercentage = BAR_CATEGORY_PERCENTAGE;
+            chart.options.plugins.datalabels.font.size = DATALABELS_FONT_SIZE; // 確保 datalabels size 也同步
+
+            // --- 動態調整圖表高度 ---
+            const chartContainer = document.querySelector('.chart-container');
+            const heightPerLabel = 30;
+            // ** 修正 1.2: 考慮 BAR_CATEGORY_PERCENTAGE 來調整高度 **
+            const adjustedHeightPerLabel = heightPerLabel * BAR_CATEGORY_PERCENTAGE;
+            const baseHeight = 150;
+            const newHeight = baseHeight + yLabels.length * adjustedHeightPerLabel;
+            const finalHeight = Math.min(Math.max(newHeight, 350), 8000); // 最小高度降低
+            chartContainer.style.height = `${finalHeight}px`;
+            if (chart) chart.resize();
+
+            // --- 更新圖例 ---
+            const legendContainer = document.getElementById('customLegend');
+            const arrowSelectContainer = document.getElementById('arrowSelectContainer');
+            if (groupKey !== 'none') {
+                let legendHTML = '';
+                chart.data.datasets.forEach((dataset, index) => {
+                    const label = dataset.label;
+                    const color = dataset.borderColor || dataset.backgroundColor;
+                    const isHidden = dataset.hidden || false;
+                    legendHTML += `<div class="flex items-center legend-item ${isHidden ? 'legend-item-hidden' : ''}" data-label="${label}" data-dataset-index="${index}">
+                                     <span class="w-3 h-3 mr-1" style="background-color: ${color}; border-radius: 2px;"></span>
+                                     <span class="text-sm text-gray-700">${label}</span>
+                                   </div>`;
+                });
+                legendContainer.innerHTML = legendHTML;
+                legendContainer.querySelectorAll('.legend-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const datasetIndex = parseInt(item.getAttribute('data-dataset-index'));
+                        if (!chart || isNaN(datasetIndex) || datasetIndex < 0 || datasetIndex >= chart.data.datasets.length) return;
+                        chart.data.datasets[datasetIndex].hidden = !chart.data.datasets[datasetIndex].hidden;
+                        item.classList.toggle('legend-item-hidden', chart.data.datasets[datasetIndex].hidden);
+                        chart.update();
+                        setTimeout(() => triggerMarkerUpdates(yKey, groupKey, yLabels, filteredData, isGroupKeyNumeric), 10);
+                    });
+                });
+                controls.arrowSelect.innerHTML = '<option value="">請選擇</option>';
+                groupLabels.forEach(label => controls.arrowSelect.innerHTML += `<option value="${label}">${label}</option>`);
+                arrowSelectContainer.classList.remove('hidden'); 
+            } else { 
+                legendContainer.innerHTML = '';
+                arrowSelectContainer.classList.add('hidden');
+                controls.arrowSelect.value = "";
+            }
+
+            // --- 更新篩選器狀態 ---
+            updateFilterActiveStates();
+
+            // --- 更新圖表與標記 ---
+            chart.update();
+            createOrUpdateArrows(yLabels.length);
+            createOrUpdateQuantileMarkers(yLabels.length);
+            createOrUpdateAverageLabels(yLabels.length);
+            setTimeout(() => {
+                triggerMarkerUpdates(yKey, groupKey, yLabels, filteredData, isGroupKeyNumeric);
+            }, 50); 
+            isUpdatingFilters = false;
+        }
+        
+        // --- 提取篩選器狀態 (通用函數) ---
+        function getActiveFilters() {
+            const activeFilters = {};
+            allColumns.forEach(catKey => {
+                const panel = document.getElementById(`filter-${catKey}-panel`);
+                if (panel) {
+                    const checkedCbs = panel.querySelectorAll('input:checked');
+                    activeFilters[catKey] = Array.from(checkedCbs).map(cb => cb.value);
+                }
+            });
+            return activeFilters;
+        }
+        
+        // --- 更新篩選器視覺狀態 (通用函數) ---
+        function updateFilterActiveStates() {
+            allColumns.forEach(catKey => {
+                const panel = document.getElementById(`filter-${catKey}-panel`);
+                if (!panel) return;
+                const summary = panel.closest('.filter-dropdown').querySelector('summary');
+                if (!summary) return;
+                const allCheckboxes = panel.querySelectorAll('input[type="checkbox"].filter-checkbox');
+                const checkedCheckboxes = panel.querySelectorAll('input[type="checkbox"].filter-checkbox:checked');
+                if (allCheckboxes.length > 0) {
+                    const isFiltered = checkedCheckboxes.length < allCheckboxes.length;
+                    summary.classList.toggle('filter-active', isFiltered);
+                } else {
+                    summary.classList.remove('filter-active');
+                }
+            });
+        }
+        
+        // --- 主標記觸發 (樞紐分析) ---
+        function triggerMarkerUpdates(yKey, groupKey, yLabels, filteredData, isGroupKeyNumeric) {
+            // ** 修正：從 controls 重新獲取 valueType **
+            const valueType = controls.valueSelect.value;
+            const hideQuantiles = valueType === 'percent' || groupKey === 'none' || !isGroupKeyNumeric;
+            const hideAverage = groupKey === 'none' || !isGroupKeyNumeric;
+            
+            updateArrowPosition(false);
+            updateQuantileMarkers(hideQuantiles, yKey, groupKey, yLabels, filteredData);
+            updateAverageLabels(hideAverage, yKey, groupKey, yLabels, filteredData);
+        }
+
+        // 建立圖表 (只執行一次)
+        function createChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: [], datasets: [] },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 20 } },
+                    scales: {
+                        x: { stacked: true, title: { display: true, text: '筆數 (Count)', font: { size: 14 } } },
+                        y: { 
+                            stacked: true, 
+                            ticks: { autoSkip: false },
+                            barPercentage: BAR_PERCENTAGE,  // ** 使用全局變數 **
+                            categoryPercentage: BAR_CATEGORY_PERCENTAGE // ** 使用全局變數 **
+                        }
+                    },
+                    plugins: {
+                        datalabels: { 
+                            display: false, 
+                            color: '#333', 
+                            font: { weight: 'bold', size: DATALABELS_FONT_SIZE } // ** 使用全局變數 **
+                        },
+                        tooltip: { enabled: true, mode: 'index', intersect: false },
+                        legend: { display: false }
+                    }
+                }
+            });
+            
+            // ** 修正 Q1：修改 Resize 事件 **
+            window.addEventListener('resize', debounce(() => {
+                // 完整重繪，才能在 Zoom 之後正確定為
+                updateChart();
+                updateSankeyChart(); // 縮放時重繪 Sankey
+                updateSmallMultiples();
+            }, 250));
+        }
+        
+        // ===============================================
+        // == 桑基圖 (Sankey Diagram) 函數 (新增/替換) ==
+        // ===============================================
+        
+        // ** Helper for Sankey Color **
+        const getColorForValue = (value, key) => {
+                const valStr = String(value).trim();
+                const prefix = getQuestionPrefix(key);
+                
+                const keyedColor = FIXED_ANSWER_COLORS[prefix + '_' + valStr];
+                if (keyedColor) return keyedColor;
+                
+                if (FIXED_ANSWER_COLORS[valStr]) return FIXED_ANSWER_COLORS[valStr];
+
+                // 如果都沒有固定色，使用通用調色盤
+                const uniqueValues = [...new Set(rawData.map(d => String(d[key]).trim()))];
+                const categoryIndex = uniqueValues.indexOf(valStr);
+                return CATEGORICAL_PALETTE[categoryIndex % CATEGORICAL_PALETTE.length];
+        };
+        
+        function generateSankeyLegend(nodes, key, isSource) {
+            const legendContainer = document.getElementById(isSource ? 'sankeySourceLegend' : 'sankeyTargetLegend');
+            const legendTitle = document.getElementById(isSource ? 'sourceLegendTitle' : 'targetLegendTitle');
+            
+            // v8 修正：確保 DOM 元素存在
+            if (!legendContainer || !legendTitle) {
+                console.error("Sankey legend container or title not found.");
+                return;
+            }
+
+            // v8 修正：絕對確保 itemsContainer 存在
+            let itemsContainer = legendContainer.querySelector('.sankey-legend-items-wrapper');
+            if (!itemsContainer) {
+                itemsContainer = document.createElement('div');
+                // 修正 2.3: 調整 itemsContainer 的 flex wrap 和對齊方式
+                itemsContainer.className = `sankey-legend-items-wrapper flex flex-wrap gap-x-4 gap-y-1 ${isSource ? 'justify-start' : 'md:justify-end'}`;
+                // 修正 2.5: 確保移除任何舊的 no-data 提示
+                const oldNoData = legendContainer.querySelector('.sankey-no-data');
+                if (oldNoData) oldNoData.remove();
+                legendTitle.after(itemsContainer);
+            }
+            
+            itemsContainer.innerHTML = ''; 
+
+            // 修正 2.1: 標題使用問題名稱
+            legendTitle.textContent = `${QUESTION_MAP[key] || key} 圖例 (${isSource ? '來源' : '目標'})`;
+
+            const getSortIndex = (val, customOrder) => {
+                const index = customOrder.indexOf(String(val).trim());
+                return index === -1 ? Infinity : index;
+            };
+            const customOrder = CUSTOM_SORT_ORDERS[key];
+            const sortedNodes = [...nodes].sort((a, b) => {
+                const valA = a.name.split(': ')[1];
+                const valB = b.name.split(': ')[1];
+                
+                // 確保排序只在該側節點上進行
+                if (a.category !== (isSource ? 'Source' : 'Target') && b.category !== (isSource ? 'Source' : 'Target')) return 0;
+                
+                if (customOrder) {
+                    return getSortIndex(valA, customOrder) - getSortIndex(valB, customOrder);
+                }
+                return smartSort(valA, valB);
+            });
+
+            // 過濾並取得該側節點
+            const sideNodes = sortedNodes.filter(d => d.category === (isSource ? 'Source' : 'Target'));
+            
+            if (sideNodes.length === 0) {
+                 const p = document.createElement('p');
+                 p.className = 'text-gray-400 sankey-no-data';
+                 p.textContent = '無圖例資料。';
+                 itemsContainer.appendChild(p);
+                 return;
+            }
+            
+            sideNodes.forEach(node => {
+                const value = node.name.split(': ')[1];
+                // 修正 2.4: 傳入問題鍵 key，確保 getColorForValue 使用正確的前綴查找
+                const color = getColorForValue(value, key); 
+                
+                const itemDiv = document.createElement('div');
+                // 修正 2.5: 確保對齊方式
+                itemDiv.className = `flex items-center sankey-legend-item ${isSource ? 'justify-start' : 'md:justify-end'}`;
+                
+                const textSpan = document.createElement('span');
+                textSpan.textContent = `${value}`;
+                textSpan.className = 'text-sm';
+
+                const colorBlock = `<span class="w-3 h-3 mx-1 flex-shrink-0" style="background-color: ${color}; border-radius: 2px;"></span>`;
+
+                if (isSource) {
+                    itemDiv.innerHTML = colorBlock + textSpan.outerHTML;
+                } else {
+                    itemDiv.innerHTML = textSpan.outerHTML + colorBlock;
+                }
+                
+                itemsContainer.appendChild(itemDiv);
+            });
+        }
+        
+        function updateSankeyChart() {
+            const sourceKey = controls.sankeySourceSelect.value;
+            const targetKey = controls.sankeyTargetSelect.value;
+            const minThreshold = parseInt(document.getElementById('sankeyMinThreshold').value) || 1;
+            const sankeyContainer = d3.select("#sankeyChart");
+            
+            sankeyContainer.html(""); // 清除舊圖表
+
+            const sourceLegendContainer = document.getElementById('sankeySourceLegend');
+            const targetLegendContainer = document.getElementById('sankeyTargetLegend');
+            
+            // 清理舊的 no-data 標籤
+            if (sourceLegendContainer) sourceLegendContainer.querySelector('.sankey-no-data')?.remove();
+            if (targetLegendContainer) targetLegendContainer.querySelector('.sankey-no-data')?.remove();
+
+            if (!sourceKey || !targetKey || sourceKey === targetKey) {
+                sankeyContainer.html('<p class="text-gray-500 text-center py-8">請選擇不同的「來源」和「目標」欄位。</p>');
+                // 清空圖例
+                if (sourceLegendContainer) sourceLegendContainer.querySelector('.sankey-legend-items-wrapper')?.remove();
+                if (targetLegendContainer) targetLegendContainer.querySelector('.sankey-legend-items-wrapper')?.remove();
+                document.getElementById('sourceLegendTitle').textContent = '來源圖例 (Source)';
+                document.getElementById('targetLegendTitle').textContent = '目標圖例 (Target)';
+                return;
+            }
+
+            const activeFilters = getActiveFilters();
+            let filteredData = rawData.filter(d => {
+                return allColumns.every(key => {
+                    const filterValues = activeFilters[key];
+                    if (filterValues === undefined) return true;
+                    if (filterValues.length === 0) return false;
+                    return filterValues.includes(String(d[key]));
+                });
+            });
+
+            if (filteredData.length === 0) {
+                 sankeyContainer.html('<p class="text-red-500 text-center py-8">在當前篩選條件下，無資料可供分析。</p>');
+                 if (sourceLegendContainer) sourceLegendContainer.querySelector('.sankey-legend-items-wrapper')?.remove();
+                 if (targetLegendContainer) targetLegendContainer.querySelector('.sankey-legend-items-wrapper')?.remove();
+                 document.getElementById('sourceLegendTitle').textContent = '來源圖例 (Source)';
+                 document.getElementById('targetLegendTitle').textContent = '目標圖例 (Target)';
+                 return;
+            }
+
+            const linkCounts = new Map();
+            const allNodes = new Set();
+            
+            filteredData.forEach(d => {
+                const sourceVal = String(d[sourceKey]).trim();
+                const targetVal = String(d[targetKey]).trim();
+                
+                if (sourceVal && targetVal) {
+                    const linkId = `${sourceVal}->${targetVal}`;
+                    linkCounts.set(linkId, (linkCounts.get(linkId) || 0) + 1);
+                    allNodes.add(`Source: ${sourceVal}`);
+                    allNodes.add(`Target: ${targetVal}`);
+                }
+            });
+
+            const nodeMap = new Map();
+            const nodes = Array.from(allNodes).map((name, index) => {
+                const node = { id: index, name: name, category: name.split(': ')[0], value: 0 };
+                nodeMap.set(name, node);
+                return node;
+            });
+
+            const links = [];
+            linkCounts.forEach((count, linkId) => {
+                if (count >= minThreshold) {
+                    const [sourceVal, targetVal] = linkId.split('->');
+                    const sourceName = `Source: ${sourceVal}`;
+                    const targetName = `Target: ${targetVal}`;
+                    
+                    if (nodeMap.has(sourceName) && nodeMap.has(targetName)) {
+                        links.push({
+                            source: nodeMap.get(sourceName).id,
+                            target: nodeMap.get(targetName).id,
+                            value: count,
+                            sourceLabel: sourceVal,
+                            targetLabel: targetVal
+                        });
+                    }
+                }
+            });
+
+            const graph = { nodes, links };
+            
+            const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+            const containerEl = document.getElementById('sankeyChart');
+            const availableWidth = containerEl.clientWidth;
+            const innerWidth = availableWidth - margin.left - margin.right;
+            const height = Math.min(nodes.length * 25 + 100, 600) - margin.top - margin.bottom; 
+            
+            const svgWidth = availableWidth; 
+            const svgHeight = height + margin.top + margin.bottom;
+
+            const svg = sankeyContainer.append("svg")
+                .attr("width", svgWidth) 
+                .attr("height", svgHeight)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // *** 關鍵修正 1: 應用自定義排序 ***
+            const getSortIndex = (val, customOrder) => {
+                const index = customOrder.indexOf(String(val).trim());
+                return index === -1 ? Infinity : index;
+            };
+
+            const sortNodesByCustomOrder = (a, b) => {
+                const aName = a.name.split(': ')[1];
+                const bName = b.name.split(': ')[1];
+                const key = a.category === 'Source' ? sourceKey : targetKey;
+                const customOrder = CUSTOM_SORT_ORDERS[key];
+
+                if (customOrder) {
+                    return getSortIndex(aName, customOrder) - getSortIndex(bName, customOrder);
+                }
+                // 如果沒有自定義排序，則使用默認的智能排序 (smartSort)
+                return smartSort(aName, bName);
+            };
+
+            const sankey = d3.sankey()
+                .nodeWidth(15)
+                .nodePadding(10)
+                .extent([[0, 0], [innerWidth, height]])
+                .nodeSort(sortNodesByCustomOrder); // <-- 應用自定義排序
+
+            sankey(graph);
+            
+            svg.append("g")
+                .attr("fill", "none")
+                .selectAll(".sankey-link")
+                .data(graph.links)
+                .join("path")
+                .attr("class", "sankey-link")
+                .attr("d", d3.sankeyLinkHorizontal())
+                .attr("stroke-width", d => Math.max(1, d.width))
+                .attr("stroke", d => getColorForValue(d.sourceLabel, sourceKey))
+                .append("title")
+                .text(d => `${d.sourceLabel} → ${d.targetLabel}\n筆數: ${d.value}`);
+
+            const node = svg.append("g")
+                .selectAll(".sankey-node")
+                .data(graph.nodes)
+                .join("g")
+                .attr("class", "sankey-node")
+                .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+            node.append("rect")
+                .attr("height", d => d.y1 - d.y0)
+                .attr("width", sankey.nodeWidth())
+                .attr("rx", 4)
+                .attr("ry", 4)
+                .attr("fill", d => {
+                    const value = d.name.split(': ')[1];
+                    const isSourceNode = d.category === 'Source';
+                    return getColorForValue(value, isSourceNode ? sourceKey : targetKey);
+                })
+                .each(function(d) {
+                    // 修正 4：計算節點的總值 (用於圖例)
+                    d.value = d.sourceLinks.reduce((sum, link) => sum + link.value, 0) || d.targetLinks.reduce((sum, link) => sum + link.value, 0);
+                })
+                .append("title")
+                .text(d => {
+                    const val = d.sourceLinks.reduce((sum, link) => sum + link.value, 0) || d.targetLinks.reduce((sum, link) => sum + link.value, 0);
+                    return `${d.name.split(': ')[1]}\n總筆數: ${val}`
+                });
+
+            // 7. 移除 D3 標籤並生成自訂圖例 (Legend)
+            if (links.length > 0) {
+                 generateSankeyLegend(graph.nodes, sourceKey, true); 
+                 generateSankeyLegend(graph.nodes, targetKey, false);
+            } else {
+                if (sourceLegendContainer) sourceLegendContainer.querySelector('.sankey-legend-items-wrapper')?.remove();
+                if (targetLegendContainer) targetLegendContainer.querySelector('.sankey-legend-items-wrapper')?.remove();
+                
+                const sourceP = document.createElement('p');
+                sourceP.className = 'text-gray-400 sankey-no-data';
+                sourceP.textContent = '無連結資料。';
+                
+                const targetP = document.createElement('p');
+                targetP.className = 'text-gray-400 sankey-no-data md:text-right';
+                targetP.textContent = '無連結資料。';
+                
+                // 確保標題存在才 append
+                const sourceTitle = document.getElementById('sourceLegendTitle');
+                const targetTitle = document.getElementById('targetLegendTitle');
+
+                if (sourceTitle) sourceTitle.after(sourceP);
+                if (targetTitle) targetTitle.after(targetP);
+
+                document.getElementById('sourceLegendTitle').textContent = `${QUESTION_MAP[sourceKey] || sourceKey} 圖例 (來源)`;
+                document.getElementById('targetLegendTitle').textContent = `${QUESTION_MAP[targetKey] || targetKey} 圖例 (目標)`;
+            }
+        }
+
+
+        // ===============================================
+        // == 單一欄位分析 (儀表板) 函數 ==
+        // ===============================================
+
+        // ** 修正 3.0: 更新所有小圖表設定的函數 (加入 forceUpdate 參數) **
+        function updateSmallMultiplesSettings(forceUpdate = false) {
+            // ** 修正 1: 確保所有選項在 Chart.js 實例上被更新 **
+            Object.values(smallCharts).forEach(chartInstance => {
+                chartInstance.options.scales.y.barPercentage = BAR_PERCENTAGE;
+                chartInstance.options.scales.y.categoryPercentage = BAR_CATEGORY_PERCENTAGE;
+                chartInstance.options.plugins.datalabels.font.size = DATALABELS_FONT_SIZE;
+                chartInstance.update('none'); // 强制更新视图
+            });
+            
+            // ** 修正 4.1: 如果是 BAR 粗度調整，需要重新創建/繪製圖表容器 **
+            if (forceUpdate) {
+                // 重新調用 updateSmallMultiples 重新繪製整個區塊，
+                // 這會重新計算每個小圖表的 wrapperHeight。
+                updateSmallMultiples();
+                return;
+            }
+        }
+        
+        function updateSmallMultiples() {
+            const container = document.getElementById('smallMultiplesContainer');
+            const selectedColumns = Array.from(document.querySelectorAll('.small-multiple-checkbox:checked')).map(cb => cb.value);
+            // ** 修正 2：讀取獨立的 valueSelect **
+            const valueType = controls.smallValueSelect.value;
+            const isPercent = valueType === 'percent';
+
+            // 抓取共用篩選
+            const activeFilters = getActiveFilters();
+            let filteredData = rawData.filter(d => {
+                return allColumns.every(key => {
+                    const filterValues = activeFilters[key];
+                    if (filterValues === undefined) return true;
+                    if (filterValues.length === 0) return false;
+                    return filterValues.includes(String(d[key]));
+                });
+            });
+
+            // 摧毀舊圖表
+            Object.values(smallCharts).forEach(chart => chart.destroy());
+            smallCharts = {};
+            container.innerHTML = '';
+
+            if (selectedColumns.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">請從上方勾選欄位以顯示分析圖表。</p>';
+                return;
+            }
+            
+            const getSortIndex = (val, customOrder) => {
+                const index = customOrder.indexOf(String(val).trim()); // ** 修正：Trim 空白 **
+                return index === -1 ? Infinity : index;
+            };
+            
+            // ** 修正 5.0: 調整每個小圖表的高度，使其更緊湊 **
+            const singleBarHeight = 100 * BAR_CATEGORY_PERCENTAGE; // 根據粗度調整 Bar 區域高度
+            const wrapperHeight = Math.max(singleBarHeight + 35, 60); // 確保最小高度
+
+            // 為每一個勾選的欄位建立一個圖表
+            selectedColumns.forEach((colKey, index) => {
+                const chartId = `smallChart-${index}`;
+                const legendId = `smallLegend-${index}`;
+                
+                // ** 還原：avgId **
+                const avgId = `smallAvg-${index}`;
+
+                // 1. 建立 HTML 結構
+                const chartWrapper = document.createElement('div');
+                // ** 修正 1：移除圓角和陰影，加上邊框 **
+                chartWrapper.className = 'bg-white p-4'; 
+                if (index > 0) {
+                    chartWrapper.className += ' border-t border-gray-200'; // 加上分隔線
+                }
+                
+                chartWrapper.innerHTML = `
+                    <!-- ** 還原：帶平均數的標題 ** -->
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-bold text-gray-800">${colKey}</h3>
+                        <span id="${avgId}" class="text-sm font-medium text-blue-700"></span>
+                    </div>
+                    <div id="${legendId}" class="flex flex-wrap gap-x-3 gap-y-1 justify-start mb-2"></div>
+                    <div class="small-chart-container" style="height: ${wrapperHeight}px;">
+                        <canvas id="${chartId}"></canvas>
+                    </div>
+                `;
+                container.appendChild(chartWrapper);
+
+                // 2. 準備資料
+                // ** 還原：yLabels **
+                const yLabels = [colKey]; 
+                let groupLabels = [...new Set(filteredData.map(d => d[colKey]))];
+                
+                if (CUSTOM_SORT_ORDERS[colKey]) groupLabels.sort((a, b) => getSortIndex(a, CUSTOM_SORT_ORDERS[colKey]) - getSortIndex(b, CUSTOM_SORT_ORDERS[colKey]));
+                else groupLabels.sort(smartSort);
+
+                let isGroupKeyNumeric = false;
+                if (filteredData.length > 0) {
+                    const firstValue = filteredData.find(d => d[colKey] !== null && d[colKey] !== undefined);
+                    if(firstValue) isGroupKeyNumeric = parseNumericValue(firstValue[colKey]).isNumeric;
+                }
+
+                // ** 修正：使用固定顏色地圖和優先檢查邏輯 **
+                let activePalette;
+                if (isGroupKeyNumeric && groupLabels.length > 3) activePalette = GRADIENT_PALETTE; 
+                else activePalette = CATEGORICAL_PALETTE;
+                
+                let colorMap = {};
+                let paletteIndex = 0;
+                groupLabels.forEach((val) => {
+                    const valStr = String(val).trim();
+                    const prefix = getQuestionPrefix(colKey); // <-- 修正 1.2: 取得題號前綴
+                    
+                    // 1. 優先檢查 (問題前綴 + 選項值) 的組合 e.g., '6.5_有'
+                    const keyedColor = FIXED_ANSWER_COLORS[prefix + '_' + valStr]; // <-- 修正 1.2: 使用前綴查找
+                    if (keyedColor) {
+                        colorMap[String(val)] = keyedColor;
+                    // 2. 接著檢查單純的選項值
+                    } else if (FIXED_ANSWER_COLORS[valStr]) {
+                        colorMap[String(val)] = FIXED_ANSWER_COLORS[valStr];
+                    } else {
+                        // 3. 都不匹配時，使用漸層或類別調色盤
+                        colorMap[String(val)] = activePalette[paletteIndex % activePalette.length]; 
+                        paletteIndex++;
+                    }
+                });
+                // ** 修正結束 **
+
+                const total = filteredData.filter(d => d[colKey] !== undefined && d[colKey] !== null).length;
+                const totalForPercent = total > 0 ? total : 1;
+                
+                // ** 還原：為長條圖準備資料 **
+                const datasets = groupLabels.map(groupVal => {
+                    const count = filteredData.filter(d => String(d[colKey]) === String(groupVal)).length;
+                    const dataValue = isPercent ? (count / totalForPercent) * 100 : count;
+                    // ** 修正：使用 colorMap 取得顏色 **
+                    const color = colorMap[String(groupVal)] || CATEGORICAL_PALETTE[0]; 
+                    return {
+                        label: groupVal,
+                        data: [dataValue], // 只有一筆資料
+                        backgroundColor: color + 'CC', 
+                        borderColor: color, 
+                        borderWidth: 0, 
+                        borderRadius: 0, 
+                        rawCount: count // 儲存原始筆數給 tooltip
+                    };
+                });
+
+
+                // 3. 建立新圖表 (長條圖)
+                const ctx = document.getElementById(chartId).getContext('2d');
+                smallCharts[chartId] = new Chart(ctx, {
+                    type: 'bar', // ** 類型改回 bar **
+                    data: { 
+                        labels: yLabels, // ** 標籤移到這裡 **
+                        datasets: datasets 
+                    },
+                    options: {
+                        indexAxis: 'y', // ** 還原 **
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: { padding: { left: -10 } }, // 隱藏 Y 軸標籤
+                        scales: {
+                            x: {
+                                display: true,
+                                stacked: true,
+                                max: isPercent ? 100 : undefined,
+                                // ** 修正 2.1: 隱藏 X 軸標題，但顯示刻度數字 (ticks) **
+                                ticks: {
+                                    display: true // <--- 改為 true
+                                },
+                                title: { 
+                                    display: false // 隱藏軸標題
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                display: false, // 隱藏 Y 軸
+                                barPercentage: BAR_PERCENTAGE,  // ** 修正 3.4: 使用設定值 **
+                                categoryPercentage: BAR_CATEGORY_PERCENTAGE // ** 修正 3.4: 使用設定值 **
+                            }
+                        },
+                        plugins: {
+                            datalabels: {
+                                display: true, // ** 修正：永遠顯示 (用於筆數或佔比) **
+                                color: '#fff',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                                font: { weight: 'bold', size: DATALABELS_FONT_SIZE }, // ** 修正 3.4: 使用設定值 **
+                                formatter: (value, context) => {
+                                    if (value === 0) return ''; // 隱藏 0
+                                    
+                                    if (isPercent) {
+                                        if (value < 8) return ''; // 佔比太小不顯示
+                                        return Math.round(value) + '%';
+                                    } else {
+                                        // 筆數模式：檢查佔比是否太小
+                                        const allData = context.chart.data.datasets.map(ds => ds.data[0]);
+                                        const total = allData.reduce((sum, val) => sum + val, 0);
+                                        if (total > 0 && (value / total) < 0.08) return ''; // 筆數佔比太小不顯示
+                                        return value; // 顯示筆數
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) label += ': ';
+                                        const rawCount = context.dataset.rawCount || 0;
+                                        if (isPercent) {
+                                            if (context.parsed.x !== null) label += context.parsed.x.toFixed(1) + '%';
+                                            label += ` (${rawCount}筆)`;
+                                        } else {
+                                            if (context.parsed.x !== null) label += context.parsed.x;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            },
+                            legend: { display: false } // 使用自訂圖例
+                        }
+                    }
+                });
+
+                // 4. 填入圖例
+                const legendContainer = document.getElementById(legendId);
+                let legendHTML = '';
+                datasets.forEach((dataset, index) => { // ** 還原：讀取長條圖的 dataset **
+                    const label = dataset.label;
+                    const color = dataset.borderColor;
+                    legendHTML += `<div class="flex items-center legend-item" data-chart-id="${chartId}" data-dataset-index="${index}">
+                                     <span class="w-3 h-3 mr-1" style="background-color: ${color}; border-radius: 2px;"></span>
+                                     <span class="text-sm text-gray-700">${label}</span>
+                                   </div>`;
+                });
+                legendContainer.innerHTML = legendHTML;
+                
+                // 5. 還原平均數計算
+                if (isGroupKeyNumeric) {
+                    let numericData = filteredData
+                        .map(d => parseNumericValue(d[colKey]))
+                        .filter(val => val.isNumeric)
+                        .map(val => val.num);
+                    if (numericData.length > 0) {
+                        const sum = numericData.reduce((a, b) => a + b, 0);
+                        const average = sum / numericData.length;
+                        document.getElementById(avgId).textContent = `平均數: ${average.toFixed(1)}`;
+                    }
+                }
+            });
+        }
+        
+        // ** 新增 Q2：截圖函數 **
+        async function downloadScreenshot() {
+            const statusEl = document.getElementById('sm-screenshot-status');
+            const buttonEl = document.getElementById('sm-download-screenshot');
+            // ** 修正：只擷取圖表容器 **
+            const targetEl = document.getElementById('smallMultiplesContainer'); 
+            
+            if (!targetEl) return;
+            
+            // ** 新增：檢查是否有圖表 **
+            if (targetEl.children.length === 0 || (targetEl.children.length === 1 && targetEl.children[0].tagName === 'P')) {
+                statusEl.textContent = '沒有圖表可供擷取。';
+                statusEl.classList.remove('hidden');
+                setTimeout(() => statusEl.classList.add('hidden'), 2000);
+                return;
+            }
+
+            statusEl.textContent = '正在產生截圖... 請稍候...';
+            statusEl.classList.remove('hidden');
+            buttonEl.disabled = true;
+
+            try {
+                const canvas = await html2canvas(targetEl, {
+                    useCORS: true, // 允許跨域圖片 (雖然我們沒有)
+                    scale: 2 // 提高解析度
+                });
+                
+                const dataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'dashboard-screenshot.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                statusEl.textContent = '截圖已下載！';
+                setTimeout(() => statusEl.classList.add('hidden'), 2000);
+
+            } catch (error) {
+                console.error('截圖失敗:', error);
+                statusEl.textContent = '截圖失敗，請檢查 console。';
+            } finally {
+                buttonEl.disabled = false;
+            }
+        }
+        
+    </script>
+</body>
+</html>
