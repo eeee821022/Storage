@@ -97,16 +97,18 @@
             border-bottom-width: 10px;
             border-bottom-color: #f472b6; /* pink-400 */
         }
-         /* 3. 平均數標籤 (長條圖末端) */
+         /* 3. 平均數標籤 (長條圖末端外側) */
         .average-label {
             position: absolute; display: none; pointer-events: none; z-index: 10;
-            background-color: rgba(0, 0, 0, 0.0); /* 透明背景 */
-            color: white; /* 白色文字 */
-            padding: 2px 5px;
-            font-size: 0.8rem;
+            background-color: rgba(255, 255, 255, 0.9); /* 白色半透明背景 */
+            color: black; /* 黑色文字 */
+            padding: 2px 6px;
+            font-size: 0.75rem;
             font-weight: bold;
-            transform: translate(-95%, -50%); /* 往左推 95%，垂直置中 */
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* 文字陰影 */
+            transform: translateY(-50%); /* 垂直置中 */
+            border-radius: 3px;
+            border: 1px solid #e5e7eb; /* 淡灰色邊框 */
+            white-space: nowrap; /* 防止文字換行 */
         }
         /* --- 結束標記樣式 --- */
 
@@ -228,15 +230,15 @@
                     <p class="text-sm text-gray-500 mt-1">控制長條圖上百分比/筆數文字的大小。</p>
                 </div>
                 
-                <!-- 2. BAR 的粗度 (Category Percentage / Bar Percentage) -->
+                <!-- 2. BAR 的高度 (固定像素) -->
                 <div>
                     <label for="barThickness" class="block text-lg font-medium text-gray-700 mb-2">
-                        長條圖粗度 (Bar Thickness: <span id="barThicknessValue">0.5</span>)
+                        單欄分析長條圖高度 (<span id="barThicknessValue">4</span> px)
                     </label>
-                    <!-- ** 修正：預設值改為 0.5，step 改為 0.05 ** -->
-                    <input type="range" id="barThickness" min="0.3" max="1.0" value="0.5" step="0.05" 
+                    <!-- 固定像素高度：4px 到 25px -->
+                    <input type="range" id="barThickness" min="4" max="25" value="4" step="1" 
                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
-                    <p class="text-sm text-gray-500 mt-1">1.0 為緊密排列，0.3 為最大間距。</p>
+                    <p class="text-sm text-gray-500 mt-1">設定單欄分析的長條圖高度（4-25 像素）。</p>
                 </div>
             </div>
         </div>
@@ -268,17 +270,78 @@
         </div>
 
         <!-- 儀表板 -->
-        <main id="dashboard" class="hidden lg:grid lg:grid-cols-3 lg:gap-6">
-            <div class="lg:col-span-2 space-y-6">
+        <main id="dashboard" class="hidden lg:grid lg:grid-cols-6 lg:gap-6">
+            <div class="lg:col-span-5 space-y-6">
                 
                 <!-- 
                   =================================
-                  區塊 1: 樞紐分析 (交叉比較)
+                  新增: 樞紐圖表分析
                   =================================
                 -->
-                <details id="pivotSection" open>
+                <details id="pivotTableSection">
+                    <summary>樞紐圖表分析</summary>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-white rounded-lg shadow-md">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <!-- 列設定 -->
+                                <div class="space-y-3">
+                                    <h3 class="text-sm font-semibold text-gray-700 border-b pb-1">列 (Row)</h3>
+                                    
+                                    <!-- 主要列 -->
+                                    <div>
+                                        <label for="pivotRowMainSelect" class="block text-xs font-medium text-gray-600">主要分組</label>
+                                        <select id="pivotRowMainSelect" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                            <option value="">請選擇</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- 次要列 -->
+                                    <div>
+                                        <label for="pivotRowSubSelect" class="block text-xs font-medium text-gray-600">次要分組（可選）</label>
+                                        <select id="pivotRowSubSelect" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                            <option value="">無</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- 欄設定 -->
+                                <div class="space-y-3">
+                                    <h3 class="text-sm font-semibold text-gray-700 border-b pb-1">欄 (Column) - 數據欄位</h3>
+                                    <div id="pivotColumnsContainer" class="space-y-2 max-h-64 overflow-y-auto">
+                                        <!-- 動態生成的欄位選擇器將顯示在這裡 -->
+                                    </div>
+                                    <button id="addPivotColumn" class="w-full py-1.5 px-3 text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md border border-indigo-200">
+                                        + 新增數據欄
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 樞紐分析表格顯示區 -->
+                        <div class="bg-white p-4 rounded-lg shadow-lg overflow-x-auto">
+                            <!-- 添加截圖按鈕 -->
+                            <div class="flex justify-end mb-2">
+                                <button id="pivotTable-download-screenshot" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700">
+                                    <i class="fas fa-camera mr-1"></i> 下載截圖
+                                </button>
+                            </div>
+                            <div id="pivotTable-screenshot-status" class="text-sm text-green-700 hidden mb-2 text-right"></div>
+                            
+                            <div id="pivotTableContainer" class="text-sm">
+                                <p class="text-gray-500">請選擇列和欄以生成樞紐分析表</p>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+                
+                <!-- 
+                  =================================
+                  區塊 1: 交叉長條圖分析 (交叉比較)
+                  =================================
+                -->
+                <details id="pivotSection">
                     <!-- 修正名稱 -->
-                    <summary>樞紐分析</summary>
+                    <summary>交叉長條圖分析</summary>
                     <div class="space-y-6">
                         <div class="p-4 bg-white rounded-lg shadow-md">
                             <div class="flex flex-col md:flex-row items-start md:items-center gap-4 mb-4">
@@ -312,8 +375,25 @@
                             </div>
                         </div>
                         <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+                            <!-- 添加截圖按鈕 -->
+                            <div class="flex justify-end mb-2">
+                                <button id="pivot-download-screenshot" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700">
+                                    <i class="fas fa-camera mr-1"></i> 下載截圖
+                                </button>
+                            </div>
+                            <div id="pivot-screenshot-status" class="text-sm text-green-700 hidden mb-2 text-right"></div>
+                            
                             <div id="chartHeader" class="flex justify-between items-start mb-2">
-                                <h3 id="yAxisChartTitle" class="text-lg font-bold text-gray-800"></h3>
+                                <div class="flex flex-col items-start">
+                                    <h3 id="yAxisChartTitle" class="text-lg font-bold text-gray-800"></h3>
+                                    <!-- 次要分組選單 -->
+                                    <div id="subGroupContainer" class="mt-2 hidden">
+                                        <label for="subGroupSelect" class="text-xs font-medium text-gray-600 mr-2">次要分組:</label>
+                                        <select id="subGroupSelect" class="text-xs py-1 px-2 border border-gray-300 bg-white rounded shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                            <option value="">無</option>
+                                        </select>
+                                    </div>
+                                </div>
                                 <div id="customLegendContainer" class="text-right space-y-2">
                                     <h3 id="cAxisChartTitle" class="text-lg font-bold text-gray-800"></h3>
                                     <div id="customLegend" class="flex flex-wrap gap-x-4 gap-y-1 justify-end"></div>
@@ -323,7 +403,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="chart-container">
+                            <div class="chart-container" id="pivotChartContainer">
                                 <canvas id="mainChart"></canvas>
                                 <!-- 容器：放置所有標記 (箭頭/分位數/平均) -->
                                 <div id="markerContainer"></div>
@@ -337,7 +417,7 @@
                   區塊 3: 桑基圖 (Sankey Diagram)
                   =================================
                 -->
-                <details id="sankeySection" open>
+                <details id="sankeySection">
                     <!-- 修正名稱 -->
                     <summary>桑基分析</summary>
                     <div class="space-y-6">
@@ -452,8 +532,10 @@
         
         // --- 設定預設值 (已修改) ---
         let DATALABELS_FONT_SIZE = 13; // 預設改為 13px
-        let BAR_CATEGORY_PERCENTAGE = 0.5; // 預設改為 0.5
-        let BAR_PERCENTAGE = 0.5; // 預設改為 0.5
+        let SMALL_CHART_BAR_HEIGHT = 4; // 單欄分析BAR高度（像素）- 改為4px
+        // 樞紐分析使用的比例設定
+        let BAR_CATEGORY_PERCENTAGE = 0.5; 
+        let BAR_PERCENTAGE = 0.5;
 
         // 1. 高對比度的「類別」調色盤 (用於文字類別，或少量的數值類別)
         const CATEGORICAL_PALETTE = ['#1e40af','#dc2626','#16a34a','#ea580c','#9333ea','#0891b2','#ca8a04','#db2777','#65a30d','#7c3aed','#0d9488','#c026d3','#475569','#f59e0b','#059669','#be185d'];
@@ -505,17 +587,321 @@
             "3.4_5": "#F35555",
             
             // 4.1 食品保健花費 (數值)
-            "4.1_0": "#BED1DB",
-            "4.1_500": "#9AD8F5",
-            "4.1_1000": "#5ECBD5",
-            "4.1_1500": "#22BDB5",
-            "4.1_2000": "#12777E",
-            "4.1_2500": "#023047",
-            "4.1_3000": "#425236",
-            "4.1_3500": "#817425",
-            "4.1_4000": "#FFB703",
-            "4.1_4500": "#F9862C",
-            "4.1_5000": "#F35555",
+    "4.1_0": "#81D5E9",
+    "4.1_500": "#3322E7",
+    "4.1_1000": "#D9D009",
+    "4.1_1500": "#E00418",
+    "4.1_2000": "#F51A9A",
+    "4.1_2500": "#1C8E73",
+    "4.1_3000": "#5C441E",
+    "4.1_3500": "#3B01AF",
+    "4.1_4000": "#515AF9",
+    "4.1_4500": "#CEE6E8",
+    "4.1_5000": "#D70B9F",
+    "4.1_5500": "#A81923",
+    "4.1_6000": "#511F7F",
+    "4.1_6500": "#6985AC",
+    "4.1_7000": "#A95315",
+    "4.1_7500": "#C7E331",
+    "4.1_8000": "#289C00",
+    "4.1_8500": "#CC1E93",
+    "4.1_9000": "#6335EC",
+    "4.1_9500": "#F72F8B",
+    "4.1_10000": "#C09C59",
+    "4.1_10500": "#97E431",
+    "4.1_11000": "#2C4EAE",
+    "4.1_11500": "#9658E2",
+    "4.1_12000": "#10F2BE",
+    "4.1_12500": "#CE3D95",
+    "4.1_13000": "#0F1082",
+    "4.1_13500": "#EBE4D5",
+    "4.1_14000": "#E71991",
+    "4.1_14500": "#2E03FB",
+    "4.1_15000": "#3C2A58",
+    "4.1_15500": "#C95794",
+    "4.1_16000": "#3A1E65",
+    "4.1_16500": "#FBE4C1",
+    "4.1_17000": "#8B4C08",
+    "4.1_17500": "#E438DE",
+    "4.1_18000": "#03C5A5",
+    "4.1_18500": "#E1A7D0",
+    "4.1_19000": "#537751",
+    "4.1_19500": "#5317E3",
+    "4.1_20000": "#CCB019",
+    "4.1_20500": "#055271",
+    "4.1_21000": "#65D5EB",
+    "4.1_21500": "#0639D2",
+    "4.1_22000": "#03A2B5",
+    "4.1_22500": "#57A212",
+    "4.1_23000": "#5E61E0",
+    "4.1_23500": "#DE5420",
+    "4.1_24000": "#D2CE15",
+    "4.1_24500": "#B04F4C",
+    "4.1_25000": "#172FDC",
+    "4.1_25500": "#F29584",
+    "4.1_26000": "#D8B09F",
+    "4.1_26500": "#B634CD",
+    "4.1_27000": "#79B8C5",
+    "4.1_27500": "#50D517",
+    "4.1_28000": "#807B4D",
+    "4.1_28500": "#388484",
+    "4.1_29000": "#43485E",
+    "4.1_29500": "#ED0D65",
+    "4.1_30000": "#604278",
+    "4.2_0": "#81D5E9",
+    "4.2_500": "#3322E7",
+    "4.2_1000": "#D9D009",
+    "4.2_1500": "#E00418",
+    "4.2_2000": "#F51A9A",
+    "4.2_2500": "#1C8E73",
+    "4.2_3000": "#5C441E",
+    "4.2_3500": "#3B01AF",
+    "4.2_4000": "#515AF9",
+    "4.2_4500": "#CEE6E8",
+    "4.2_5000": "#D70B9F",
+    "4.2_5500": "#A81923",
+    "4.2_6000": "#511F7F",
+    "4.2_6500": "#6985AC",
+    "4.2_7000": "#A95315",
+    "4.2_7500": "#C7E331",
+    "4.2_8000": "#289C00",
+    "4.2_8500": "#CC1E93",
+    "4.2_9000": "#6335EC",
+    "4.2_9500": "#F72F8B",
+    "4.2_10000": "#C09C59",
+    "4.2_10500": "#97E431",
+    "4.2_11000": "#2C4EAE",
+    "4.2_11500": "#9658E2",
+    "4.2_12000": "#10F2BE",
+    "4.2_12500": "#CE3D95",
+    "4.2_13000": "#0F1082",
+    "4.2_13500": "#EBE4D5",
+    "4.2_14000": "#E71991",
+    "4.2_14500": "#2E03FB",
+    "4.2_15000": "#3C2A58",
+    "4.2_15500": "#C95794",
+    "4.2_16000": "#3A1E65",
+    "4.2_16500": "#FBE4C1",
+    "4.2_17000": "#8B4C08",
+    "4.2_17500": "#E438DE",
+    "4.2_18000": "#03C5A5",
+    "4.2_18500": "#E1A7D0",
+    "4.2_19000": "#537751",
+    "4.2_19500": "#5317E3",
+    "4.2_20000": "#CCB019",
+    "4.2_20500": "#055271",
+    "4.2_21000": "#65D5EB",
+    "4.2_21500": "#0639D2",
+    "4.2_22000": "#03A2B5",
+    "4.2_22500": "#57A212",
+    "4.2_23000": "#5E61E0",
+    "4.2_23500": "#DE5420",
+    "4.2_24000": "#D2CE15",
+    "4.2_24500": "#B04F4C",
+    "4.2_25000": "#172FDC",
+    "4.2_25500": "#F29584",
+    "4.2_26000": "#D8B09F",
+    "4.2_26500": "#B634CD",
+    "4.2_27000": "#79B8C5",
+    "4.2_27500": "#50D517",
+    "4.2_28000": "#807B4D",
+    "4.2_28500": "#388484",
+    "4.2_29000": "#43485E",
+    "4.2_29500": "#ED0D65",
+    "4.2_30000": "#604278",
+    "4.4_0": "#81D5E9",
+    "4.4_500": "#3322E7",
+    "4.4_1000": "#D9D009",
+    "4.4_1500": "#E00418",
+    "4.4_2000": "#F51A9A",
+    "4.4_2500": "#1C8E73",
+    "4.4_3000": "#5C441E",
+    "4.4_3500": "#3B01AF",
+    "4.4_4000": "#515AF9",
+    "4.4_4500": "#CEE6E8",
+    "4.4_5000": "#D70B9F",
+    "4.4_5500": "#A81923",
+    "4.4_6000": "#511F7F",
+    "4.4_6500": "#6985AC",
+    "4.4_7000": "#A95315",
+    "4.4_7500": "#C7E331",
+    "4.4_8000": "#289C00",
+    "4.4_8500": "#CC1E93",
+    "4.4_9000": "#6335EC",
+    "4.4_9500": "#F72F8B",
+    "4.4_10000": "#C09C59",
+    "4.4_10500": "#97E431",
+    "4.4_11000": "#2C4EAE",
+    "4.4_11500": "#9658E2",
+    "4.4_12000": "#10F2BE",
+    "4.4_12500": "#CE3D95",
+    "4.4_13000": "#0F1082",
+    "4.4_13500": "#EBE4D5",
+    "4.4_14000": "#E71991",
+    "4.4_14500": "#2E03FB",
+    "4.4_15000": "#3C2A58",
+    "4.4_15500": "#C95794",
+    "4.4_16000": "#3A1E65",
+    "4.4_16500": "#FBE4C1",
+    "4.4_17000": "#8B4C08",
+    "4.4_17500": "#E438DE",
+    "4.4_18000": "#03C5A5",
+    "4.4_18500": "#E1A7D0",
+    "4.4_19000": "#537751",
+    "4.4_19500": "#5317E3",
+    "4.4_20000": "#CCB019",
+    "4.4_20500": "#055271",
+    "4.4_21000": "#65D5EB",
+    "4.4_21500": "#0639D2",
+    "4.4_22000": "#03A2B5",
+    "4.4_22500": "#57A212",
+    "4.4_23000": "#5E61E0",
+    "4.4_23500": "#DE5420",
+    "4.4_24000": "#D2CE15",
+    "4.4_24500": "#B04F4C",
+    "4.4_25000": "#172FDC",
+    "4.4_25500": "#F29584",
+    "4.4_26000": "#D8B09F",
+    "4.4_26500": "#B634CD",
+    "4.4_27000": "#79B8C5",
+    "4.4_27500": "#50D517",
+    "4.4_28000": "#807B4D",
+    "4.4_28500": "#388484",
+    "4.4_29000": "#43485E",
+    "4.4_29500": "#ED0D65",
+    "4.4_30000": "#604278",
+    "5.3_0": "#81D5E9",
+    "5.3_500": "#3322E7",
+    "5.3_1000": "#D9D009",
+    "5.3_1500": "#E00418",
+    "5.3_2000": "#F51A9A",
+    "5.3_2500": "#1C8E73",
+    "5.3_3000": "#5C441E",
+    "5.3_3500": "#3B01AF",
+    "5.3_4000": "#515AF9",
+    "5.3_4500": "#CEE6E8",
+    "5.3_5000": "#D70B9F",
+    "5.3_5500": "#A81923",
+    "5.3_6000": "#511F7F",
+    "5.3_6500": "#6985AC",
+    "5.3_7000": "#A95315",
+    "5.3_7500": "#C7E331",
+    "5.3_8000": "#289C00",
+    "5.3_8500": "#CC1E93",
+    "5.3_9000": "#6335EC",
+    "5.3_9500": "#F72F8B",
+    "5.3_10000": "#C09C59",
+    "5.3_10500": "#97E431",
+    "5.3_11000": "#2C4EAE",
+    "5.3_11500": "#9658E2",
+    "5.3_12000": "#10F2BE",
+    "5.3_12500": "#CE3D95",
+    "5.3_13000": "#0F1082",
+    "5.3_13500": "#EBE4D5",
+    "5.3_14000": "#E71991",
+    "5.3_14500": "#2E03FB",
+    "5.3_15000": "#3C2A58",
+    "5.3_15500": "#C95794",
+    "5.3_16000": "#3A1E65",
+    "5.3_16500": "#FBE4C1",
+    "5.3_17000": "#8B4C08",
+    "5.3_17500": "#E438DE",
+    "5.3_18000": "#03C5A5",
+    "5.3_18500": "#E1A7D0",
+    "5.3_19000": "#537751",
+    "5.3_19500": "#5317E3",
+    "5.3_20000": "#CCB019",
+    "5.3_20500": "#055271",
+    "5.3_21000": "#65D5EB",
+    "5.3_21500": "#0639D2",
+    "5.3_22000": "#03A2B5",
+    "5.3_22500": "#57A212",
+    "5.3_23000": "#5E61E0",
+    "5.3_23500": "#DE5420",
+    "5.3_24000": "#D2CE15",
+    "5.3_24500": "#B04F4C",
+    "5.3_25000": "#172FDC",
+    "5.3_25500": "#F29584",
+    "5.3_26000": "#D8B09F",
+    "5.3_26500": "#B634CD",
+    "5.3_27000": "#79B8C5",
+    "5.3_27500": "#50D517",
+    "5.3_28000": "#807B4D",
+    "5.3_28500": "#388484",
+    "5.3_29000": "#43485E",
+    "5.3_29500": "#ED0D65",
+    "5.3_30000": "#604278",
+    "5.5_0": "#81D5E9",
+    "5.5_500": "#3322E7",
+    "5.5_1000": "#D9D009",
+    "5.5_1500": "#E00418",
+    "5.5_2000": "#F51A9A",
+    "5.5_2500": "#1C8E73",
+    "5.5_3000": "#5C441E",
+    "5.5_3500": "#3B01AF",
+    "5.5_4000": "#515AF9",
+    "5.5_4500": "#CEE6E8",
+    "5.5_5000": "#D70B9F",
+    "5.5_5500": "#A81923",
+    "5.5_6000": "#511F7F",
+    "5.5_6500": "#6985AC",
+    "5.5_7000": "#A95315",
+    "5.5_7500": "#C7E331",
+    "5.5_8000": "#289C00",
+    "5.5_8500": "#CC1E93",
+    "5.5_9000": "#6335EC",
+    "5.5_9500": "#F72F8B",
+    "5.5_10000": "#C09C59",
+    "5.5_10500": "#97E431",
+    "5.5_11000": "#2C4EAE",
+    "5.5_11500": "#9658E2",
+    "5.5_12000": "#10F2BE",
+    "5.5_12500": "#CE3D95",
+    "5.5_13000": "#0F1082",
+    "5.5_13500": "#EBE4D5",
+    "5.5_14000": "#E71991",
+    "5.5_14500": "#2E03FB",
+    "5.5_15000": "#3C2A58",
+    "5.5_15500": "#C95794",
+    "5.5_16000": "#3A1E65",
+    "5.5_16500": "#FBE4C1",
+    "5.5_17000": "#8B4C08",
+    "5.5_17500": "#E438DE",
+    "5.5_18000": "#03C5A5",
+    "5.5_18500": "#E1A7D0",
+    "5.5_19000": "#537751",
+    "5.5_19500": "#5317E3",
+    "5.5_20000": "#CCB019",
+    "5.5_20500": "#055271",
+    "5.5_21000": "#65D5EB",
+    "5.5_21500": "#0639D2",
+    "5.5_22000": "#03A2B5",
+    "5.5_22500": "#57A212",
+    "5.5_23000": "#5E61E0",
+    "5.5_23500": "#DE5420",
+    "5.5_24000": "#D2CE15",
+    "5.5_24500": "#B04F4C",
+    "5.5_25000": "#172FDC",
+    "5.5_25500": "#F29584",
+    "5.5_26000": "#D8B09F",
+    "5.5_26500": "#B634CD",
+    "5.5_27000": "#79B8C5",
+    "5.5_27500": "#50D517",
+    "5.5_28000": "#807B4D",
+    "5.5_28500": "#388484",
+    "5.5_29000": "#43485E",
+    "5.5_29500": "#ED0D65",
+    "5.5_30000": "#604278",
+
+
+
+
+
+
+
+
+
+
 
             // 4.3 科技用品數量
             "4.3_0": "#9AD8F5", 
@@ -571,7 +957,162 @@
             "無閒錢": "#9AD8F5",
             "小康": "#22BDB5",
             "富裕": "#FFB703",
-            "多到沒地方花": "#F35555"
+            "多到沒地方花": "#F35555",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         };
         
         const QUESTION_MAP = {'1.1_寵物類型':'您目前飼養的寵物類型為？','1.2_飼養數量':'您目前飼養的寵物數量為？','1.3_Age_Oldest':'您目前飼養的寵物中，最年長的年紀為？','1.3_Age_Youngest':'您目前飼養的寵物中，最年幼的年紀為？','1.4_居住型態':'您目前的居住型態為？','2.1_視為家人':'我視我的寵物為家人','2.2_情感慰藉':'寵物是我的重要情感慰藉','2.3_對寵說話':'我經常對我的寵物說話','2.4_擔心想念':'當我不在寵物身邊時，我會擔心或想念牠','2.5_快樂來源':'寵物是我快樂的重要來源','2.6_像孩子':'我常覺得我的寵物像我的孩子','2.7_填補空缺':'寵物填補了我生活中的空缺','2.8_日常話題':'寵物是我日常生活中的重要話題','3.1_充滿活力':'我希望我的寵物總是充滿活力','3.2_擔心獨處':'我擔心寵物獨處時感到孤單或焦慮','3.3_願意陪伴':'我願意花更多時間陪伴我的寵物','3.4_專心時間':'我每天都會有一段專心陪伴寵物的時間','4.1_食品保健花費':'您平均每月在寵物「食品與保健品」上花費多少？','4.2_玩具娛樂花費':'您平均每月在寵物「玩具與娛樂用品」上花費多少？','4.3_科技用品數量':'您目前擁有多少「寵物科技用品」（如：自動餵食器、飲水器、寵物攝影機、智能玩具等）？','4.4_最高產品金額':'您願意為單一「寵物科技產品」支付的最高金額約為？','5.1_不好經驗':'您過去是否有使用寵物科技產品的不良經驗？','5.2_願意添購':'未來 6 個月內，您是否考慮添購 neuen 「寵物科技產品」？','5.3_願意購買金額':'若有一款「寵物陪伴機器人」，您願意購買的金額範圍是？','5.4_開心使用':'我樂於看到寵物開心使用科技產品','5.4_安全使用':'我最擔心寵物科技產品的安全性','5.4_節省時間':'我希望寵物科技產品能幫我節省照顧時間','5.4_持久耐用':'我重視寵物科技產品的持久耐用性','5.4_容易清潔':'我希望寵物科技產品容易清潔','6.1_性別':'您的性別','6.2_年齡':'您的年齡','6.3_單身':'您目前的婚姻狀況','6.4_獨居':'您目前是否獨居','6.5_子女':'您目前是否有子女同住','6.6_寵物相關背景':'您是否具有寵物相關背景（如：獸醫、寵物美容、訓練師等）？','6.7_月收入':'您的個人平均月收入'};
@@ -601,13 +1142,12 @@
             '3.4_專心時間': ["0", "0.5", "1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "5"],
             
             // 4.1 食品保健花費
-            '4.1_食品保健花費': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000"],
-            
+
             // 4.3 科技用品數量
             '4.3_科技用品數量': ["0", "1", "2", "3", "4", "5"],
             
             // 5.1 不好經驗 (0-3 排序)
-            '5.1_不好經驗': ["0", "1", "2", "3"],
+            '5.1_不好經驗': ["3", "2", "1", "0"],
             
             // 5.2 願意添購
             '5.2_願意添購': ["是", "否"],
@@ -626,8 +1166,24 @@
             '6.4_獨居': ["是", "否"],
             '6.5_子女': ["有", "無"],
             '6.6_寵物相關背景': ["是", "否"],
-            '6.7_月收入': ["無閒錢", "小康", "富裕", "多到沒地方花"]
-        };
+            '6.7_月收入': ["無閒錢", "小康", "富裕", "多到沒地方花"],
+            '4.2_玩具娛樂花費': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000", "5500", "6000", "6500", "7000", "7500", "8000", "8500", "9000", "9500", "10000", "10500", "11000", "11500", "12000", "12500", "13000", "13500", "14000", "14500", "15000", "15500", "16000", "16500", "17000", "17500", "18000", "18500", "19000", "19500", "20000", "20500", "21000", "21500", "22000", "22500", "23000", "23500", "24000", "24500", "25000", "25500", "26000", "26500", "27000", "27500", "28000", "28500", "29000", "29500", "30000"],
+    '4.4_最高產品金額': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000", "5500", "6000", "6500", "7000", "7500", "8000", "8500", "9000", "9500", "10000", "10500", "11000", "11500", "12000", "12500", "13000", "13500", "14000", "14500", "15000", "15500", "16000", "16500", "17000", "17500", "18000", "18500", "19000", "19500", "20000", "20500", "21000", "21500", "22000", "22500", "23000", "23500", "24000", "24500", "25000", "25500", "26000", "26500", "27000", "27500", "28000", "28500", "29000", "29500", "30000"],
+    '5.3_願意購買金額': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000", "5500", "6000", "6500", "7000", "7500", "8000", "8500", "9000", "9500", "10000", "10500", "11000", "11500", "12000", "12500", "13000", "13500", "14000", "14500", "15000", "15500", "16000", "16500", "17000", "17500", "18000", "18500", "19000", "19500", "20000", "20500", "21000", "21500", "22000", "22500", "23000", "23500", "24000", "24500", "25000", "25500", "26000", "26500", "27000", "27500", "28000", "28500", "29000", "29500", "30000"],
+    '5.5_總額': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000", "5500", "6000", "6500", "7000", "7500", "8000", "8500", "9000", "9500", "10000", "10500", "11000", "11500", "12000", "12500", "13000", "13500", "14000", "14500", "15000", "15500", "16000", "16500", "17000", "17500", "18000", "18500", "19000", "19500", "20000", "20500", "21000", "21500", "22000", "22500", "23000", "23500", "24000", "24500", "25000", "25500", "26000", "26500", "27000", "27500", "28000", "28500", "29000", "29500", "30000"],
+    '4.1_食品保健花費': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000", "5500", "6000", "6500", "7000", "7500", "8000", "8500", "9000", "9500", "10000", "10500", "11000", "11500", "12000", "12500", "13000", "13500", "14000", "14500", "15000", "15500", "16000", "16500", "17000", "17500", "18000", "18500", "19000", "19500", "20000", "20500", "21000", "21500", "22000", "22500", "23000", "23500", "24000", "24500", "25000", "25500", "26000", "26500", "27000", "27500", "28000", "28500", "29000", "29500", "30000"],
+
+        
+    '4.1': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000", "5500", "6000", "6500", "7000", "7500", "8000", "8500", "9000", "9500", "10000", "10500", "11000", "11500", "12000", "12500", "13000", "13500", "14000", "14500", "15000", "15500", "16000", "16500", "17000", "17500", "18000", "18500", "19000", "19500", "20000", "20500", "21000", "21500", "22000", "22500", "23000", "23500", "24000", "24500", "25000", "25500", "26000", "26500", "27000", "27500", "28000", "28500", "29000", "29500", "30000"],
+
+    '4.2': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000", "5500", "6000", "6500", "7000", "7500", "8000", "8500", "9000", "9500", "10000", "10500", "11000", "11500", "12000", "12500", "13000", "13500", "14000", "14500", "15000", "15500", "16000", "16500", "17000", "17500", "18000", "18500", "19000", "19500", "20000", "20500", "21000", "21500", "22000", "22500", "23000", "23500", "24000", "24500", "25000", "25500", "26000", "26500", "27000", "27500", "28000", "28500", "29000", "29500", "30000"],
+
+    '4.4': ["0", "500", "1000", "1500", "2000", "2500", "3000", "3500", "4000", "4500", "5000", "5500", "6000", "6500", "7000", "7500", "8000", "8500", "9000", "9500", "10000", "10500", "11000", "11500", "12000", "12500", "13000", "13500", "14000", "14500", "15000", "15500", "16000", "16500", "17000", "17500", "18000", "18500", "19000", "19500", "20000", "20500", "21000", "21500", "22000", "22500", "23000", "23500", "24000", "24500", "25000", "25500", "26000", "26500", "27000", "27500", "28000", "28500", "29000", "29500", "30000"],
+
+    '5.3': ["0", "750", "1500", "2250", "3000", "3750", "4500", "5250", "6000", "6750", "7500", "8250", "9000", "9750", "10500", "11250", "12000", "12750", "13500", "14250", "15000", "15750", "16500", "17250", "18000", "18750", "19500", "20250", "21000", "21750", "22500", "23250", "24000", "24750", "25500", "26250", "27000", "27750", "28500", "29250", "30000", "30750", "31500", "32250", "33000", "33750", "34500", "35250", "36000", "36750", "37500", "38250", "39000", "39750", "40500", "41250", "42000", "42750", "43500", "44250", "45000"],
+
+    '5.5': ["0", "750", "1500", "2250", "3000", "3750", "4500", "5250", "6000", "6750", "7500", "8250", "9000", "9750", "10500", "11250", "12000", "12750", "13500", "14250", "15000", "15750", "16500", "17250", "18000", "18750", "19500", "20250", "21000", "21750", "22500", "23250", "24000", "24750", "25500", "26250", "27000", "27750", "28500", "29250", "30000", "30750", "31500", "32250", "33000", "33750", "34500", "35250", "36000", "36750", "37500", "38250", "39000", "39750", "40500", "41250", "42000", "42750", "43500", "44250", "45000"],
+};
         
         // --- 佔比模式 25/50/75% 虛線外掛 ---
         const percentageGridLinesPlugin = {
@@ -663,7 +1219,28 @@
         };
         Chart.register(percentageGridLinesPlugin); // 註冊外掛
 
-        // --- Helper 函數 ---
+        
+        // 以自訂順序排序；若找不到於順序表，則回退為「數值由小到大」；再不行回到字串比較
+        function compareWithOrder(a, b, orderArr) {
+            const aRaw = String(a).trim();
+            const bRaw = String(b).trim();
+            const aNumStr = aRaw.replace(/[^0-9.+-]/g, '');
+            const bNumStr = bRaw.replace(/[^0-9.+-]/g, '');
+            const aIdx = orderArr.indexOf(aNumStr);
+            const bIdx = orderArr.indexOf(bNumStr);
+            if (aIdx !== -1 || bIdx !== -1) {
+                const av = (aIdx === -1) ? Infinity : aIdx;
+                const bv = (bIdx === -1) ? Infinity : bIdx;
+                if (av !== bv) return av - bv;
+            }
+            const aNum = parseFloat(aNumStr);
+            const bNum = parseFloat(bNumStr);
+            if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+                if (aNum !== bNum) return aNum - bNum;
+            }
+            return aRaw.localeCompare(bRaw);
+        }
+// --- Helper 函數 ---
         function parseNumericValue(val) {
             const valStr = String(val).trim(); // ** 修正：Trim 空白 **
             // 移除 NT$ 或其他貨幣符號
@@ -716,10 +1293,10 @@
                 const later = () => {
                     clearTimeout(timeout);
                     func(...args);
-                };
+        };
                 clearTimeout(timeout);
                 timeout = setTimeout(later, wait);
-            };
+        };
         }
 
         let chart; // 主圖表 (樞紐)
@@ -765,8 +1342,8 @@
             // 初始化設定值顯示 (使用全域變數的預設值)
             datalabelsSize.value = DATALABELS_FONT_SIZE;
             datalabelsSizeValue.textContent = DATALABELS_FONT_SIZE;
-            barThickness.value = BAR_CATEGORY_PERCENTAGE;
-            barThicknessValue.textContent = BAR_CATEGORY_PERCENTAGE.toFixed(1);
+            barThickness.value = SMALL_CHART_BAR_HEIGHT;
+            barThicknessValue.textContent = SMALL_CHART_BAR_HEIGHT;
             sankeyMinThresholdValue.textContent = sankeyMinThreshold.value;
 
             // 綁定設定調整事件
@@ -778,10 +1355,9 @@
             });
 
             barThickness.addEventListener('input', () => {
-                BAR_CATEGORY_PERCENTAGE = parseFloat(barThickness.value);
-                BAR_PERCENTAGE = parseFloat(barThickness.value);
-                barThicknessValue.textContent = BAR_CATEGORY_PERCENTAGE.toFixed(1);
-                if (chart) updateChartSettings(true); 
+                SMALL_CHART_BAR_HEIGHT = parseInt(barThickness.value);
+                barThicknessValue.textContent = SMALL_CHART_BAR_HEIGHT;
+                // 不影響樞紐分析，只更新單欄分析
                 updateSmallMultiplesSettings(true); 
             });
             
@@ -888,6 +1464,13 @@
             controls.smallValueSelect = document.getElementById('smallValueSelect'); // ** 修正 2：加入新的控制器 **
             controls.swapButton = document.getElementById('swapAxesButton');
             controls.arrowSelect = document.getElementById('arrowSelect');
+            controls.subGroupSelect = document.getElementById('subGroupSelect'); // 次要分組選單
+            
+            // Pivot Table Controls
+            controls.pivotRowMainSelect = document.getElementById('pivotRowMainSelect');
+            controls.pivotRowSubSelect = document.getElementById('pivotRowSubSelect');
+            controls.addPivotColumnBtn = document.getElementById('addPivotColumn');
+            controls.pivotColumns = []; // 存儲動態添加的欄位配置
             
             // Sankey Controls
             controls.sankeySourceSelect = document.getElementById('sankeySourceSelect');
@@ -898,12 +1481,18 @@
             controls.colorBySelect.innerHTML = '<option value="none">不分組 (單一顏色)</option>';
             controls.sankeySourceSelect.innerHTML = '<option value="">請選擇</option>';
             controls.sankeyTargetSelect.innerHTML = '<option value="">請選擇</option>';
+            controls.subGroupSelect.innerHTML = '<option value="">無</option>'; // 次要分組預設選項
+            controls.pivotRowMainSelect.innerHTML = '<option value="">請選擇</option>';
+            controls.pivotRowSubSelect.innerHTML = '<option value="">無</option>';
 
             allColumns.forEach(key => {
                 controls.yAxisSelect.innerHTML += `<option value="${key}">${key}</option>`;
                 controls.colorBySelect.innerHTML += `<option value="${key}">${key}</option>`;
                 controls.sankeySourceSelect.innerHTML += `<option value="${key}">${key}</option>`;
                 controls.sankeyTargetSelect.innerHTML += `<option value="${key}">${key}</option>`;
+                controls.subGroupSelect.innerHTML += `<option value="${key}">${key}</option>`; // 添加到次要分組選單
+                controls.pivotRowMainSelect.innerHTML += `<option value="${key}">${key}</option>`;
+                controls.pivotRowSubSelect.innerHTML += `<option value="${key}">${key}</option>`;
             });
             
             // ** 新增：設定「單一欄位分析」的複選框 **
@@ -935,6 +1524,12 @@
                 updateSmallMultiples();
             });
             document.getElementById('sm-download-screenshot').addEventListener('click', downloadScreenshot);
+            
+            // 綁定樞紐分析截圖按鈕
+            document.getElementById('pivot-download-screenshot').addEventListener('click', downloadPivotScreenshot);
+            
+            // 綁定樞紐分析表格截圖按鈕
+            document.getElementById('pivotTable-download-screenshot').addEventListener('click', downloadPivotTableScreenshot);
 
 
             // --- 篩選器 (共用) ---
@@ -967,7 +1562,25 @@
                 updateChart();
                 updateSankeyChart(); // 篩選器變更也更新 Sankey
             });
-            controls.arrowSelect.addEventListener('change', updateArrowPosition);
+            controls.arrowSelect.addEventListener('change', () => {
+                // 立即更新一次
+                updateArrowPosition();
+                // 延遲再更新一次，確保圖表已完全渲染
+                setTimeout(() => updateArrowPosition(), 50);
+            });
+            
+            // 次要分組選單事件
+            controls.subGroupSelect.addEventListener('change', () => {
+                updateChart();
+            });
+            
+            // 樞紐圖表分析事件
+            controls.pivotRowMainSelect.addEventListener('change', updatePivotTable);
+            controls.pivotRowSubSelect.addEventListener('change', updatePivotTable);
+            controls.addPivotColumnBtn.addEventListener('click', addPivotColumnField);
+            
+            // 初始化時添加一個欄位
+            addPivotColumnField();
 
             // ** 修正 2：「值」和「篩選器」需要*分開*更新兩個圖表區塊 **
             controls.valueSelect.addEventListener('change', updateChart); // ** 只更新主圖表 **
@@ -996,9 +1609,13 @@
                 if (CUSTOM_SORT_ORDERS[targetKey]) {
                     const customOrder = CUSTOM_SORT_ORDERS[targetKey];
                     const getSortIndex = (val) => {
-                        const index = customOrder.indexOf(String(val).trim()); // ** Trim here **
-                        return index === -1 ? Infinity : index;
-                    };
+                        const raw = String(val).trim();
+                        const numeric = raw.replace(/[^0-9.+-]/g, '');
+                        let idx = -1;
+                        if (numeric !== '') { idx = customOrder.indexOf(numeric); }
+                        if (idx === -1) { idx = customOrder.indexOf(raw); }
+                        return idx === -1 ? Infinity : idx;
+        };
                     availableValues.sort((a, b) => getSortIndex(a) - getSortIndex(b));
                 } else {
                     availableValues.sort(smartSort);
@@ -1115,6 +1732,10 @@
             const selectedLabelString = selectEl.value;
             arrows.forEach(arrow => arrow.style.display = 'none'); 
             if (!chart || !selectedLabelString) return;
+            
+            // 強制圖表更新以確保所有元素位置正確
+            chart.update('none'); // 使用 'none' 模式避免動畫延遲
+            
             const datasets = chart.data.datasets;
             let datasetIndex = -1;
             for (let i = 0; i < datasets.length; i++) {
@@ -1189,9 +1810,13 @@
                 const sortedIndices = Array.from(Array(groupData.length).keys()).sort((a, b) => {
                     if (customOrder) {
                         const getSortIndex = (val) => {
-                            const index = customOrder.indexOf(String(val).trim()); // ** Trim here **
-                            return index === -1 ? Infinity : index;
-                        };
+                            const raw = String(val).trim();
+                        const numeric = raw.replace(/[^0-9.+-]/g, '');
+                        let idx = -1;
+                        if (numeric !== '') { idx = customOrder.indexOf(numeric); }
+                        if (idx === -1) { idx = customOrder.indexOf(raw); }
+                        return idx === -1 ? Infinity : idx;
+        };
                         return getSortIndex(groupData[a]) - getSortIndex(groupData[b]);
                     }
                     return smartSort(groupData[a], groupData[b]);
@@ -1218,7 +1843,7 @@
                     
                     // 取得 bar segment 的中心點 X 軸位置
                     return dataElement.getCenterPoint().x;
-                };
+        };
                 // ** 修正結束 **
 
                 const xPixels = { q1: getXPixel(q1DatasetIndex), q2: getXPixel(q2DatasetIndex), q3: getXPixel(q3DatasetIndex) };
@@ -1235,18 +1860,37 @@
                 });
             });
         }
-        function updateAverageLabels(hide = false, yKey, groupKey, yLabels, filteredData) {
+        function updateAverageLabels(hide = false, yKey, groupKey, yLabels, filteredData, subGroupKey = null) {
             const container = document.getElementById('markerContainer');
             if (!container) return;
             const allLabels = container.querySelectorAll('.average-label');
             allLabels.forEach(label => label.style.display = 'none');
             if (hide || !chart) return;
-            yLabels.forEach((yLabel, yIndex) => {
-                let numericData = filteredData
-                    .filter(d => String(d[yKey]) === String(yLabel))
-                    .map(d => parseNumericValue(d[groupKey]))
-                    .filter(val => val.isNumeric)
-                    .map(val => val.num);
+            
+            yLabels.forEach((yItem, yIndex) => {
+                // 如果是字串（舊格式），轉換為物件
+                const labelObj = typeof yItem === 'string' ? { primary: yItem, secondary: null, isSpacer: false, isTotal: false } : yItem;
+                
+                // 跳過間距標籤
+                if (labelObj.isSpacer) return;
+                
+                let numericData;
+                if (subGroupKey && labelObj.secondary && !labelObj.isTotal) {
+                    // 有次要分組且不是總計：過濾主要和次要分組
+                    numericData = filteredData
+                        .filter(d => String(d[yKey]) === String(labelObj.primary) && String(d[subGroupKey]) === String(labelObj.secondary))
+                        .map(d => parseNumericValue(d[groupKey]))
+                        .filter(val => val.isNumeric)
+                        .map(val => val.num);
+                } else {
+                    // 無次要分組或是總計BAR：只過濾主要分組
+                    numericData = filteredData
+                        .filter(d => String(d[yKey]) === String(labelObj.primary))
+                        .map(d => parseNumericValue(d[groupKey]))
+                        .filter(val => val.isNumeric)
+                        .map(val => val.num);
+                }
+                
                 if (numericData.length === 0) return; 
                 const sum = numericData.reduce((a, b) => a + b, 0);
                 const average = sum / numericData.length;
@@ -1264,10 +1908,15 @@
                 if(valueType === 'percent') {
                     xPixel = chart.scales.x.getPixelForValue(100);
                 }
+                
+                // 修改：將標籤放在圖表右邊緣外側（加上5px間距）
+                const chartRightEdge = chart.scales.x.right;
+                const labelX = chartRightEdge + 5;
+                
                 const labelEl = document.getElementById(`averageLabel-${yIndex}`);
                 if (labelEl) {
                     labelEl.textContent = `${average.toFixed(1)}`; 
-                    labelEl.style.left = `${xPixel}px`;
+                    labelEl.style.left = `${labelX}px`;
                     labelEl.style.top = `${yPixel}px`;
                     labelEl.style.display = 'block';
                 }
@@ -1304,8 +1953,17 @@
 
             const yKey = controls.yAxisSelect.value;
             const groupKey = controls.colorBySelect.value;
+            const subGroupKey = controls.subGroupSelect.value; // 次要分組
             const valueType = controls.valueSelect.value;
             updateAnnotations();
+            
+            // 控制次要分組選單的顯示
+            const subGroupContainer = document.getElementById('subGroupContainer');
+            if (yKey) {
+                subGroupContainer.classList.remove('hidden');
+            } else {
+                subGroupContainer.classList.add('hidden');
+            }
 
             // 抓取篩選 (與小圖表共用)
             const activeFilters = getActiveFilters();
@@ -1321,12 +1979,49 @@
             const getSortIndex = (val, customOrder) => {
                 const index = customOrder.indexOf(String(val).trim()); // ** 修正：Trim 空白 **
                 return index === -1 ? Infinity : index;
-            };
+        };
 
-            let yLabels = [...new Set(filteredData.map(d => d[yKey]))];
-            if (CUSTOM_SORT_ORDERS[yKey]) yLabels.sort((a, b) => getSortIndex(a, CUSTOM_SORT_ORDERS[yKey]) - getSortIndex(b, CUSTOM_SORT_ORDERS[yKey]));
-            else yLabels.sort(smartSort);
-            chart.data.labels = yLabels;
+            // 處理次要分組
+            let yLabels;
+            if (subGroupKey) {
+                // 有次要分組：創建組合標籤（例如："無閒錢-犬", "無閒錢-貓"）
+                const primaryLabels = [...new Set(filteredData.map(d => d[yKey]))];
+                if (CUSTOM_SORT_ORDERS[yKey]) primaryLabels.sort((a, b) => getSortIndex(a, CUSTOM_SORT_ORDERS[yKey]) - getSortIndex(b, CUSTOM_SORT_ORDERS[yKey]));
+                else primaryLabels.sort(smartSort);
+                
+                const secondaryLabels = [...new Set(filteredData.map(d => d[subGroupKey]))];
+                if (CUSTOM_SORT_ORDERS[subGroupKey]) secondaryLabels.sort((a, b) => getSortIndex(a, CUSTOM_SORT_ORDERS[subGroupKey]) - getSortIndex(b, CUSTOM_SORT_ORDERS[subGroupKey]));
+                else secondaryLabels.sort(smartSort);
+                
+                // 創建組合標籤，在主要分組之間添加固定1個間距
+                yLabels = [];
+                primaryLabels.forEach((primary, pIdx) => {
+                    // 1. 先添加主要分組的總計BAR
+                    yLabels.push({ primary, secondary: null, label: String(primary), isSpacer: false, isTotal: true });
+                    
+                    // 2. 再添加各個次要分組的BAR
+                    secondaryLabels.forEach(secondary => {
+                        // 檢查這個組合是否有資料
+                        const hasData = filteredData.some(d => String(d[yKey]) === String(primary) && String(d[subGroupKey]) === String(secondary));
+                        if (hasData) {
+                            yLabels.push({ primary, secondary, label: `${primary}-${secondary}`, isSpacer: false, isTotal: false });
+                        }
+                    });
+                    
+                    // 3. 在每個主要分組後添加1個間距標籤（除了最後一個）
+                    if (pIdx < primaryLabels.length - 1) {
+                        yLabels.push({ primary: null, secondary: null, label: '', isSpacer: true, isTotal: false }); // 空字串隱藏標籤
+                    }
+                });
+            } else {
+                // 無次要分組：使用原本的邏輯
+                yLabels = [...new Set(filteredData.map(d => d[yKey]))];
+                if (CUSTOM_SORT_ORDERS[yKey]) yLabels.sort((a, b) => getSortIndex(a, CUSTOM_SORT_ORDERS[yKey]) - getSortIndex(b, CUSTOM_SORT_ORDERS[yKey]));
+                else yLabels.sort(smartSort);
+                yLabels = yLabels.map(label => ({ primary: label, secondary: null, label, isSpacer: false, isTotal: false }));
+            }
+            
+            chart.data.labels = yLabels.map(item => item.label);
 
             let groupLabels;
             let colorMap = {};
@@ -1371,14 +2066,37 @@
                 });
                 // ** 修正結束 **
 
-                const totalsPerYLabel = yLabels.map(yVal => {
-                    const total = filteredData.filter(d => String(d[yKey]) === String(yVal)).length;
-                    return total > 0 ? total : 1;
+                const totalsPerYLabel = yLabels.map(yItem => {
+                    if (yItem.isSpacer) return 1; // 間距標籤
+                    let count;
+                    if (subGroupKey && !yItem.isTotal) {
+                        // 次要分組的細分BAR：需要過濾主要和次要
+                        count = filteredData.filter(d => String(d[yKey]) === String(yItem.primary) && String(d[subGroupKey]) === String(yItem.secondary)).length;
+                    } else {
+                        // 主要分組的總計BAR或無次要分組：只過濾主要
+                        count = filteredData.filter(d => String(d[yKey]) === String(yItem.primary)).length;
+                    }
+                    return count > 0 ? count : 1;
                 });
 
                 chart.data.datasets = groupLabels.map(groupVal => {
-                    const dataValues = yLabels.map((yVal, yIdx) => {
-                        const count = filteredData.filter(d => String(d[yKey]) === String(yVal) && String(d[groupKey]) === String(groupVal)).length;
+                    const dataValues = yLabels.map((yItem, yIdx) => {
+                        if (yItem.isSpacer) return 0; // 間距標籤顯示為0
+                        let count;
+                        if (subGroupKey && !yItem.isTotal) {
+                            // 次要分組的細分BAR：需要過濾主要、次要和顏色分組
+                            count = filteredData.filter(d => 
+                                String(d[yKey]) === String(yItem.primary) && 
+                                String(d[subGroupKey]) === String(yItem.secondary) &&
+                                String(d[groupKey]) === String(groupVal)
+                            ).length;
+                        } else {
+                            // 主要分組的總計BAR或無次要分組：只過濾主要和顏色分組
+                            count = filteredData.filter(d => 
+                                String(d[yKey]) === String(yItem.primary) && 
+                                String(d[groupKey]) === String(groupVal)
+                            ).length;
+                        }
                         return isPercent ? (count / totalsPerYLabel[yIdx]) * 100 : count;
                     });
                     const originalLabel = [...new Set(rawData.map(d => d[groupKey]))].find(l => String(l) === String(groupVal)) ?? groupVal;
@@ -1391,21 +2109,33 @@
                         borderColor: color, 
                         borderWidth: 0, 
                         borderRadius: 0 
-                    };
+        };
                 });
                 
-                document.getElementById('yAxisChartTitle').textContent = yKey;
+                document.getElementById('yAxisChartTitle').textContent = subGroupKey ? `${yKey} (次要分組: ${subGroupKey})` : yKey;
                 document.getElementById('cAxisChartTitle').textContent = groupKey;
                 
             } else { // 無分組
-                const dataCounts = yLabels.map(yVal => filteredData.filter(d => String(d[yKey]) === String(yVal)).length);
+                const dataCounts = yLabels.map(yItem => {
+                    if (yItem.isSpacer) return 0; // 間距標籤顯示為0
+                    if (subGroupKey && !yItem.isTotal) {
+                        // 次要分組的細分BAR
+                        return filteredData.filter(d => 
+                            String(d[yKey]) === String(yItem.primary) && 
+                            String(d[subGroupKey]) === String(yItem.secondary)
+                        ).length;
+                    } else {
+                        // 主要分組的總計BAR或無次要分組
+                        return filteredData.filter(d => String(d[yKey]) === String(yItem.primary)).length;
+                    }
+                });
                 chart.data.datasets = [{
                     label: '筆數', data: dataCounts,
                     backgroundColor: CATEGORICAL_PALETTE[0] + 'CC', borderColor: CATEGORICAL_PALETTE[0], 
                     borderWidth: 0, // ** 修正：移除間距 **
                     borderRadius: 0 // ** 新增：移除圓角 **
                 }];
-                document.getElementById('yAxisChartTitle').textContent = yKey;
+                document.getElementById('yAxisChartTitle').textContent = subGroupKey ? `${yKey} (次要分組: ${subGroupKey})` : yKey;
                 document.getElementById('cAxisChartTitle').textContent = '';
             }
 
@@ -1440,7 +2170,7 @@
                     const totalText = total > 0 ? `總計: ${total} 筆` : '總計: N/A';
                     return totalText;
                 }
-            };
+        };
             
             // ** 修正 2.2: 突出顯示 hover 的 bar **
             chart.options.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
@@ -1522,7 +2252,7 @@
             createOrUpdateQuantileMarkers(yLabels.length);
             createOrUpdateAverageLabels(yLabels.length);
             setTimeout(() => {
-                triggerMarkerUpdates(yKey, groupKey, yLabels, filteredData, isGroupKeyNumeric);
+                triggerMarkerUpdates(yKey, groupKey, yLabels, filteredData, isGroupKeyNumeric, subGroupKey);
             }, 50); 
             isUpdatingFilters = false;
         }
@@ -1559,7 +2289,7 @@
         }
         
         // --- 主標記觸發 (樞紐分析) ---
-        function triggerMarkerUpdates(yKey, groupKey, yLabels, filteredData, isGroupKeyNumeric) {
+        function triggerMarkerUpdates(yKey, groupKey, yLabels, filteredData, isGroupKeyNumeric, subGroupKey = null) {
             // ** 修正：從 controls 重新獲取 valueType **
             const valueType = controls.valueSelect.value;
             const hideQuantiles = valueType === 'percent' || groupKey === 'none' || !isGroupKeyNumeric;
@@ -1567,7 +2297,7 @@
             
             updateArrowPosition(false);
             updateQuantileMarkers(hideQuantiles, yKey, groupKey, yLabels, filteredData);
-            updateAverageLabels(hideAverage, yKey, groupKey, yLabels, filteredData);
+            updateAverageLabels(hideAverage, yKey, groupKey, yLabels, filteredData, subGroupKey);
         }
 
         // 建立圖表 (只執行一次)
@@ -1580,7 +2310,7 @@
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    layout: { padding: { top: 20 } },
+                    layout: { padding: { top: 20, right: 60 } }, // 添加右側padding為平均數標籤留空間
                     scales: {
                         x: { stacked: true, title: { display: true, text: '筆數 (Count)', font: { size: 14 } } },
                         y: { 
@@ -1673,7 +2403,7 @@
             const getSortIndex = (val, customOrder) => {
                 const index = customOrder.indexOf(String(val).trim());
                 return index === -1 ? Infinity : index;
-            };
+        };
             const customOrder = CUSTOM_SORT_ORDERS[key];
             const sortedNodes = [...nodes].sort((a, b) => {
                 const valA = a.name.split(': ')[1];
@@ -1722,6 +2452,354 @@
                 
                 itemsContainer.appendChild(itemDiv);
             });
+        }
+        
+        // ===============================================
+        // == 樞紐圖表分析函數 ==
+        // ===============================================
+        // ===============================================
+        // == 樞紐圖表分析函數 (新版) ==
+        // ===============================================
+        
+        let pivotColumnCounter = 0;
+        
+        // 添加新的數據欄
+        function addPivotColumnField() {
+            const container = document.getElementById('pivotColumnsContainer');
+            const id = pivotColumnCounter++;
+            
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'flex gap-2 items-center p-2 bg-gray-50 rounded border border-gray-200';
+            fieldDiv.id = `pivotCol_${id}`;
+            
+            // 欄位選擇
+            const fieldSelect = document.createElement('select');
+            fieldSelect.className = 'flex-1 py-1.5 px-2 border border-gray-300 bg-white rounded text-xs';
+            fieldSelect.innerHTML = '<option value="">選擇欄位</option>';
+            allColumns.forEach(key => {
+                fieldSelect.innerHTML += `<option value="${key}">${key}</option>`;
+            });
+            
+            // 聚合函數選擇
+            const aggSelect = document.createElement('select');
+            aggSelect.className = 'w-24 py-1.5 px-2 border border-gray-300 bg-white rounded text-xs';
+            aggSelect.innerHTML = `
+                <option value="count">COUNT</option>
+                <option value="countunique">UNIQUE</option>
+                <option value="sum">SUM</option>
+                <option value="average">AVG</option>
+                <option value="max">MAX</option>
+                <option value="min">MIN</option>
+                <option value="median">MEDIAN</option>
+                <option value="stdev">STDEV</option>
+                <option value="var">VAR</option>
+                <option value="countx">X</option>
+            `;
+            
+            // 格式輸入框
+            const formatInput = document.createElement('input');
+            formatInput.type = 'text';
+            formatInput.placeholder = '格式/X值 例:1或"元"';
+            formatInput.className = 'w-32 py-1.5 px-2 border border-gray-300 bg-white rounded text-xs';
+            formatInput.title = '格式：#,##0 "單位" 或直接輸入單位\nX函數：輸入要計算的值（如：1、0、是）';
+            
+            // 刪除按鈕
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'px-2 py-1 text-red-600 hover:bg-red-50 rounded text-xs';
+            removeBtn.innerHTML = '✕';
+            removeBtn.onclick = () => {
+                fieldDiv.remove();
+                updatePivotTable();
+            };
+            
+            fieldDiv.appendChild(fieldSelect);
+            fieldDiv.appendChild(aggSelect);
+            fieldDiv.appendChild(formatInput);
+            fieldDiv.appendChild(removeBtn);
+            container.appendChild(fieldDiv);
+            
+            fieldSelect.addEventListener('change', updatePivotTable);
+            aggSelect.addEventListener('change', updatePivotTable);
+            formatInput.addEventListener('change', updatePivotTable);
+            formatInput.addEventListener('blur', updatePivotTable);
+        }
+        
+        // 獲取所有已配置的欄位
+        function getPivotColumns() {
+            const container = document.getElementById('pivotColumnsContainer');
+            const columns = [];
+            
+            container.querySelectorAll('[id^="pivotCol_"]').forEach(div => {
+                const fieldSelect = div.querySelector('select:nth-of-type(1)');
+                const aggSelect = div.querySelector('select:nth-of-type(2)');
+                const formatInput = div.querySelector('input[type="text"]');
+                const field = fieldSelect.value;
+                const agg = aggSelect.value;
+                const format = formatInput ? formatInput.value.trim() : '';
+                
+                if (field) {
+                    columns.push({ 
+                        field, 
+                        agg, 
+                        format,
+                        label: `${field} (${agg.toUpperCase()})` 
+                    });
+                }
+            });
+            
+            return columns;
+        }
+        
+        function updatePivotTable() {
+            const rowMainKey = controls.pivotRowMainSelect.value;
+            const rowSubKey = controls.pivotRowSubSelect.value;
+            const columns = getPivotColumns();
+            const container = document.getElementById('pivotTableContainer');
+            
+            if (!rowMainKey || columns.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">請選擇主要列和至少一個數據欄</p>';
+                return;
+            }
+            
+            // 獲取篩選後的數據
+            const activeFilters = getActiveFilters();
+            let filteredData = rawData.filter(d => {
+                return allColumns.every(key => {
+                    const filterValues = activeFilters[key];
+                    if (filterValues === undefined) return true;
+                    if (filterValues.length === 0) return false;
+                    return filterValues.includes(String(d[key]));
+                });
+            });
+            
+            // 構建行標籤
+            let rowLabels = [];
+            
+            // 定義排序輔助函數
+            const getSortIndex = (val, customOrder) => {
+                const index = customOrder.indexOf(String(val).trim());
+                return index === -1 ? Infinity : index;
+            };
+            
+            // 主要列排序 - 優先使用自定義排序
+            const mainValues = [...new Set(filteredData.map(d => d[rowMainKey]))];
+            if (CUSTOM_SORT_ORDERS[rowMainKey]) {
+                mainValues.sort((a, b) => getSortIndex(a, CUSTOM_SORT_ORDERS[rowMainKey]) - getSortIndex(b, CUSTOM_SORT_ORDERS[rowMainKey]));
+            } else {
+                mainValues.sort(smartSort);
+            }
+            
+            if (rowSubKey) {
+                // 有次要分組
+                const subValues = [...new Set(filteredData.map(d => d[rowSubKey]))];
+                if (CUSTOM_SORT_ORDERS[rowSubKey]) {
+                    subValues.sort((a, b) => getSortIndex(a, CUSTOM_SORT_ORDERS[rowSubKey]) - getSortIndex(b, CUSTOM_SORT_ORDERS[rowSubKey]));
+                } else {
+                    subValues.sort(smartSort);
+                }
+                mainValues.forEach(main => {
+                    rowLabels.push({ main, sub: null, label: String(main), isTotal: true });
+                    subValues.forEach(sub => {
+                        const hasData = filteredData.some(d => 
+                            String(d[rowMainKey]) === String(main) && 
+                            String(d[rowSubKey]) === String(sub)
+                        );
+                        if (hasData) {
+                            rowLabels.push({ main, sub, label: `  ${main}-${sub}`, isTotal: false });
+                        }
+                    });
+                });
+            } else {
+                // 無次要分組
+                rowLabels = mainValues.map(main => ({ main, sub: null, label: String(main), isTotal: false }));
+            }
+            
+            // 生成HTML表格
+            let html = '<table class="min-w-full border-collapse border border-gray-300">';
+            
+            // 表頭
+            html += '<thead><tr class="bg-gray-100">';
+            html += `<th class="border border-gray-300 px-3 py-2 text-left font-bold sticky left-0 bg-gray-100">${rowMainKey}${rowSubKey ? ' / ' + rowSubKey : ''}</th>`;
+            html += `<th class="border border-gray-300 px-3 py-2 text-center font-medium bg-blue-50">筆數</th>`;
+            columns.forEach(col => {
+                html += `<th class="border border-gray-300 px-3 py-2 text-center font-medium">${col.label}</th>`;
+            });
+            html += '</tr></thead>';
+            
+            // 表身
+            html += '<tbody>';
+            rowLabels.forEach(row => {
+                html += '<tr>';
+                const bgClass = row.isTotal ? 'bg-yellow-50 font-bold' : 'bg-white';
+                html += `<td class="border border-gray-300 px-3 py-2 font-medium ${bgClass} sticky left-0">${row.label}</td>`;
+                
+                // 添加筆數欄(移到第2欄)
+                let rowCount;
+                if (rowSubKey && !row.isTotal) {
+                    rowCount = filteredData.filter(d => 
+                        String(d[rowMainKey]) === String(row.main) && 
+                        String(d[rowSubKey]) === String(row.sub)
+                    ).length;
+                } else {
+                    rowCount = filteredData.filter(d => String(d[rowMainKey]) === String(row.main)).length;
+                }
+                html += `<td class="border border-gray-300 px-3 py-2 text-right ${bgClass} bg-blue-50 font-medium">${rowCount}</td>`;
+                
+                columns.forEach(col => {
+                    // 過濾該行的數據
+                    let rowData;
+                    if (rowSubKey && !row.isTotal) {
+                        // 次要分組的細分行
+                        rowData = filteredData.filter(d => 
+                            String(d[rowMainKey]) === String(row.main) && 
+                            String(d[rowSubKey]) === String(row.sub)
+                        );
+                    } else {
+                        // 主要分組或總計行
+                        rowData = filteredData.filter(d => String(d[rowMainKey]) === String(row.main));
+                    }
+                    
+                    // 計算聚合值
+                    const value = calculateAggregation(rowData, col.field, col.agg, col.format);
+                    
+                    // X函數返回的是百分比，直接添加%號
+                    let displayValue;
+                    if (col.agg === 'countx') {
+                        displayValue = (value === null || value === undefined || isNaN(value)) ? '' : value.toFixed(2) + '%';
+                    } else {
+                        displayValue = formatValueWithCustomFormat(value, col.format);
+                    }
+                    
+                    html += `<td class="border border-gray-300 px-3 py-2 text-right ${bgClass}">${displayValue}</td>`;
+                });
+                
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            
+            container.innerHTML = html;
+        }
+        
+        // 計算聚合值
+        function calculateAggregation(data, field, aggFunc, format) {
+            if (aggFunc === 'count') {
+                return data.length;
+            } else if (aggFunc === 'countunique') {
+                return new Set(data.map(d => d[field])).size;
+            } else if (aggFunc === 'countx') {
+                // X = COUNT(X) / COUNTA × 100%
+                // X的值從format參數中取得
+                if (!format || format.trim() === '') {
+                    return null; // 沒有指定X值
+                }
+                
+                const allValues = data.map(d => String(d[field]).trim());
+                const totalCount = allValues.length; // COUNTA
+                
+                if (totalCount === 0) return null;
+                
+                // 從format中提取X值
+                // 支援直接輸入值，或從引號中提取
+                let targetValue = format.trim();
+                const quoteMatch = format.match(/"([^"]*)"/);
+                if (quoteMatch) {
+                    targetValue = quoteMatch[1];
+                } else {
+                    // 移除常見的格式字符，只保留值
+                    targetValue = format.replace(/#|,|0|\.|%/g, '').trim();
+                    // 如果還有引號，移除它
+                    targetValue = targetValue.replace(/["']/g, '');
+                }
+                
+                if (targetValue === '') return null;
+                
+                // 計算匹配的數量
+                const matchCount = allValues.filter(v => v === targetValue).length;
+                return (matchCount / totalCount) * 100; // 返回百分比
+            }
+            
+            // 提取數值
+            const values = data.map(d => parseFloat(d[field])).filter(v => !isNaN(v));
+            if (values.length === 0) return null;
+            
+            switch(aggFunc) {
+                case 'sum':
+                    return values.reduce((a, b) => a + b, 0);
+                case 'average':
+                    return values.reduce((a, b) => a + b, 0) / values.length;
+                case 'max':
+                    return Math.max(...values);
+                case 'min':
+                    return Math.min(...values);
+                case 'median':
+                    const sorted = [...values].sort((a, b) => a - b);
+                    const mid = Math.floor(sorted.length / 2);
+                    return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+                case 'stdev':
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    const squareDiffs = values.map(v => Math.pow(v - avg, 2));
+                    return Math.sqrt(squareDiffs.reduce((a, b) => a + b, 0) / (values.length - 1));
+                case 'var':
+                    const avgv = values.reduce((a, b) => a + b, 0) / values.length;
+                    const squareDiffsv = values.map(v => Math.pow(v - avgv, 2));
+                    return squareDiffsv.reduce((a, b) => a + b, 0) / (values.length - 1);
+                default:
+                    return values.length;
+            }
+        }
+        
+        // 格式化顯示值
+        function formatValue(value) {
+            if (value === null || value === undefined || isNaN(value)) return '';
+            if (Number.isInteger(value)) return value;
+            return value.toFixed(2);
+        }
+        
+        // 使用自訂格式格式化數值
+        function formatValueWithCustomFormat(value, format) {
+            if (value === null || value === undefined || isNaN(value)) return '';
+            
+            // 如果沒有自訂格式，使用預設格式
+            if (!format) {
+                return formatValue(value);
+            }
+            
+            // 解析格式字串
+            // 支援格式：#,##0 "元"、0.00 "%"、或直接輸入單位
+            
+            let formattedNumber = '';
+            let suffix = '';
+            
+            // 檢查是否包含引號（單位）
+            const quoteMatch = format.match(/"([^"]*)"/);
+            if (quoteMatch) {
+                suffix = quoteMatch[1];
+                format = format.replace(/"[^"]*"/, '').trim();
+            } else if (format && !format.includes('#') && !format.includes('0') && !format.includes(',')) {
+                // 如果格式只是純文字（沒有#或0），直接當作單位
+                suffix = format;
+                format = '';
+            }
+            
+            // 處理數字格式
+            if (format.includes('#,##0') || format.includes(',')) {
+                // 千分位格式
+                const decimals = (format.match(/\.0+/) || [''])[0].length - 1;
+                if (decimals > 0) {
+                    formattedNumber = value.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                } else {
+                    formattedNumber = Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                }
+            } else if (format.includes('0.')) {
+                // 小數格式
+                const decimals = (format.match(/\.0+/) || [''])[0].length - 1;
+                formattedNumber = value.toFixed(decimals);
+            } else {
+                // 預設格式
+                formattedNumber = Number.isInteger(value) ? value.toString() : value.toFixed(2);
+            }
+            
+            return formattedNumber + suffix;
         }
         
         function updateSankeyChart() {
@@ -1830,7 +2908,7 @@
             const getSortIndex = (val, customOrder) => {
                 const index = customOrder.indexOf(String(val).trim());
                 return index === -1 ? Infinity : index;
-            };
+        };
 
             const sortNodesByCustomOrder = (a, b) => {
                 const aName = a.name.split(': ')[1];
@@ -1843,7 +2921,7 @@
                 }
                 // 如果沒有自定義排序，則使用默認的智能排序 (smartSort)
                 return smartSort(aName, bName);
-            };
+        };
 
             const sankey = d3.sankey()
                 .nodeWidth(15)
@@ -1975,11 +3053,11 @@
             const getSortIndex = (val, customOrder) => {
                 const index = customOrder.indexOf(String(val).trim()); // ** 修正：Trim 空白 **
                 return index === -1 ? Infinity : index;
-            };
+        };
             
-            // ** 修正 5.0: 調整每個小圖表的高度，使其更緊湊 **
-            const singleBarHeight = 100 * BAR_CATEGORY_PERCENTAGE; // 根據粗度調整 Bar 區域高度
-            const chartAreaHeight = Math.max(singleBarHeight, 20); // 圖表區域的最小高度
+            // ** 修正 5.0: 使用固定像素高度 **
+            // 直接使用 SMALL_CHART_BAR_HEIGHT 作為BAR的實際高度
+            const chartAreaHeight = SMALL_CHART_BAR_HEIGHT + 10; // BAR高度 + 上下留白
             // 整體 wrapper 的高度 = 圖表區 + X軸刻度 (35px) + 上下 padding/margin (5px)
             const headerHeight = 30; // 為標題和圖例預留 30px 的空間
             const wrapperHeight = chartAreaHeight + 35 + 5 + headerHeight; 
@@ -2040,7 +3118,7 @@
                         borderWidth: 0, 
                         borderRadius: 0, 
                         rawCount: count // 儲存原始筆數給 tooltip
-                    };
+        };
                 });
 
 
@@ -2099,8 +3177,8 @@
                             y: {
                                 stacked: true,
                                 display: false, // 隱藏 Y 軸
-                                barPercentage: BAR_PERCENTAGE, 
-                                categoryPercentage: BAR_CATEGORY_PERCENTAGE 
+                                barPercentage: 1.0, // 填滿整個category空間
+                                categoryPercentage: 1.0 // 填滿整個軸空間
                             }
                         },
                         plugins: {
@@ -2144,18 +3222,32 @@
                     }
                 });
 
-                // 4. 填入圖例
+                // 4. 填入圖例 - 添加點擊隱藏功能
                 const legendContainer = document.getElementById(legendId);
                 let legendHTML = '';
-                datasets.forEach((dataset) => { 
+                datasets.forEach((dataset, index) => { 
                     const label = dataset.label;
                     const color = dataset.borderColor;
-                    legendHTML += `<div class="flex items-center legend-item">
+                    const isHidden = dataset.hidden || false;
+                    legendHTML += `<div class="flex items-center legend-item ${isHidden ? 'legend-item-hidden' : ''}" data-dataset-index="${index}">
                                      <span class="w-3 h-3 mr-1 flex-shrink-0" style="background-color: ${color}; border-radius: 2px;"></span>
                                      <span class="text-xs text-gray-700">${label}</span>
                                    </div>`; // 圖例文字縮小為 text-xs
                 });
                 legendContainer.innerHTML = legendHTML;
+                
+                // 添加點擊事件來隱藏/顯示dataset
+                const chart = smallCharts[chartId];
+                legendContainer.querySelectorAll('.legend-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const datasetIndex = parseInt(item.getAttribute('data-dataset-index'));
+                        if (!chart || isNaN(datasetIndex) || datasetIndex < 0 || datasetIndex >= chart.data.datasets.length) return;
+                        chart.data.datasets[datasetIndex].hidden = !chart.data.datasets[datasetIndex].hidden;
+                        item.classList.toggle('legend-item-hidden', chart.data.datasets[datasetIndex].hidden);
+                        chart.update();
+                    });
+                });
+
                 
                 // 5. 還原平均數計算
                 if (isGroupKeyNumeric) {
@@ -2172,7 +3264,7 @@
             });
         }
         
-        // ** 新增 Q2：截圖函數 **
+        // ** 新增 Q2：單欄分析截圖函數 **
         async function downloadScreenshot() {
             const statusEl = document.getElementById('sm-screenshot-status');
             const buttonEl = document.getElementById('sm-download-screenshot');
@@ -2202,7 +3294,99 @@
                 const dataUrl = canvas.toDataURL('image/png');
                 const link = document.createElement('a');
                 link.href = dataUrl;
-                link.download = 'dashboard-screenshot.png';
+                link.download = 'smallmultiples-screenshot.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                statusEl.textContent = '截圖已下載！';
+                setTimeout(() => statusEl.classList.add('hidden'), 2000);
+
+            } catch (error) {
+                console.error('截圖失敗:', error);
+                statusEl.textContent = '截圖失敗，請檢查 console。';
+            } finally {
+                buttonEl.disabled = false;
+            }
+        }
+        
+        // ** 新增：樞紐分析截圖函數 **
+        async function downloadPivotScreenshot() {
+            const statusEl = document.getElementById('pivot-screenshot-status');
+            const buttonEl = document.getElementById('pivot-download-screenshot');
+            // 擷取整個樞紐圖表分析區域（包含標題、圖例、圖表）
+            const targetEl = document.getElementById('pivotChartContainer').parentElement;
+            
+            if (!targetEl) return;
+            
+            // 檢查是否有圖表
+            if (!chart || !chart.data || chart.data.labels.length === 0) {
+                statusEl.textContent = '沒有圖表可供擷取。';
+                statusEl.classList.remove('hidden');
+                setTimeout(() => statusEl.classList.add('hidden'), 2000);
+                return;
+            }
+
+            statusEl.textContent = '正在產生截圖... 請稍候...';
+            statusEl.classList.remove('hidden');
+            buttonEl.disabled = true;
+
+            try {
+                const canvas = await html2canvas(targetEl, {
+                    useCORS: true,
+                    scale: 2 // 提高解析度
+                });
+                
+                const dataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'pivot-chart-screenshot.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                statusEl.textContent = '截圖已下載！';
+                setTimeout(() => statusEl.classList.add('hidden'), 2000);
+
+            } catch (error) {
+                console.error('截圖失敗:', error);
+                statusEl.textContent = '截圖失敗，請檢查 console。';
+            } finally {
+                buttonEl.disabled = false;
+            }
+        }
+        
+        // 樞紐分析表格截圖函數
+        async function downloadPivotTableScreenshot() {
+            const statusEl = document.getElementById('pivotTable-screenshot-status');
+            const buttonEl = document.getElementById('pivotTable-download-screenshot');
+            const targetEl = document.getElementById('pivotTableContainer');
+            
+            if (!targetEl) return;
+            
+            // 檢查是否有表格
+            const table = targetEl.querySelector('table');
+            if (!table) {
+                statusEl.textContent = '沒有表格可供擷取。';
+                statusEl.classList.remove('hidden');
+                setTimeout(() => statusEl.classList.add('hidden'), 2000);
+                return;
+            }
+
+            statusEl.textContent = '正在產生截圖... 請稍候...';
+            statusEl.classList.remove('hidden');
+            buttonEl.disabled = true;
+
+            try {
+                const canvas = await html2canvas(targetEl, {
+                    useCORS: true,
+                    scale: 2 // 提高解析度
+                });
+                
+                const dataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'pivot-table-screenshot.png';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
