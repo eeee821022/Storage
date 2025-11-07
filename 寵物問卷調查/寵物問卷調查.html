@@ -79,14 +79,23 @@
 
     <script>
         // --- 獲取或設定唯一識別碼 ---
+        const UNIQUE_ID_KEY = 'petSurveyUniqueID_v2';
+
         function getOrSetUniqueID() {
-            let id = localStorage.getItem('petSurveyUniqueID_v2');
+            let id = localStorage.getItem(UNIQUE_ID_KEY);
             if (!id) {
                 id = 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('petSurveyUniqueID_v2', id);
+                localStorage.setItem(UNIQUE_ID_KEY, id); // <-- 關鍵：儲存在裝置/瀏覽器
             }
             return id;
         }
+
+        // 新增函式：清除 UniqueID
+        function clearUniqueID() {
+            localStorage.removeItem(UNIQUE_ID_KEY);
+            console.log("UniqueID 已清除，下次開啟將生成新的 ID。");
+        }
+
 
         // --- 應用程式狀態 ---
         let state = {
@@ -319,7 +328,7 @@
                     // 顯示「重新填寫」按鈕
                     actionButtons = `
                         <button id="restartButton" class="btn btn-secondary">
-                            <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
+                            <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫 (清除此裝置紀錄)
                         </button>
                     `;
                     
@@ -341,7 +350,7 @@
                    
                     actionButtons = `
                         <button id="restartButton" class="btn btn-secondary">
-                            <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
+                            <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫 (清除此裝置紀錄)
                         </button>
                     `;
                     
@@ -384,7 +393,7 @@
                     <p class="text-lg text-gray-600 max-w-2xl mx-auto">抱歉，提交過程中發生錯誤。請檢查您的網路連線或稍後再試。</p>
                     <p class="text-sm text-gray-500">錯誤訊息: ${state.answers.errorMessage || '未知錯誤'}</p>
                     <button id="restartButton" class="btn btn-secondary">
-                        <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫
+                        <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫 (清除此裝置紀錄)
                     </button>
                 </div>
             `;
@@ -522,19 +531,26 @@
         
         // --- 輔助函數 ---
         
+        // === 🚀 核心修改點：優化滑桿 (Slider) 的 HTML 結構以解決換行問題 ===
         function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
             const currentValue = state.answers[id] || defaultValue || min;
+            // 題目獨立一行，確保有足夠的換行空間
             return `
                 <div class="space-y-2 py-2" id="container-${id}"> 
-                    <div class="flex justify-between items-center">
-                        <label class="font-medium text-gray-700">${label}</label>
-                        <span id="slider-value-${id}" class="text-lg font-bold text-blue-600">${valueTextFn(currentValue)}</span>
+                    <label class="font-medium text-gray-700 block">${label}</label>
+                    <div class="flex items-center">
+                        <!-- 答案顯示區，使用 text-xl (比原來的 text-lg 更大) 和 mr-4 增加視覺邊距 -->
+                        <span id="slider-value-${id}" class="text-xl font-bold text-blue-600 mr-4 whitespace-nowrap">
+                            ${valueTextFn(currentValue)}
+                        </span>
+                        <!-- 滑桿佔用剩餘空間 -->
+                        <input type="range" data-id="${id}" id="${id}" min="${min}" max="${max}" step="${step}" value="${currentValue}"
+                               data-valuetextfn="${encodeURIComponent(valueTextFn.toString())}" class="flex-grow">
                     </div>
-                    <input type="range" data-id="${id}" id="${id}" min="${min}" max="${max}" step="${step}" value="${currentValue}"
-                           data-valuetextfn="${encodeURIComponent(valueTextFn.toString())}">
                 </div>
             `;
         }
+        // =================================================================
 
 
         // 重構 handleRangeInput，使其成為所有滑桿事件的統一處理中心
@@ -1164,7 +1180,7 @@ function update5_7FinalAmount() {
         }
 
 
-        // --- 事件監聽器 (保持不變) ---
+        // --- 事件監聽器 (修改：在重新填寫時清除 UniqueID) ---
         
         function attachStartListeners() {
              document.getElementById('startButton').onclick = () => {
@@ -1199,10 +1215,13 @@ function update5_7FinalAmount() {
             const restartButton = document.getElementById('restartButton');
             if (restartButton) {
                 restartButton.onclick = () => {
+                    // **新增邏輯：在重置問卷狀態前，清除 UniqueID**
+                    clearUniqueID(); 
+                    
                     // 重置狀態
                     state = {
                         page: 'start', currentStep: 0, answers: {},
-                        submissionStatus: 'idle', startTime: null, uniqueID: state.uniqueID, // 保留 uniqueID
+                        submissionStatus: 'idle', startTime: null, uniqueID: getOrSetUniqueID(), // 重新獲取新的 ID
                         showInterviewModal: false, interviewConsent: null, contactInfo: ''
                     };
                     render();
