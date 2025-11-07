@@ -71,11 +71,11 @@
 
     <div id="app" class="quiz-card relative">
         </div>
-    <!--
+
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
-    -->
+    
 
     <script>
         // --- 獲取或設定唯一識別碼 ---
@@ -146,12 +146,12 @@
             '3.3_擔心孤單': '3.3 您是否會擔心寵物孤單無聊？',
             '3.4_擔心沒活動': '3.4 您是否會擔心寵物睡整天沒有活動？',
 
-            // --- Step 4
-            '4.1_願意花時間': '4.1 您是否願意在家時花費時間陪伴寵物？',
-            '4.2_曾無法陪伴': '4.2 您是否曾經因為生活上受限於...無法陪伴寵物？',
-            '4.3_無法陪伴頻率': '4.3 您遇到上述情況的頻率是每周是？',
-            '4.4_平均陪伴時間': '4.4 您平均花費多少時間陪伴寵物玩樂、散步？',
-            '4.5_無限陪伴時間': '4.5 在生活上沒有受限時...陪伴寵物玩樂、散步？',
+            // --- Step 4 (修改敘述)
+            '4.1_願意花時間': '4.1 您在家時，是否願意花費時間陪伴寵物?',
+            '4.2_曾無法陪伴': '4.2 您是否曾經在某日因為生活上受限於時間、心力、個人興趣等原因無法陪伴寵物?',
+            '4.3_無法陪伴頻率': '4.3 您遇到上述情況的頻率每周是?',
+            '4.4_平均陪伴時間': '4.4 您平均每日花費多少時間陪伴寵物玩樂、散步?',
+            '4.5_無限陪伴時間': '4.5 在生活上沒有受限時，您願意每日花費多少時間陪伴寵物玩樂、散步?',
             // --- Step 5
             '5.1_食品保健花費': '5.1 每月花費 (食品保健)',
             '5.2_挑選健康品': '5.2 是否有意挑選較健康食品', 
@@ -192,7 +192,8 @@
             'Q4.1_提升方法': 'Q4.1 提升活動量的方法',
             'Q4.2_方法成效': 'Q4.2 方法是否成功',
             'Q5_健康方法': 'Q5. 健康問題的處理方法',
-            'Q6_試用意願': 'Q6. 試用意願與聯絡方式'
+            'Q6_購買意願': 'Q6. 購買設備的主要原因/期許技術 (新增)', // 新增 Q6
+            'Q7_試用意願': 'Q7. 試用意願與聯絡方式' // 原 Q6 改為 Q7
         };
 
         // --- 轉換輔助函數 ---
@@ -486,12 +487,20 @@
                              state.answers['3.2_擔心髒亂'] === '3' || state.answers['3.2_擔心髒亂'] === 3);
             const show_Q3 = (state.answers['3.3_擔心孤單'] === '4' || state.answers['3.3_擔心孤單'] === 4 || 
                              state.answers['3.3_擔心孤單'] === '3' || state.answers['3.3_擔心孤單'] === 3);
+            // Q4 顯示條件檢查: 3.4 答案是 '同意' (3) 或 '非常同意' (4) 
             const show_Q4 = (state.answers['3.4_擔心沒活動'] === '4' || state.answers['3.4_擔心沒活動'] === 4 || 
                              state.answers['3.4_擔心沒活動'] === '3' || state.answers['3.4_擔心沒活動'] === 3);
+            
+            // **修改 Q6 顯示條件：檢查 6.2 是否為 '是'**
+            const show_Q6_new = (state.answers['6.2_願意添購'] === '是');
             
             // 檢查 1.4 的答案，決定是否顯示 Q5
             const health_concerns = state.answers['1.4_健康隱憂'] || '';
             const show_Q5 = health_concerns && health_concerns !== '以上皆無' && !health_concerns.includes('以上皆無');
+            
+            // 取得 6.3 答案 (用於 Q6/Q7)
+            const v6_3 = state.answers['6.3_願意購買金額'] || '0';
+            const priceText = (v6_3 == 0) ? '$0' : (v6_3 >= 30 ? '$30,000+' : `$${(v6_3 * 1000).toLocaleString()}`);
             
             return `
                 <div class="p-6 md:p-10 space-y-8" style="max-height: 70vh; overflow-y: auto;">
@@ -512,9 +521,30 @@
                     
                     ${show_Q5 ? createTextArea('Q5_健康方法', 'Q5. 您在寵物' + (health_concerns ? health_concerns.replace(/、/g, '、') : '') + '健康問題上有哪些方法？<br><span class="text-sm text-gray-500">例如：食物、用品清潔、日常活動量、保健食品...</span>') : ''}
                     
-                    ${createTextArea('Q6_試用意願', 'Q6. 我們正在針對寵物健康設備做研究，請問您是否有興趣參與樣品試用？需要請您填寫聯絡方式<br><span class="text-sm text-gray-500">例如：Line ID、手機、信箱、IG、FB等社群帳號</span>')}
+                    <!-- 新增 Q6：家用運動設備購買意願 (條件已修改) -->
+                    ${show_Q6_new ? `
+                    <div class="space-y-4 border p-4 rounded-lg bg-yellow-50/50">
+                        <h3 class="text-lg font-bold text-gray-800">Q6. 家用運動娛樂設備購買意願</h3>
+                        
+                        <div class="w-full max-w-sm mx-auto overflow-hidden rounded-xl shadow-lg">
+                           <img src="https://eeee821022.github.io/Storage/%E5%AF%B5%E7%89%A9%E5%95%8F%E5%8D%B7%E8%AA%BF%E6%9F%A5/%E5%AF%B5%E7%89%A9%E7%99%BC%E6%83%B3%E5%9C%96.png" 
+                                alt="家用寵物運動娛樂設備示意圖" 
+                                class="w-full h-auto object-cover"
+                                onerror="this.onerror=null; this.src='https://placehold.co/400x250/3b82f6/ffffff?text=Image+Not+Found';">
+                        </div>
+
+                        <p class="text-gray-600 text-sm italic border-l-4 border-blue-400 pl-3 py-1">
+                            我們正在設計一款家用運動娛樂設備，幫助寵物在家時不會感到無趣，代替飼主在無暇時陪伴寵物。動物就像人一樣，除了健康的飲食習慣，還需要搭配足夠的活動量，不只能減少機能衰退、增強心肺，還能讓寵物遠離慢性疾病與傷痛。
+                        </p>
+                        
+                        ${createTextArea('Q6_購買意願', `您願意以 **${priceText}** 元購買這款產品的主要原因是? 您期許有哪些主要技術或附加功能才能值得您的購買?`)}
+                    </div>
+                    ` : ''}
                     
-                    ${!show_Q1 && !show_Q2 && !show_Q3 && !show_Q4 && !show_Q5 ? '<p class="text-gray-600">根據您的答案，除了試用意願外，目前沒有其他需要補充的訪談問題。</p>' : ''}
+                    <!-- 原 Q6 改為 Q7 -->
+                    ${createTextArea('Q7_試用意願', 'Q7. 我們是否有機會邀請您參與樣品試用？請留下您的聯絡方式<br><span class="text-sm text-gray-500">例如：Line ID、手機、信箱、IG、FB等社群帳號</span>')}
+                    
+                    ${!show_Q1 && !show_Q2 && !show_Q3 && !show_Q4 && !show_Q5 && !show_Q6_new ? '<p class="text-gray-600">根據您的答案，除了試用意願外，目前沒有其他需要補充的訪談問題。</p>' : ''}
                 </div>
                 <div class="p-6 bg-gray-50 border-t border-gray-200 flex justify-end items-center">
                     <button id="finalInterviewSubmitButton" class="btn btn-primary">
@@ -605,6 +635,7 @@
             }
         }
 
+        // 修改：新增 gridClass 預設值
         function createRadioGroup(id, label, options, gridClass = 'grid-cols-1 sm:grid-cols-2') {
             return `
                 <div class="space-y-3">
@@ -677,7 +708,8 @@
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第一部分：飼主與寵物基本背景</h2>
                     <div class="space-y-3">
                         <label class="font-medium text-gray-700 text-lg">1.1 您的寵物類型是？(一種以上可以多寫幾份!)</label>
-                        <div class="grid grid-cols-2 gap-4" data-radio-group="1.1_寵物類型">
+                        <!-- 修改：新增 "皆有" 選項，改為 grid-cols-3 -->
+                        <div class="grid grid-cols-3 gap-4" data-radio-group="1.1_寵物類型">
                             <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                                 <input type="radio" name="1.1_寵物類型" value="犬" class="hidden" data-id="1.1_寵物類型">
                                 <i class="fas fa-dog text-6xl text-blue-400"></i>
@@ -687,6 +719,11 @@
                                 <input type="radio" name="1.1_寵物類型" value="貓" class="hidden" data-id="1.1_寵物類型">
                                 <i class="fas fa-cat text-6xl text-blue-400"></i>
                                 <span class="block text-xl font-bold text-gray-700">貓</span>
+                            </label>
+                            <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
+                                <input type="radio" name="1.1_寵物類型" value="皆有" class="hidden" data-id="1.1_寵物類型">
+                                <i class="fas fa-paw text-6xl text-blue-400"></i>
+                                <span class="block text-xl font-bold text-gray-700">皆有</span>
                             </label>
                         </div>
                     </div>
@@ -768,17 +805,18 @@
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第四部分：平日在家與寵物相處時</h2>
                     <div class="space-y-6">
-                        ${createLikertSlider('4.1_願意花時間', '4.1 您是否願意在家時花費時間陪伴寵物？')}
-                        ${createLikertSlider('4.2_曾無法陪伴', '4.2 您是否曾經因為生活上受限於時間、心力、個人興趣等原因無法陪伴寵物？')}
-                        ${createSlider('4.3_無法陪伴頻率', '4.3 您遇到上述情況的頻率是每周是？', 0, 7, 1,
+                        <!-- 修改題目敘述 -->
+                        ${createLikertSlider('4.1_願意花時間', '4.1 您在家時，是否願意花費時間陪伴寵物?')}
+                        ${createLikertSlider('4.2_曾無法陪伴', '4.2 您是否曾經在某日因為生活上受限於時間、心力、個人興趣等原因無法陪伴寵物?')}
+                        ${createSlider('4.3_無法陪伴頻率', '4.3 您遇到上述情況的頻率每周是?', 0, 7, 1,
                             (v) => `${v} 日`,
                             0
                         )}
-                        ${createSlider('4.4_平均陪伴時間', '4.4 您平均花費多少時間陪伴寵物玩樂、散步？', 0, 5, 1,
+                        ${createSlider('4.4_平均陪伴時間', '4.4 您平均每日花費多少時間陪伴寵物玩樂、散步?', 0, 5, 1,
                             (v) => v >= 5 ? '5+ 小時' : `${v} 小時`,
                             0
                         )}
-                        ${createSlider('4.5_無限陪伴時間', '4.5 在生活上沒有受限時，您平均花費多少時間陪伴寵物玩樂、散步？', 0, 5, 1,
+                        ${createSlider('4.5_無限陪伴時間', '4.5 在生活上沒有受限時，您願意每日花費多少時間陪伴寵物玩樂、散步?', 0, 5, 1,
                             (v) => v >= 5 ? '5+ 小時' : `${v} 小時`,
                             0
                         )}
@@ -1056,7 +1094,8 @@ function update5_7FinalAmount() {
                 
                 // 隱藏不應顯示的題目
                 if (id.startsWith('5.7_') && id !== '5.7_年度總投入') continue; // 隱藏 5.7 計算過程
-                // 隱藏 Qs：只有在 consent 為 '願意' 或 '接受文字訪問' 時才顯示 Qs (Q1~Q6)
+                
+                // 隱藏 Qs：只有在 consent 為 '願意' 或 '接受文字訪問' 時才顯示 Qs (Q1~Q7)
                 if (id.startsWith('Q') && !(state.interviewConsent === '願意' || state.interviewConsent === '接受文字訪問')) continue;
                 if (id === '1.3_Age_Youngest' && (state.answers['1.2_飼養數量'] || '0') === '0') continue; // 隱藏單隻寵物的 '最年幼'
                 // 隱藏 8.1/8.2：只有在 consent 為 '願意' 或 '接受文字訪問' 時才顯示
@@ -1064,6 +1103,12 @@ function update5_7FinalAmount() {
                 if (id === '6.3_願意購買金額' && state.answers['6.2_願意添購'] === '否') continue; // 隱藏 6.3
                 if (id === '5.6_活動產品最高金額' && state.answers['5.5_購買活動產品'] === '否') continue; // 隱藏 5.6
                 if (id === '8.1_願意受訪' && state.interviewConsent === '接受文字訪問') answer = '接受文字訪問 (簡易訪談)'; // 特別標記
+                
+                // Q6 根據 6.2 答案決定是否顯示
+                const isQ6Conditional = id === 'Q6_購買意願';
+                const is62Agreed = state.answers['6.2_願意添購'] === '是';
+                if (isQ6Conditional && !is62Agreed) continue;
+
 
                 if (answer === undefined || answer === null || answer === '') {
                      answer = 'N/A'; // 未填答
@@ -1413,26 +1458,35 @@ function update5_7FinalAmount() {
         // --- 修正 BUG 2：替換 attachInterviewSurveyListeners 函數 ---
         function attachInterviewSurveyListeners() {
             document.getElementById('finalInterviewSubmitButton').onclick = () => {
-                // 修正 1：更新 ids 陣列以包含所有訪談問題 (Q1 ~ Q6)
+                // 修正 1：更新 ids 陣列以包含所有訪談問題 (Q1 ~ Q7)
                 const ids = [
                     'Q1_情境連結', 'Q2_當前痛點', 'Q3_未滿足需求', 'Q4_產品概念',
-                    'Q4.1_提升方法', 'Q4.2_方法成效', 'Q5_健康方法', 'Q6_試用意願'
+                    'Q4.1_提升方法', 'Q4.2_方法成效', 'Q5_健康方法', 'Q6_購買意願', // 新增 Q6
+                    'Q7_試用意願' // Q6 改為 Q7
                 ];
                 let allValid = true;
                 
                 ids.forEach(id => {
                     const textarea = document.getElementById(id);
                     const errorEl = document.getElementById(`error-${id}`);
+                    const isConditionalQ6 = id === 'Q6_購買意願';
 
                     // 修正 2：檢查 textarea 是否存在 (不是 null)，如果不存在則跳過驗證
                     if (textarea) { 
                         if (textarea.value.trim() === '') {
-                            // 只有 Q6 (試用意願) 允許空白，其他 Q1-Q5 只要出現了就是必填
-                            if (id !== 'Q6_試用意願') { 
+                            // 只有 Q7 (原 Q6) 允許空白，其他 Q1-Q5, Q6 只要出現了就是必填
+                            if (id !== 'Q7_試用意願') { 
+                                // 對 Q6 進行二次檢查，如果它不應該出現，則跳過驗證
+                                if (isConditionalQ6) {
+                                    // **修改條件檢查：從 3.4 改為 6.2**
+                                    const is62Agreed = state.answers['6.2_願意添購'] === '是';
+                                    if (!is62Agreed) return; // 不顯示 Q6，則跳過必填驗證
+                                }
+                                
                                 errorEl.classList.remove('hidden');
                                 allValid = false;
                             } else {
-                                // Q6 是空白的，但仍然儲存它
+                                // Q7 是空白的，但仍然儲存它
                                 errorEl.classList.add('hidden');
                                 state.answers[id] = textarea.value.trim();
                             }
@@ -1445,15 +1499,15 @@ function update5_7FinalAmount() {
                 });
 
                 if (allValid) {
-                    // 提交前，手動儲存 Q6 (如果 Q6 存在但為空)
-                    const q6_textarea = document.getElementById('Q6_試用意願');
-                    if (q6_textarea) {
-                          state.answers['Q6_試用意願'] = q6_textarea.value.trim();
+                    // 提交前，手動儲存 Q7 (如果 Q7 存在但為空)
+                    const q7_textarea = document.getElementById('Q7_試用意願');
+                    if (q7_textarea) {
+                          state.answers['Q7_試用意願'] = q7_textarea.value.trim();
                     }
                     
                     handleFinalSubmit();
                 } else {
-                    showToast("您有尚未填寫的題目喔！(Q6除外)", "error");
+                    showToast("您有尚未填寫的題目喔！(Q7除外)", "error");
                 }
             };
 
@@ -1739,7 +1793,7 @@ function update5_7FinalAmount() {
             newAnswers['Reference'] = randomChoice(['朋友A', 'FB寵物社團', '測試員']);
 
             // Step 1
-            newAnswers['1.1_寵物類型'] = randomChoice(['犬', '貓']);
+            newAnswers['1.1_寵物類型'] = randomChoice(['犬', '貓', '皆有']); // 增加 '皆有'
             const petCountValue = randomInt(0, 2);
             newAnswers['1.2_飼養數量'] = petCountValue;
             newAnswers['1.3_Age_Oldest'] = randomInt(0, 4);
@@ -1825,6 +1879,12 @@ function update5_7FinalAmount() {
         async function handleFinalSubmit() {
             if (state.submissionStatus === 'submitting') return;
             setState({ page: "end", submissionStatus: 'submitting' });
+            // 提交前手動儲存 Q6/Q7
+            const q6_textarea = document.getElementById('Q6_購買意願');
+            if (q6_textarea) state.answers['Q6_購買意願'] = q6_textarea.value.trim();
+            const q7_textarea = document.getElementById('Q7_試用意願');
+            if (q7_textarea) state.answers['Q7_試用意願'] = q7_textarea.value.trim();
+            
             const success = await sendDataToGoogle(true);
             if (success) {
                 setState({ submissionStatus: "success" });
@@ -1969,17 +2029,18 @@ function update5_7FinalAmount() {
                 '7.7_寵物相關背景': state.answers['7.7_寵物相關背景'] || 'N/A', // <-- (校正) 7.6_寵物相關背景 -> 7.7_寵物相關背景
                 '7.8_可支配消費額': (state.answers['7.8_可支配消費額'] >= 10) ? '10+萬' : (state.answers['7.8_可支配消費額'] || '1') + '萬', // <-- (校正) 7.7_可支配消費額 -> 7.8_可支配消費額
 
-                // Interview (已校正 + 補上 Q4.1, Q4.2, Q5, Q6)
-                '8.1_願意受訪': state.interviewConsent || (isFinalSubmit ? 'Yes' : 'N/A'), // <-- (校正) 7.1_願意受訪 -> 8.1_願意受訪
-                '8.2_聯絡資訊': state.contactInfo || '', // <-- (校正) 7.2_聯絡資訊 -> 8.2_聯絡資訊
+                // Interview (已校正 + 補上 Q4.1, Q4.2, Q5, Q6, Q7)
+                '8.1_願意受訪': state.interviewConsent || (isFinalSubmit ? 'Yes' : 'N/A'), 
+                '8.2_聯絡資訊': state.contactInfo || '', 
                 'Q1_情境連結': isFinalSubmit ? (state.answers['Q1_情境連結'] || '') : '',
                 'Q2_當前痛點': isFinalSubmit ? (state.answers['Q2_當前痛點'] || '') : '',
                 'Q3_未滿足需求': isFinalSubmit ? (state.answers['Q3_未滿足需求'] || '') : '',
                 'Q4_產品概念': isFinalSubmit ? (state.answers['Q4_產品概念'] || '') : '',
-                'Q4.1_提升方法': isFinalSubmit ? (state.answers['Q4.1_提升方法'] || '') : '', // <-- 已補上
-                'Q4.2_方法成效': isFinalSubmit ? (state.answers['Q4.2_方法成效'] || '') : '', // <-- 已補上
-                'Q5_健康方法': isFinalSubmit ? (state.answers['Q5_健康方法'] || '') : '', // <-- 已補上
-                'Q6_試用意願': isFinalSubmit ? (state.answers['Q6_試用意願'] || '') : '' // <-- 已補上
+                'Q4.1_提升方法': isFinalSubmit ? (state.answers['Q4.1_提升方法'] || '') : '', 
+                'Q4.2_方法成效': isFinalSubmit ? (state.answers['Q4.2_方法成效'] || '') : '', 
+                'Q5_健康方法': isFinalSubmit ? (state.answers['Q5_健康方法'] || '') : '', 
+                'Q6_購買意願': isFinalSubmit ? (state.answers['Q6_購買意願'] || '') : '', // 新增 Q6
+                'Q7_試用意願': isFinalSubmit ? (state.answers['Q7_試用意願'] || '') : '' // 原 Q6 改為 Q7
             };
             
             // [ 資料轉換 ] (保持不變)
@@ -2053,4 +2114,3 @@ function update5_7FinalAmount() {
 </script>
 </body>
 </html>
-
