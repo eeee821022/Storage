@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>寵物飼主健康管理與娛樂需求調查</title>
+    <!-- 1. 標題已更新 -->
+    <title>寵物健康管理與娛樂市場調查</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -71,11 +72,11 @@
 
     <div id="app" class="quiz-card relative">
         </div>
-
+    <!--
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
-    
+    -->
 
     <script>
         // --- 獲取或設定唯一識別碼 ---
@@ -391,6 +392,10 @@
                     </p>
                     <div class="flex justify-center gap-4 flex-wrap">
                         ${actionButtons}
+                        <!-- 2. 新增分享按鈕 (適用於所有成功畫面) -->
+                        <button id="shareButton" class="btn btn-primary">
+                            <i class="fas fa-share-alt h-4 w-4 mr-2"></i> 分享問卷
+                        </button>
                     </div>
                     ${downloadSection}
                 </div>
@@ -1192,6 +1197,37 @@ function update5_7FinalAmount() {
                 }
             }
         }
+        
+        // --- 2. 新增：處理分享按鈕點擊的函式 ---
+        async function handleShare() {
+            const shareText = "Hi ~這是份關於【寵物健康管理與娛樂】的市場調查\n點選連結作答喔~https://tinyurl.com/yc2htzfc";
+            
+            try {
+                // 嘗試使用現代的 Clipboard API
+                await navigator.clipboard.writeText(shareText);
+                showToast("已複製到剪貼簿！", "info");
+            } catch (err) {
+                console.error('無法複製文字: ', err);
+                // 備用方案 (適用於 http 或舊版瀏覽器)
+                try {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = shareText;
+                    textArea.style.position = "fixed";  // 避免滾動
+                    textArea.style.top = 0;
+                    textArea.style.left = 0;
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showToast("已複製到剪貼簿！", "info");
+                } catch (fallbackErr) {
+                     console.error('備用複製方案失敗: ', fallbackErr);
+                     showToast("複製失敗，請手動複製", "error");
+                }
+            }
+        }
+
 
         // --- 顯隱 6.3 輔助函數 (保持不變) ---
         function toggleQuestion5_3(value) {
@@ -1310,6 +1346,12 @@ function update5_7FinalAmount() {
             if (downloadButton) {
                 renderAnswerSummary(); // 確保摘要已渲染
                 downloadButton.onclick = handleDownloadPng;
+            }
+            
+            // 3. 綁定分享按鈕的點擊事件
+            const shareButton = document.getElementById('shareButton');
+            if (shareButton) {
+                shareButton.onclick = handleShare;
             }
         }
 
@@ -1774,13 +1816,20 @@ function update5_7FinalAmount() {
             toast = document.createElement('div');
             toast.id = 'toast-notification';
             const bgColor = type === 'error' ? 'bg-red-500' : 'bg-blue-500';
-            toast.className = `fixed top-5 right-5 ${bgColor} text-white p-4 rounded-lg shadow-lg z-50 animate-bounce`;
+            // 調整 Toast 樣式
+            toast.className = `fixed top-5 right-5 ${bgColor} text-white p-4 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-out translate-x-full`;
             toast.textContent = message;
             document.body.appendChild(toast);
+            
+            // Slide in
             setTimeout(() => {
-                toast.style.transition = 'opacity 0.5s ease-out';
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 500);
+                toast.classList.remove('translate-x-full');
+            }, 100);
+
+            // Slide out
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
             }, 2500);
         }
 
