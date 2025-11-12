@@ -165,7 +165,9 @@
             new google.translate.TranslateElement({
                 pageLanguage: defaultLang, // 網頁的原始語言
                 includedLanguages: `${targetLang},${defaultLang}`, // 僅包含英文和中文的選項
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE 
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                // **修正 1：阻止自動翻譯**
+                autoDisplay: false 
             }, 'google_translate_element');
             
             // 延遲綁定點擊事件，確保 Google Translate 已經完全初始化
@@ -671,7 +673,7 @@
                     
                     ${show_Q5 ? createTextArea('Q5_健康方法', 'Q5. 您在寵物' + (health_concerns ? health_concerns.replace(/、/g, '、') : '') + '健康問題上有哪些方法？<br><span class="text-sm text-gray-500">例如：食物、用品清潔、日常活動量、保健食品...</span>') : ''}
                     
-                    <!-- 新增 Q6：家用運動設備購買意願 (條件已修改) -->
+                    <!-- 新增 Q6：家用運動娛樂設備購買意願 (條件已修改) -->
                     ${show_Q6_new ? `
                     <div class="space-y-4 border p-4 rounded-lg bg-yellow-50/50">
                         <h3 class="text-lg font-bold text-gray-800">Q6. 家用運動娛樂設備購買意願</h3>
