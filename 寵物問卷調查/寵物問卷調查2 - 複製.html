@@ -18,7 +18,19 @@
         ::-webkit-scrollbar-thumb { background: #60a5fa; }
         ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
         .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
-        .quiz-card { background-color: white; border-radius: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); max-width: 800px; width: 100%; overflow: hidden; transition: all 0.3s ease-in-out; }
+        .quiz-card { 
+            background-color: white; 
+            border-radius: 1.5rem; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
+            max-width: 800px; 
+            width: 100%; 
+            overflow: hidden; 
+            transition: all 0.3s ease-in-out; 
+            /* 3. 修正：將問卷層級拉高，確保在浮動元素上方 */
+            z-index: 100 !important; 
+            position: relative;
+        }
         .progress-bar-inner { background-color: #3b82f6; transition: width 0.5s ease-in-out; }
         .btn { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border-radius: 9999px; font-weight: 500; padding: 0.75rem 1.5rem; font-size: 1rem; transition: all 0.2s ease-in-out; border: 2px solid transparent; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         .btn-primary { background-color: #3b82f6; color: white; }
@@ -70,7 +82,20 @@
         #answer-summary span { color: #1d4ed8; font-weight: 500; }
         #answer-summary span pre { font-family: inherit; margin: 0; white-space: pre-wrap; word-wrap: break-word; }
 
-        /* 新增：Google Translate Widget 容器樣式 */
+        /* ========= 翻譯浮動介面控制 (聲納法) START ========= */
+        /* 1. 隱藏 Google 翻譯的頂部橫幅 (雖然您的載入程式碼已隱藏，但這是備用) */
+        body > .skiptranslate:first-child {
+            display: none !important;
+            visibility: hidden !important; 
+        }
+        
+        /* 2. 隱藏 Google 翻譯的評論彈窗 (您圖片中擋住按鈕的元兇) */
+        .goog-te-balloon-frame {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* Google 翻譯小工具容器 */
         #google_translate_element_container {
             position: fixed;
             top: 1rem;
@@ -79,11 +104,6 @@
             /* 調整下拉選單樣式，使其不那麼突兀 */
         }
         
-        /* 隱藏 Google 翻譯的橫幅 */
-        body > .skiptranslate:first-child {
-            display: none !important;
-        }
-
         /* 調整翻譯下拉選單的樣式，使其看起來更像按鈕 */
         #google_translate_element .goog-te-gadget-simple {
             background-color: #f59e0b; /* 橙色背景 */
@@ -107,6 +127,7 @@
         #google_translate_element .goog-te-gadget-simple span {
             display: none !important;
         }
+        /* ========= 翻譯浮動介面控制 END ========= */
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
@@ -125,7 +146,7 @@
     
 
     <script>
-        // --- Google 翻譯小工具初始化函數 ---
+        // --- Google 翻譯小工具初始化函數 (保留) ---
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'zh-TW', // 網頁的原始語言
@@ -134,7 +155,7 @@
             }, 'google_translate_element');
         }
         
-        // --- 引入 Google 翻譯的 API 腳本 ---
+        // --- 引入 Google 翻譯的 API 腳本 (保留) ---
         (function() {
             const script = document.createElement('script');
             script.type = 'text/javascript';
@@ -633,7 +654,7 @@
         
         // --- 輔助函數 ---
         
-        // === 3. 核心修改點：優化滑桿 (Slider) 的 HTML 結構以解決換行問題 ===
+        // === 3. 核心修改點：優化滑桿 (Slider) 的 HTML 結構以解決換行問題 (滑桿排版修正) ===
         function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
             const currentValue = state.answers[id] || defaultValue || min;
             // 題目獨立一行，確保有足夠的換行空間
@@ -685,7 +706,7 @@
                     if (yrEl) yrEl.textContent = '$' + yearly.toLocaleString();
                 }
                 // 觸發 5.7 基礎值重算
-                if (typeof update5_7BaseAmount === 'function') update5_7BaseAmount();
+                if (typeof update5_7BaseAmount === 'function') update557BaseAmount();
             }
 
             // 3. 特例：1.2 變動時，重新渲染年齡滑桿
@@ -1576,7 +1597,7 @@ function update5_7FinalAmount() {
                         if (textarea.value.trim() === '') {
                             // 只有 Q7 (原 Q6) 允許空白，其他 Q1-Q5, Q6 只要出現了就是必填
                             if (id !== 'Q7_試用意願') { 
-                                // 對 Q6 進行二次檢查，如果它不應該出現，則跳過驗證
+                                // 對 Q6 進行二次檢查，如果它不應該出現，則跳過必填驗證
                                 if (isConditionalQ6) {
                                     // **修改條件檢查：從 3.4 改為 6.2**
                                     const is62Agreed = state.answers['6.2_願意添購'] === '是';
@@ -2022,7 +2043,7 @@ function update5_7FinalAmount() {
 
 
         // --- 新增函式：取得問卷填寫人數 ---
-        const BASE_COUNT = 76; // 初始人數
+        const BASE_COUNT = 76; 
 
         /**
          * 透過 GET 請求從 Google Apps Script 獲取試算表中的資料筆數。
