@@ -91,11 +91,11 @@
 
     <div id="app" class="quiz-card relative">
         </div>
-    <!--
+    
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
-    -->
+    
 
     <script>
         // --- 獲取或設定唯一識別碼 ---
@@ -293,14 +293,12 @@
 
         // --- 頁面渲染函數 (start, end, survey) ---
         
-        // --- 修改後的 renderStartPage 函數：加入人數顯示區塊及文字 ---
+        // --- 【修改】renderStartPage：調整顯示區塊 ID 和結構 ---
         function renderStartPage() {
             return `
                 <div class="p-8 md:p-12 text-center space-y-8 relative pb-12">
-                    <div id="survey-count-display" class="absolute top-4 right-4 text-sm font-semibold text-gray-500 flex items-center">
-                        <span class="mr-1 text-gray-700">已填問卷數:</span>
-                        <i class="fas fa-users mr-1"></i>
-                        <span id="current-total-count" class="text-blue-500 font-bold">讀取中...</span>
+                    <div id="pet-count-display-container" class="absolute top-4 right-4 text-sm font-semibold text-gray-500 flex items-center">
+                        <span id="pet-count-display" class="text-blue-500 font-bold">讀取中...</span>
                     </div>
                     <i class="fas fa-paw text-6xl text-blue-500"></i>
                     <h1 class="text-3xl font-bold text-gray-800">台灣寵物飼主健康管理與娛樂需求之市場調查</h1>
@@ -1036,7 +1034,7 @@ function update5_7FinalAmount() {
             } else {
                  // 價值剛好 $12,000，使用藍色
                 displayEl.classList.add('text-blue-600');
-                displayEl.textContent = `價值 NT$ 12,000`;
+                displayEl.textContent = `價值 NT$ 12,000 (基準)`;
             }
         }
         // === 6.4 總和計算邏輯更新結束 ===
@@ -1346,12 +1344,8 @@ function update5_7FinalAmount() {
                     };
                     render();
                     
-                    // **新增：重新載入人數顯示**
-                    const totalCount = await getSurveyCount();
-                    const countEl = document.getElementById('current-total-count');
-                    if (countEl) {
-                        countEl.textContent = totalCount.toLocaleString();
-                    }
+                    // **新增：重新載入寵物人數顯示**
+                    updatePetCountDisplay();
                 };
             }
 
@@ -1936,8 +1930,9 @@ function update5_7FinalAmount() {
         }
 
         // --- Google Apps Script 網址 ---
-        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSC-co1UtcQ0V2faXXuPIr5F7s3pri4ukLq9Tyu5unMfeVseAHsr_F04D0yzDssU-wbA/exec'; // 請替換成您的 Google Apps Script 網址 
-
+        // !!! 請將 GOOGLE_SHEET_SCRIPT_URL 替換為您的實際部署網址 !!!
+        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSC-co1UtcQ0V2faXXuPIr5F7s3pri4ukLq9Tyu5unMfeVseAHsr_F04D0yzDssU-wbA/exec'; 
+        
         async function handleFirstSubmit() {
             if (state.submissionStatus === 'submitting') return;
             setState({ page: "end", submissionStatus: 'submitting' });
@@ -1977,47 +1972,87 @@ function update5_7FinalAmount() {
         }
 
 
-        // --- 新增函式：取得問卷填寫人數 ---
+        // --- 【修改】更新：取得寵物分類數量並更新顯示 ---
         const BASE_COUNT = 0; 
+        
+        /**
+         * 負責解析從 Google Apps Script 取得的數據，並更新首頁顯示。
+         * 格式變更為：總數: XX | 狗: XX | 貓: XX | 皆有: XX
+         * @param {Object} data - 從 GS 取得的寵物計數物件 (e.g., { "犬": 12, "貓": 45, "皆有": 5 })
+         */
+        function updatePetCountDisplay(data = null) {
+            const displayEl = document.getElementById('pet-count-display');
+            if (!displayEl) return;
+            
+            // 預設值 (如果讀取失敗或尚未讀取)
+            let dogCount = 0;
+            let catCount = 0;
+            let bothCount = 0;
+            let total = 0;
+            let totalCountText = '讀取中...';
+            
+            if (data && data.result === 'success' && data.data) {
+                dogCount = data.data['犬'] || 0;
+                catCount = data.data['貓'] || 0;
+                bothCount = data.data['皆有'] || 0; 
+                
+                // 計算總問卷數 (純狗 + 純貓 + 皆有)
+                total = dogCount + catCount + bothCount;
+                totalCountText = (BASE_COUNT + total).toLocaleString();
+
+                // 核心修改：顯示三個獨立的計數，以及總數
+                displayEl.innerHTML = `
+                    <span class="mr-3 text-gray-700">總問卷數:</span>
+                    <i class="fas fa-users mr-1"></i>
+                    <span class="font-bold mr-3">${totalCountText}</span>
+                    <span class="text-gray-700">分類: </span>
+                    <span class="font-bold text-blue-500">狗: ${dogCount.toLocaleString()} | 貓: ${catCount.toLocaleString()} | 皆有: ${bothCount.toLocaleString()}</span>
+                `;
+            } else {
+                // 讀取失敗時，顯示讀取中...
+                 displayEl.innerHTML = `
+                    <span class="mr-1 text-gray-700">寵物分類計數:</span>
+                    <i class="fas fa-users mr-1"></i>
+                    <span class="font-bold text-blue-500">${totalCountText}</span>
+                `;
+            }
+        }
 
         /**
-         * 透過 GET 請求從 Google Apps Script 獲取試算表中的資料筆數。
-         * @returns {Promise<number>} - 總填寫人數 (基礎人數 + GS資料筆數)。
+         * 透過 GET 請求從 Google Apps Script 獲取寵物分類資料。
+         * @returns {Promise<Object | null>} - 包含寵物計數的數據物件，或 null。
          */
         async function getSurveyCount() {
             if (GOOGLE_SHEET_SCRIPT_URL.includes('!!!') || !GOOGLE_SHEET_SCRIPT_URL.startsWith('https:')) {
                 console.error("錯誤：尚未設定有效的 Google Apps Script URL！無法讀取人數。");
-                return BASE_COUNT;
+                return null;
             }
             
+            // 發送帶有 action 參數的 GET 請求給 GS
+            const urlWithAction = GOOGLE_SHEET_SCRIPT_URL + (GOOGLE_SHEET_SCRIPT_URL.includes('?') ? '&' : '?') + 'action=getPetCount';
+            
             try {
-                // 發送 GET 請求
-                const response = await fetch(GOOGLE_SHEET_SCRIPT_URL, {
-                    method: 'GET',
-                });
+                const response = await fetch(urlWithAction, { method: 'GET' });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const data = await response.json();
-
-                if (data.result === 'success' && data.count !== undefined) {
-                    const sheetCount = parseInt(data.count, 10);
-                    const totalCount = BASE_COUNT + sheetCount;
-                    console.log(`成功讀取 GS 筆數: ${sheetCount}，顯示總數: ${totalCount}`);
-                    return totalCount;
+                
+                if (data.result === 'success' && data.data !== undefined) {
+                    console.log("成功讀取 GS 寵物分類計數:", data.data);
+                    return data;
                 } else {
                     console.warn("GS 回傳格式錯誤或失敗:", data.message || '未知錯誤');
-                    return BASE_COUNT; 
+                    return null; 
                 }
             } catch (error) {
                 console.error("讀取問卷筆數失敗:", error);
-                // 在 Canvas 環境中，CORS 錯誤可能會導致這裡失敗，但我們會顯示基礎人數
-                return BASE_COUNT; 
+                return null; 
             }
         }
-        // --- 函式新增結束 ---
+        // --- 函式修改結束 ---
 
         async function sendDataToGoogle(isFinalSubmit = false) {
             
@@ -2181,12 +2216,9 @@ function update5_7FinalAmount() {
         document.addEventListener('DOMContentLoaded', async () => {
             render();
             
-            // **新增：在頁面載入後，立即讀取人數並更新顯示**
-            const totalCount = await getSurveyCount();
-            const countEl = document.getElementById('current-total-count');
-            if (countEl) {
-                countEl.textContent = totalCount.toLocaleString(); // 顯示人數並加上千分位
-            }
+            // **【修改】在頁面載入後，發送請求獲取寵物分類計數並更新顯示**
+            const petCountData = await getSurveyCount();
+            updatePetCountDisplay(petCountData);
 
             const debugButton = document.getElementById('debugFillButton');
             if (debugButton) {
