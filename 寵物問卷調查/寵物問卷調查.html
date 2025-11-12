@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1. 標題已更新 -->
     <title>寵物健康管理與娛樂市場調查</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        /* [您的 CSS 樣式...] */
-        html { font-size: 106.25%; }
+        /* ================================================= */
+        /* 1. 【修改】所有字體縮小 20%：根字體大小由 106.25% 調整為 85% (106.25 * 0.8) */
+        /* ================================================= */
+        html { font-size: 85%; } 
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #f7fafc; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -20,27 +21,45 @@
         .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
         .quiz-card { background-color: white; border-radius: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); max-width: 800px; width: 100%; overflow: hidden; transition: all 0.3s ease-in-out; }
         .progress-bar-inner { background-color: #3b82f6; transition: width 0.5s ease-in-out; }
-        .btn { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border-radius: 9999px; font-weight: 500; padding: 0.75rem 1.5rem; font-size: 1rem; transition: all 0.2s ease-in-out; border: 2px solid transparent; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        
+        /* 針對較小的字體，稍微調整按鈕內距以維持手感 */
+        .btn { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border-radius: 9999px; font-weight: 500; padding: 0.6rem 1.25rem; font-size: 0.9rem; transition: all 0.2s ease-in-out; border: 2px solid transparent; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         .btn-primary { background-color: #3b82f6; color: white; }
         .btn-primary:hover { background-color: #2563eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
         .btn-secondary { background-color: #e2e8f0; color: #1f2937; }
         .btn-secondary:hover { background-color: #cbd5e1; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-        .radio-option { display: block; width: 100%; padding: 1rem 1.5rem; border: 2px solid #e2e8f0; border-radius: 0.75rem; text-align: left; font-size: 1rem; font-weight: 500; color: #374151; background-color: white; transition: all 0.2s ease-in-out; cursor: pointer; }
-        .radio-option:hover { border-color: #93c5fd; background-color: #eff6ff; }
-        .radio-option.selected { border-color: #3b82f6; background-color: #dbeafe; color: #1e3a8a; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06); }
-        .radio-option input { display: none; }
         
-        .checkbox-option { display: block; width: 100%; padding: 1rem 1.5rem; border: 2px solid #e2e8f0; border-radius: 0.75rem; text-align: left; font-size: 1rem; font-weight: 500; color: #374151; background-color: white; transition: all 0.2s ease-in-out; cursor: pointer; }
-        .checkbox-option:hover { border-color: #93c5fd; background-color: #eff6ff; }
-        .checkbox-option.selected { border-color: #3b82f6; background-color: #dbeafe; color: #1e3a8a; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06); }
-        .checkbox-option input { display: none; }
+        /* 選項 */
+        .radio-option, .checkbox-option { display: block; width: 100%; padding: 0.75rem 1.25rem; border: 2px solid #e2e8f0; border-radius: 0.75rem; text-align: left; font-size: 0.9rem; font-weight: 500; color: #374151; background-color: white; transition: all 0.2s ease-in-out; cursor: pointer; }
+        .radio-option:hover { border-color: #93c5fd; background-color: #eff6ff; }
+        .radio-option.selected, .checkbox-option.selected { border-color: #3b82f6; background-color: #dbeafe; color: #1e3a8a; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06); }
+        .radio-option input, .checkbox-option input { display: none; }
+        
+        /* ================================================= */
+        /* 2. 【修改】寵物選項圖示過大問題：調整 font-size 和 padding */
+        /* ================================================= */
         .pet-choice { border: 4px solid transparent; transition: all 0.2s ease-in-out; border-radius: 1rem; }
         .pet-choice.selected { border-color: #3b82f6; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2), 0 4px 6px -2px rgba(59, 130, 246, 0.1); }
+        
+        /* 覆蓋樣式：縮小圖標 */
+        .pet-choice i { 
+            font-size: 3rem; /* 從 6xl 縮小 */
+        }
+        /* 覆蓋樣式：縮小文字 */
+        .pet-choice span { 
+            font-size: 1.25rem; /* 從 xl 縮小 */
+        }
+        /* 覆蓋樣式：縮小區塊內距 */
+        .pet-choice {
+            padding: 0.75rem !important; /* 縮小內距 */
+        }
+        /* ================================================= */
+        
         input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #d1d5db; border-radius: 9999px; outline: none; opacity: 0.9; transition: opacity 0.2s; }
         input[type="range"]:hover { opacity: 1; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-        input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
         .page-section { display: none; }
         .page-section.active { display: block; }
         .loader { width: 80px; height: 80px; border: 8px solid #f3f3f3; border-top: 8px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
@@ -278,14 +297,11 @@
         function renderStartPage() {
             return `
                 <div class="p-8 md:p-12 text-center space-y-8 relative pb-12">
-                    <!-- 新增開始：顯示人數的區塊 (加入文字) -->
                     <div id="survey-count-display" class="absolute top-4 right-4 text-sm font-semibold text-gray-500 flex items-center">
                         <span class="mr-1 text-gray-700">已填問卷數:</span>
                         <i class="fas fa-users mr-1"></i>
                         <span id="current-total-count" class="text-blue-500 font-bold">讀取中...</span>
                     </div>
-                    <!-- 新增結束 -->
-                
                     <i class="fas fa-paw text-6xl text-blue-500"></i>
                     <h1 class="text-3xl font-bold text-gray-800">台灣寵物飼主健康管理與娛樂需求之市場調查</h1>
                     
@@ -296,14 +312,13 @@
                             <p id="reference-error" class="text-red-500 text-sm mt-1 hidden">請務必填寫此欄位</p>
                         </div>
                         
-                        <button id="startButton" class="btn btn-primary btn-lg text-lg w-full">
+                        <button id="startButton" class="btn btn-primary w-full" style="font-size: 1.1rem; padding: 0.75rem 1.5rem;">
                             <i class="fas fa-play h-5 w-5 mr-2"></i> 開始填寫
                         </button>
                     </div>
 
                     <p class="text-sm text-gray-500 pt-4">(僅限目前正在台灣飼養犬、貓的飼主填寫)</p>
 
-                    <!-- 修改：調整字體大小為 text-sm -->
                     <p class="absolute bottom-4 right-8 text-sm text-gray-400">創投報告</p>
                 </div>
             `;
@@ -369,7 +384,7 @@
                     // 只有在 'No' (尚未填寫文字訪談) 時，才顯示「簡易文字訪談」按鈕
                     if (state.interviewConsent === 'No' || state.interviewConsent === null) {
                         actionButtons += `
-                        <button id="textInterviewButton" class="btn btn-primary">
+                        <button id="textInterviewButton" class="btn btn-primary mt-3 sm:mt-0">
                             <i class="fas fa-comments h-4 w-4 mr-2"></i> 簡易文字訪談
                         </button>
                         `;
@@ -391,10 +406,9 @@
                     <p class="text-lg text-gray-600 max-w-2xl mx-auto">
                         ${message}
                     </p>
-                    <div class="flex justify-center gap-4 flex-wrap">
+                    <div class="flex flex-col sm:flex-row justify-center gap-4 flex-wrap">
                         ${actionButtons}
-                        <!-- 2. 新增分享按鈕 (適用於所有成功畫面) -->
-                        <button id="shareButton" class="btn btn-primary">
+                        <button id="shareButton" class="btn btn-primary mt-3 sm:mt-0">
                             <i class="fas fa-share-alt h-4 w-4 mr-2"></i> 分享問卷
                         </button>
                     </div>
@@ -443,7 +457,10 @@
             `;
         }
         
-        
+        /* ================================================= */
+        /* 4. 【修改】訪談彈窗 (Interview Modal) 按鈕排列 */
+        /* 將接受/拒絕選項從並排改為上下排列 */
+        /* ================================================= */
         function renderInterviewModal() {
             // 檢查是否由「簡易文字訪談」按鈕觸發
             const skipStep1 = state.interviewConsent === '接受文字訪問';
@@ -463,9 +480,9 @@
                         <h2 class="text-2xl font-bold text-gray-800 text-center">${title}</h2>
                         <p class="text-lg text-gray-600 text-center">${paragraph}</p>
                         
-                        <div id="interview-step-1" class="flex justify-around gap-4 ${skipStep1 ? 'hidden' : ''}">
-                            <button id="interview-no" class="btn btn-secondary w-full"><i class="fas fa-times h-4 w-4 mr-2"></i> 不用了，謝謝</button>
+                        <div id="interview-step-1" class="${skipStep1 ? 'hidden' : 'space-y-3'}">
                             <button id="interview-yes" class="btn btn-primary w-full"><i class="fas fa-check h-4 w-4 mr-2"></i> 願意</button>
+                            <button id="interview-no" class="btn btn-secondary w-full"><i class="fas fa-times h-4 w-4 mr-2"></i> 不用了，謝謝</button>
                         </div>
                         
                         <div id="interview-step-2" class="${skipStep1 ? '' : 'hidden'} space-y-4">
@@ -481,7 +498,9 @@
                 </div>
             `;
         }
-
+        /* ================================================= */
+        /* 4. 【修改】訪談彈窗 (Interview Modal) 按鈕排列 結束 */
+        /* ================================================= */
 
 
         // --- 渲染訪談問答頁 ---
@@ -527,7 +546,6 @@
                     
                     ${show_Q5 ? createTextArea('Q5_健康方法', 'Q5. 您在寵物' + (health_concerns ? health_concerns.replace(/、/g, '、') : '') + '健康問題上有哪些方法？<br><span class="text-sm text-gray-500">例如：食物、用品清潔、日常活動量、保健食品...</span>') : ''}
                     
-                    <!-- 新增 Q6：家用運動設備購買意願 (條件已修改) -->
                     ${show_Q6_new ? `
                     <div class="space-y-4 border p-4 rounded-lg bg-yellow-50/50">
                         <h3 class="text-lg font-bold text-gray-800">Q6. 家用運動娛樂設備購買意願</h3>
@@ -547,7 +565,6 @@
                     </div>
                     ` : ''}
                     
-                    <!-- 原 Q6 改為 Q7 -->
                     ${createTextArea('Q7_試用意願', 'Q7. 我們是否有機會邀請您參與樣品試用？請留下您的聯絡方式<br><span class="text-sm text-gray-500">例如：Line ID、手機、信箱、IG、FB等社群帳號</span>')}
                     
                     ${!show_Q1 && !show_Q2 && !show_Q3 && !show_Q4 && !show_Q5 && !show_Q6_new ? '<p class="text-gray-600">根據您的答案，除了試用意願外，目前沒有其他需要補充的訪談問題。</p>' : ''}
@@ -576,26 +593,27 @@
         
         // --- 輔助函數 ---
         
-        // === 🚀 核心修改點：優化滑桿 (Slider) 的 HTML 結構以解決換行問題 ===
+        /* ================================================= */
+        /* 3. 【修改】滑桿結構：文字顯示在上方靠左，滑桿在下 */
+        /* ================================================= */
         function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
             const currentValue = state.answers[id] || defaultValue || min;
-            // 題目獨立一行，確保有足夠的換行空間
             return `
                 <div class="space-y-2 py-2" id="container-${id}"> 
                     <label class="font-medium text-gray-700 block">${label}</label>
-                    <div class="flex items-center">
-                        <!-- 答案顯示區，使用 text-xl (比原來的 text-lg 更大) 和 mr-4 增加視覺邊距 -->
-                        <span id="slider-value-${id}" class="text-xl font-bold text-blue-600 mr-4 whitespace-nowrap">
+                    <div class="flex items-center mb-2">
+                        <span id="slider-value-${id}" class="text-xl font-bold text-blue-600">
                             ${valueTextFn(currentValue)}
                         </span>
-                        <!-- 滑桿佔用剩餘空間 -->
-                        <input type="range" data-id="${id}" id="${id}" min="${min}" max="${max}" step="${step}" value="${currentValue}"
-                               data-valuetextfn="${encodeURIComponent(valueTextFn.toString())}" class="flex-grow">
                     </div>
+                    <input type="range" data-id="${id}" id="${id}" min="${min}" max="${max}" step="${step}" value="${currentValue}"
+                           data-valuetextfn="${encodeURIComponent(valueTextFn.toString())}" class="w-full">
                 </div>
             `;
         }
-        // =================================================================
+        /* ================================================= */
+        /* 3. 【修改】滑桿結構 結束 */
+        /* ================================================= */
 
 
         // 重構 handleRangeInput，使其成為所有滑桿事件的統一處理中心
@@ -613,6 +631,7 @@
                     const valueTextFn = eval('(' + decoded + ')'); // 保持原始程式碼中的 eval
                     const out = valueTextFn(val);
                     const labelEl = document.getElementById('slider-value-' + id);
+                    // 修正：移除原有的 mr-4 造成的排版問題，現在文字是獨立一行
                     if (labelEl && out != null) labelEl.textContent = out;
                 } catch (e) { console.warn('valueTextFn 執行錯誤 for', id, e); }
             }
@@ -664,13 +683,13 @@
                     <div class="grid grid-cols-2 gap-4" data-radio-group="${id}">
                         <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                             <input type="radio" name="${id}" value="${yesText}" class="hidden" data-id="${id}">
-                            <i class="fas ${yesIcon} text-6xl text-green-400"></i>
-                            <span class="block text-xl font-bold text-gray-700">${yesText}</span>
+                            <i class="fas ${yesIcon} text-green-400" style="font-size: 3rem;"></i>
+                            <span class="block font-bold text-gray-700" style="font-size: 1.25rem;">${yesText}</span>
                         </label>
                         <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                             <input type="radio" name="${id}" value="${noText}" class="hidden" data-id="${id}">
-                            <i class="fas ${noIcon} text-6xl text-red-400"></i>
-                            <span class="block text-xl font-bold text-gray-700">${noText}</span>
+                            <i class="fas ${noIcon} text-red-400" style="font-size: 3rem;"></i>
+                            <span class="block font-bold text-gray-700" style="font-size: 1.25rem;">${noText}</span>
                         </label>
                     </div>
                 </div>
@@ -714,22 +733,21 @@
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第一部分：飼主與寵物基本背景</h2>
                     <div class="space-y-3">
                         <label class="font-medium text-gray-700 text-lg">1.1 您的寵物類型是？(一種以上可以多寫幾份!)</label>
-                        <!-- 修改：新增 "皆有" 選項，改為 grid-cols-3 -->
                         <div class="grid grid-cols-3 gap-4" data-radio-group="1.1_寵物類型">
                             <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                                 <input type="radio" name="1.1_寵物類型" value="犬" class="hidden" data-id="1.1_寵物類型">
-                                <i class="fas fa-dog text-6xl text-blue-400"></i>
-                                <span class="block text-xl font-bold text-gray-700">犬</span>
+                                <i class="fas fa-dog text-blue-400" style="font-size: 3rem;"></i>
+                                <span class="block font-bold text-gray-700" style="font-size: 1.25rem;">犬</span>
                             </label>
                             <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                                 <input type="radio" name="1.1_寵物類型" value="貓" class="hidden" data-id="1.1_寵物類型">
-                                <i class="fas fa-cat text-6xl text-blue-400"></i>
-                                <span class="block text-xl font-bold text-gray-700">貓</span>
+                                <i class="fas fa-cat text-blue-400" style="font-size: 3rem;"></i>
+                                <span class="block font-bold text-gray-700" style="font-size: 1.25rem;">貓</span>
                             </label>
                             <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                                 <input type="radio" name="1.1_寵物類型" value="皆有" class="hidden" data-id="1.1_寵物類型">
-                                <i class="fas fa-paw text-6xl text-blue-400"></i>
-                                <span class="block text-xl font-bold text-gray-700">皆有</span>
+                                <i class="fas fa-paw text-blue-400" style="font-size: 3rem;"></i>
+                                <span class="block font-bold text-gray-700" style="font-size: 1.25rem;">皆有</span>
                             </label>
                         </div>
                     </div>
@@ -811,7 +829,6 @@
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第四部分：平日在家與寵物相處時</h2>
                     <div class="space-y-6">
-                        <!-- 修改題目敘述 -->
                         ${createLikertSlider('4.1_願意花時間', '4.1 您在家時，是否願意花費時間陪伴寵物?')}
                         ${createLikertSlider('4.2_曾無法陪伴', '4.2 您是否曾經在某日因為生活上受限於時間、心力、個人興趣等原因無法陪伴寵物?')}
                         ${createSlider('4.3_無法陪伴頻率', '4.3 您遇到上述情況的頻率每周是?', 0, 7, 1,
@@ -963,13 +980,12 @@ function update5_7FinalAmount() {
                     </div>
 
                     <div class="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <!-- 更新 6.4 標題和預算 -->
                         <h3 class="font-medium text-gray-700 text-lg">6.4 如果您用12,000元選購一項寵物用品時，您最重視花錢投資的功能是？</h3>
                         <p class="text-sm text-gray-500">請左右拉動滑桿，分配您的 12,000 元預算。正值代表增加預算，負值代表減少預算。</p>
                         
                         <div class="text-center py-4">
-                            <span class="text-gray-600 text-lg">剩餘/超出 預算</span>
-                            <div id="budget-total-display" class="text-4xl font-bold text-blue-600">NT$ 12,000</div>
+                            <span class="text-gray-600 text-lg">總價值 (NT$ 12,000 為中位基準)</span>
+                            <div id="budget-total-display" class="text-4xl font-bold text-blue-600">NT$ 0</div> 
                         </div>
 
                         <div id="budget-sliders-container" class="space-y-6">
@@ -978,7 +994,6 @@ function update5_7FinalAmount() {
                             ${createBudgetSlider('6.4_節省時間', '節省飼主時間、精力')}
                             ${createBudgetSlider('6.4_持久耐用', '產品持久耐用')}
                             ${createBudgetSlider('6.4_容易清潔', '產品容易清潔整理')}
-                            <!-- 新增 6.4_節省空間 -->
                             ${createBudgetSlider('6.4_節省空間', '產品能有效節省空間')}
                         </div>
                     </div>
@@ -986,35 +1001,42 @@ function update5_7FinalAmount() {
             `;
         }
         
-        // === 6.4 總和計算邏輯更新 ===
+        // === 6.4 總和計算邏輯更新 (已修正為計算「總價值」) ===
         function updateBudgetTotal() {
             // 新增 6.4_節省空間
             const budgetIds = [
                 '6.4_開心使用', '6.4_安全使用', '6.4_節省時間', '6.4_持久耐用', '6.4_容易清潔', '6.4_節省空間' 
             ];
-            let sum = 0;
+            let sumValue = 0; // 儲存滑桿數值 (-4 到 +4) 的總和
             budgetIds.forEach(id => {
-                sum += parseInt(state.answers[id] || 0, 10);
+                sumValue += parseInt(state.answers[id] || 0, 10);
             });
-            const BASE_BUDGET = 12000; // **修改為 12000 元**
             
-            // 總預算應為 12000 + 調整值 (調整值為 sum * 500)
-            const remaining = BASE_BUDGET - (sum * 500); 
+            // 每個滑桿數值單位代表 $500
+            const totalValueChange = sumValue * 500;
+            const BASE_BUDGET = 12000; 
+            
+            // 總價值 = 基準金額 + 總調整金額 (totalValueChange)
+            const finalValue = BASE_BUDGET + totalValueChange; 
+            
             const displayEl = document.getElementById('budget-total-display');
             if (!displayEl) return;
 
-            displayEl.textContent = `NT$ ${remaining.toLocaleString()}`;
+            // 1. 修正顯示文字：將「剩餘/超出」改為「價值」
+            displayEl.textContent = `價值 NT$ ${finalValue.toLocaleString()}`;
             displayEl.classList.remove('text-blue-600', 'text-red-500', 'text-yellow-600');
             
-            if (remaining < 0) {
-                displayEl.textContent = `超出 NT$ ${Math.abs(remaining).toLocaleString()}`;
-                displayEl.classList.add('text-red-500');
-            } else if (remaining > 0) {
-                 displayEl.textContent = `剩餘 NT$ ${remaining.toLocaleString()}`;
-                displayEl.classList.add('text-yellow-600');
-            } else {
-                 displayEl.textContent = 'NT$ 0 (分配完畢)';
+            // 2. 修正顏色邏輯 (可選：用顏色表示與 $12,000 的差異)
+            if (finalValue > BASE_BUDGET) {
+                // 價值變高，使用藍色
                 displayEl.classList.add('text-blue-600');
+            } else if (finalValue < BASE_BUDGET) {
+                // 價值變低，使用紅色
+                displayEl.classList.add('text-red-500');
+            } else {
+                 // 價值剛好 $12,000，使用藍色
+                displayEl.classList.add('text-blue-600');
+                displayEl.textContent = `價值 NT$ 12,000`;
             }
         }
         // === 6.4 總和計算邏輯更新結束 ===
@@ -2175,6 +2197,3 @@ function update5_7FinalAmount() {
 </script>
 </body>
 </html>
-
-
-
