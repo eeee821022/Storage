@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        /* [您的 CSS 樣式...] */
         /* 1. 修正：字體縮小 20% (106.25% * 0.8 = 85%) */
         html { font-size: 85%; } 
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #f7fafc; }
@@ -18,19 +17,7 @@
         ::-webkit-scrollbar-thumb { background: #60a5fa; }
         ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
         .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
-        .quiz-card { 
-            background-color: white; 
-            border-radius: 1.5rem; 
-            border: 1px solid #e2e8f0; 
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
-            max-width: 800px; 
-            width: 100%; 
-            overflow: hidden; 
-            transition: all 0.3s ease-in-out; 
-            /* 3. 修正：將問卷層級拉高，確保在浮動元素上方 */
-            z-index: 100 !important; 
-            position: relative;
-        }
+        .quiz-card { background-color: white; border-radius: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); max-width: 800px; width: 100%; overflow: hidden; transition: all 0.3s ease-in-out; }
         .progress-bar-inner { background-color: #3b82f6; transition: width 0.5s ease-in-out; }
         .btn { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border-radius: 9999px; font-weight: 500; padding: 0.75rem 1.5rem; font-size: 1rem; transition: all 0.2s ease-in-out; border: 2px solid transparent; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         .btn-primary { background-color: #3b82f6; color: white; }
@@ -70,7 +57,19 @@
         .error-icon i { color: white; font-size: 40px; font-weight: bold; }
         .budget-slider::-webkit-slider-runnable-track { background: linear-gradient(to right, #ef4444, #f87171, #d1d5db, #d1d5db, #60a5fa, #3b82f6); }
         .budget-slider::-moz-range-track { background: linear-gradient(to right, #ef4444, #f87171, #d1d5db, #d1d5db, #60a5fa, #3b82f6); }
-        .modal-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal-overlay { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background-color: rgba(0, 0, 0, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            /* 修正: 確保問卷彈窗層級最高 */
+            z-index: 99999; 
+        }
         .modal-content { background-color: white; border-radius: 1rem; padding: 2rem; width: 90%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
         .text-input { display: block; width: 100%; border: 2px solid #e2e8f0; border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 1rem; color: #374151; transition: all 0.2s ease-in-out; }
         .text-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
@@ -82,26 +81,30 @@
         #answer-summary span { color: #1d4ed8; font-weight: 500; }
         #answer-summary span pre { font-family: inherit; margin: 0; white-space: pre-wrap; word-wrap: break-word; }
 
-        /* ========= 翻譯浮動介面控制 (聲納法) START ========= */
-        /* 1. 隱藏 Google 翻譯的頂部橫幅 (雖然您的載入程式碼已隱藏，但這是備用) */
-        body > .skiptranslate:first-child {
-            display: none !important;
-            visibility: hidden !important; 
-        }
+        /* Google 翻譯相關修正 (保留功能並隱藏問題元素) */
         
-        /* 2. 隱藏 Google 翻譯的評論彈窗 (您圖片中擋住按鈕的元兇) */
-        .goog-te-balloon-frame {
-            display: none !important;
-            visibility: hidden !important;
-        }
-
-        /* Google 翻譯小工具容器 */
+        /* 修正: 降低翻譯小工具容器的 Z-index */
         #google_translate_element_container {
             position: fixed;
             top: 1rem;
             left: 1rem;
-            z-index: 9999;
+            z-index: 10; 
             /* 調整下拉選單樣式，使其不那麼突兀 */
+        }
+        
+        /* 隱藏 Google 翻譯的橫幅 (已存在) */
+        body > .skiptranslate:first-child {
+            display: none !important;
+        }
+
+        /* 新增：強制隱藏 Google 翻譯產生的所有浮動工具列和評論氣泡（解決遮擋問題） */
+        .goog-te-banner-frame {
+            display: none !important;
+        }
+        
+        /* 隱藏 Google 翻譯的評論氣泡和對話框 (這是擋住按鈕的元兇) */
+        .goog-tooltip, .goog-tooltip:hover, .goog-tooltip-float {
+            display: none !important;
         }
         
         /* 調整翻譯下拉選單的樣式，使其看起來更像按鈕 */
@@ -127,7 +130,9 @@
         #google_translate_element .goog-te-gadget-simple span {
             display: none !important;
         }
-        /* ========= 翻譯浮動介面控制 END ========= */
+        
+        /* 確保問卷主體和按鈕始終可點擊 */
+        body { top: 0px !important; }
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
@@ -654,7 +659,7 @@
         
         // --- 輔助函數 ---
         
-        // === 3. 核心修改點：優化滑桿 (Slider) 的 HTML 結構以解決換行問題 (滑桿排版修正) ===
+        // === 3. 核心修改點：優化滑桿 (Slider) 的 HTML 結構以解決換行問題 ===
         function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
             const currentValue = state.answers[id] || defaultValue || min;
             // 題目獨立一行，確保有足夠的換行空間
@@ -706,7 +711,7 @@
                     if (yrEl) yrEl.textContent = '$' + yearly.toLocaleString();
                 }
                 // 觸發 5.7 基礎值重算
-                if (typeof update5_7BaseAmount === 'function') update557BaseAmount();
+                if (typeof update5_7BaseAmount === 'function') update5_7BaseAmount();
             }
 
             // 3. 特例：1.2 變動時，重新渲染年齡滑桿
@@ -1599,9 +1604,8 @@ function update5_7FinalAmount() {
                             if (id !== 'Q7_試用意願') { 
                                 // 對 Q6 進行二次檢查，如果它不應該出現，則跳過必填驗證
                                 if (isConditionalQ6) {
-                                    // **修改條件檢查：從 3.4 改為 6.2**
                                     const is62Agreed = state.answers['6.2_願意添購'] === '是';
-                                    if (!is62Agreed) return; // 不顯示 Q6，則跳過必填驗證
+                                    if (!is62Agreed) return; 
                                 }
                                 
                                 errorEl.classList.remove('hidden');
@@ -2043,7 +2047,7 @@ function update5_7FinalAmount() {
 
 
         // --- 新增函式：取得問卷填寫人數 ---
-        const BASE_COUNT = 76; 
+        const BASE_COUNT = 76; // 初始人數
 
         /**
          * 透過 GET 請求從 Google Apps Script 獲取試算表中的資料筆數。
