@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1. 標題已更新 -->
     <title>寵物健康管理與娛樂市場調查</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.css">
@@ -11,8 +10,8 @@
     
     <style>
         /* [您的 CSS 樣式...] */
-        /* 1. 字體縮小約 20% (從 106.25% (17px) 調整到 87.5% (14px)) */
-        html { font-size: 87.5%; } 
+        /* 1. 修正：字體縮小 20% (106.25% * 0.8 = 85%) */
+        html { font-size: 85%; } 
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #f7fafc; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -38,15 +37,9 @@
         .checkbox-option input { display: none; }
         .pet-choice { border: 4px solid transparent; transition: all 0.2s ease-in-out; border-radius: 1rem; }
         .pet-choice.selected { border-color: #3b82f6; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2), 0 4px 6px -2px rgba(59, 130, 246, 0.1); }
-        
-        /* 2. 縮小寵物選項圖示和字體 */
-        .pet-choice i {
-            font-size: 3rem; /* 從 6xl 縮小到約 3xl (48px -> 30px) */
-        }
-        .pet-choice span {
-            font-size: 1.125rem; /* 從 xl 縮小到 lg */
-        }
-        
+        /* 2. 修正：調整寵物圖示大小 */
+        .pet-choice i { font-size: 3rem !important; } /* 從 6xl 降到 4xl */
+
         input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #d1d5db; border-radius: 9999px; outline: none; opacity: 0.9; transition: opacity 0.2s; }
         input[type="range"]:hover { opacity: 1; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
@@ -77,17 +70,13 @@
         #answer-summary span { color: #1d4ed8; font-weight: 500; }
         #answer-summary span pre { font-family: inherit; margin: 0; white-space: pre-wrap; word-wrap: break-word; }
 
-        /* Google 翻譯小工具容器 (恢復顯示並簡化樣式) */
+        /* 新增：Google Translate Widget 容器樣式 */
         #google_translate_element_container {
             position: fixed;
-            top: 1.5rem;
-            left: 1.5rem;
+            top: 1rem;
+            left: 1rem;
             z-index: 9999;
-            opacity: 1; /* 確保可見 */
-            pointer-events: auto; /* 確保可互動 */
-            width: auto;
-            height: auto;
-            overflow: visible;
+            /* 調整下拉選單樣式，使其不那麼突兀 */
         }
         
         /* 隱藏 Google 翻譯的橫幅 */
@@ -95,15 +84,15 @@
             display: none !important;
         }
 
-        /* 簡化翻譯下拉選單的樣式，使其看起來更像按鈕 */
+        /* 調整翻譯下拉選單的樣式，使其看起來更像按鈕 */
         #google_translate_element .goog-te-gadget-simple {
-            background-color: #f59e0b !important; /* 橙色背景 */
-            color: white !important;
+            background-color: #f59e0b; /* 橙色背景 */
+            color: white;
             border: none !important;
             border-radius: 0.75rem !important; /* 圓角 */
-            padding: 0.5rem 1rem !important;
+            padding: 0.5rem 0.5rem !important;
             font-weight: 700;
-            font-size: 1rem !important;
+            font-size: 1rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             cursor: pointer;
             transition: all 0.2s ease;
@@ -118,17 +107,6 @@
         #google_translate_element .goog-te-gadget-simple span {
             display: none !important;
         }
-        /* 顯示下拉選單本身，以保留使用者選擇的邏輯 */
-        #google_translate_element select {
-            color: black !important; /* 確保下拉選單文字清晰 */
-        }
-        
-        /* 3. 新增滑桿文字顯示樣式 (使其不佔用彈性空間) */
-        .slider-value-display {
-             text-align: left;
-             width: 100%;
-             margin-bottom: 0.5rem;
-        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
@@ -136,20 +114,18 @@
     <div id="app" class="quiz-card relative">
     </div>
     
-    <!-- Google 翻譯小工具容器 (恢復原始顯示，但經過簡化樣式) -->
     <div id="google_translate_element_container">
         <div id="google_translate_element"></div>
     </div>
     
-    <!-- 移除原有的自定義按鈕，只保留 Google Widget -->
-    
+
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
     
 
     <script>
-        // --- Google 翻譯小工具初始化函數 (使用原始配置，允許使用者選擇) ---
+        // --- Google 翻譯小工具初始化函數 ---
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'zh-TW', // 網頁的原始語言
@@ -265,7 +241,7 @@
             // --- Step 7 (校正) ---
             '7.1_性別': '7.1 您的性別？',
             '7.2_年齡': '7.2 您的年齡區間？',
-            '7.3_有伴侶': '7.3 您是否有伴侶(男女朋友、夫妻)？',
+            '7.3_有伴侶': '7.3 您是否有伴侶（男女朋友、夫妻）？',
             '7.4_獨居': '7.4 您是否獨自居住？',
             '7.5_居住型態': '7.5 您的居住型態為？',
             '7.6_子女': '7.6 您是否有子女？', // <-- 修正 7.5_子女 -> 7.6_子女
@@ -366,14 +342,11 @@
         function renderStartPage() {
             return `
                 <div class="p-8 md:p-12 text-center space-y-8 relative pb-12">
-                    <!-- 新增開始：顯示人數的區塊 (加入文字) -->
                     <div id="survey-count-display" class="absolute top-4 right-4 text-sm font-semibold text-gray-500 flex items-center">
                         <span class="mr-1 text-gray-700">已填問卷數:</span>
                         <i class="fas fa-users mr-1"></i>
                         <span id="current-total-count" class="text-blue-500 font-bold">讀取中...</span>
                     </div>
-                    <!-- 新增結束 -->
-                
                     <i class="fas fa-paw text-6xl text-blue-500"></i>
                     <h1 class="text-3xl font-bold text-gray-800">台灣寵物飼主健康管理與娛樂需求之市場調查</h1>
                     
@@ -391,7 +364,6 @@
 
                     <p class="text-sm text-gray-500 pt-4">(僅限目前正在台灣飼養犬、貓的飼主填寫)</p>
 
-                    <!-- 修改：調整字體大小為 text-sm -->
                     <p class="absolute bottom-4 right-8 text-sm text-gray-400">創投報告</p>
                 </div>
             `;
@@ -427,7 +399,7 @@
 
                     // 顯示「重新填寫」按鈕
                     actionButtons = `
-                        <button id="restartButton" class="btn btn-secondary">
+                        <button id="restartButton" class="btn btn-secondary w-full sm:w-auto">
                             <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫 (清除此裝置紀錄)
                         </button>
                     `;
@@ -449,7 +421,7 @@
                     message = '問卷到此全部結束。再次誠摯地感謝您撥出寶貴的時間提供您的意見！';
                    
                     actionButtons = `
-                        <button id="restartButton" class="btn btn-secondary">
+                        <button id="restartButton" class="btn btn-secondary w-full sm:w-auto">
                             <i class="fas fa-redo h-4 w-4 mr-2"></i> 重新填寫 (清除此裝置紀錄)
                         </button>
                     `;
@@ -457,7 +429,7 @@
                     // 只有在 'No' (尚未填寫文字訪談) 時，才顯示「簡易文字訪談」按鈕
                     if (state.interviewConsent === 'No' || state.interviewConsent === null) {
                         actionButtons += `
-                        <button id="textInterviewButton" class="btn btn-primary">
+                        <button id="textInterviewButton" class="btn btn-primary w-full sm:w-auto mt-4 sm:mt-0">
                             <i class="fas fa-comments h-4 w-4 mr-2"></i> 簡易文字訪談
                         </button>
                         `;
@@ -481,8 +453,7 @@
                     </p>
                     <div class="flex justify-center gap-4 flex-wrap">
                         ${actionButtons}
-                        <!-- 2. 新增分享按鈕 (適用於所有成功畫面) -->
-                        <button id="shareButton" class="btn btn-primary">
+                        <button id="shareButton" class="btn btn-primary w-full sm:w-auto mt-4 sm:mt-0">
                             <i class="fas fa-share-alt h-4 w-4 mr-2"></i> 分享問卷
                         </button>
                     </div>
@@ -545,17 +516,14 @@
                 ? '請留下您的聯絡資訊，<br>完成後即可開始填寫訪談問題。'
                 : '我們誠摯邀請您參與後續的訪談，<br>請問您是否願意接受深度訪問嗎？';
 
-            // 4. 按鈕排版為上下排列 (已從上一個版本中保留此優化)
             return `
                 <div id="interview-modal" class="modal-overlay">
                     <div class="modal-content space-y-6">
                         <h2 class="text-2xl font-bold text-gray-800 text-center">${title}</h2>
                         <p class="text-lg text-gray-600 text-center">${paragraph}</p>
                         
-                        <div id="interview-step-1" class="flex flex-col gap-4 ${skipStep1 ? 'hidden' : ''}">
-                            <!-- 上接受 -->
+                        <div id="interview-step-1" class="space-y-4 ${skipStep1 ? 'hidden' : ''}"> 
                             <button id="interview-yes" class="btn btn-primary w-full"><i class="fas fa-check h-4 w-4 mr-2"></i> 願意</button>
-                            <!-- 下拒絕 -->
                             <button id="interview-no" class="btn btn-secondary w-full"><i class="fas fa-times h-4 w-4 mr-2"></i> 不用了，謝謝</button>
                         </div>
                         
@@ -618,7 +586,6 @@
                     
                     ${show_Q5 ? createTextArea('Q5_健康方法', 'Q5. 您在寵物' + (health_concerns ? health_concerns.replace(/、/g, '、') : '') + '健康問題上有哪些方法？<br><span class="text-sm text-gray-500">例如：食物、用品清潔、日常活動量、保健食品...</span>') : ''}
                     
-                    <!-- 新增 Q6：家用運動娛樂設備購買意願 (條件已修改) -->
                     ${show_Q6_new ? `
                     <div class="space-y-4 border p-4 rounded-lg bg-yellow-50/50">
                         <h3 class="text-lg font-bold text-gray-800">Q6. 家用運動娛樂設備購買意願</h3>
@@ -638,7 +605,6 @@
                     </div>
                     ` : ''}
                     
-                    <!-- 原 Q6 改為 Q7 -->
                     ${createTextArea('Q7_試用意願', 'Q7. 我們是否有機會邀請您參與樣品試用？請留下您的聯絡方式<br><span class="text-sm text-gray-500">例如：Line ID、手機、信箱、IG、FB等社群帳號</span>')}
                     
                     ${!show_Q1 && !show_Q2 && !show_Q3 && !show_Q4 && !show_Q5 && !show_Q6_new ? '<p class="text-gray-600">根據您的答案，除了試用意願外，目前沒有其他需要補充的訪談問題。</p>' : ''}
@@ -667,22 +633,16 @@
         
         // --- 輔助函數 ---
         
-        // === 3. 調整滑桿顯示：將數值移到上方靠左 (已從上一個版本中保留此優化) ===
+        // === 3. 核心修改點：優化滑桿 (Slider) 的 HTML 結構以解決換行問題 ===
         function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
             const currentValue = state.answers[id] || defaultValue || min;
             // 題目獨立一行，確保有足夠的換行空間
             return `
                 <div class="space-y-2 py-2" id="container-${id}"> 
                     <label class="font-medium text-gray-700 block">${label}</label>
-                    
-                    <!-- 數值顯示區塊：獨立一行，靠左對齊，不會與滑桿並排導致跳動 -->
-                    <div class="slider-value-display">
-                        <span id="slider-value-${id}" class="text-xl font-bold text-blue-600 whitespace-nowrap">
-                            ${valueTextFn(currentValue)}
-                        </span>
-                    </div>
-
-                    <!-- 滑桿佔用剩餘空間 -->
+                    <span id="slider-value-${id}" class="text-xl font-bold text-blue-600 block text-left">
+                        ${valueTextFn(currentValue)}
+                    </span>
                     <input type="range" data-id="${id}" id="${id}" min="${min}" max="${max}" step="${step}" value="${currentValue}"
                            data-valuetextfn="${encodeURIComponent(valueTextFn.toString())}" class="w-full">
                 </div>
@@ -706,9 +666,12 @@
                     const valueTextFn = eval('(' + decoded + ')'); // 保持原始程式碼中的 eval
                     const out = valueTextFn(val);
                     const labelEl = document.getElementById('slider-value-' + id);
-                    // 修正 5.7 顯示邏輯：由於 5.7 調整值的 ID 被硬編碼在 renderStep5() 中，這裡需要特殊處理。
-                    // 但因為 createSlider 已經改為將值放在上方，所以這裡只需要確保 labelEl 存在
-                    if (labelEl && out != null) labelEl.textContent = out;
+                    // 修正：更新顯示值的 text-left
+                    if (labelEl && out != null) {
+                         labelEl.textContent = out;
+                         labelEl.classList.remove('text-center', 'text-right');
+                         labelEl.classList.add('text-left');
+                    }
                 } catch (e) { console.warn('valueTextFn 執行錯誤 for', id, e); }
             }
 
@@ -759,13 +722,13 @@
                     <div class="grid grid-cols-2 gap-4" data-radio-group="${id}">
                         <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                             <input type="radio" name="${id}" value="${yesText}" class="hidden" data-id="${id}">
-                            <i class="fas ${yesIcon} text-blue-400"></i>
-                            <span class="block font-bold text-gray-700">${yesText}</span>
+                            <i class="fas ${yesIcon} text-6xl text-green-400"></i>
+                            <span class="block text-xl font-bold text-gray-700">${yesText}</span>
                         </label>
                         <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
-                            <input type="radio" name="${id}" value="${noText}" class="hidden" data-id="${id}">
-                            <i class="fas ${noIcon} text-red-400"></i>
-                            <span class="block font-bold text-gray-700">${noText}</span>
+                            <input type="radio" name="${id}" value="${noText}" class="hidden" data-id="e${id}">
+                            <i class="fas ${noIcon} text-6xl text-red-400"></i>
+                            <span class="block text-xl font-bold text-gray-700">${noText}</span>
                         </label>
                     </div>
                 </div>
@@ -773,31 +736,18 @@
         }
         function createLikertSlider(id, label) {
             const currentValue = state.answers[id] !== undefined ? state.answers[id] : 2; // 預設 '普通'
-            const currentText = likertValueToText(currentValue);
             const valueTextFnString = likertValueToText.toString();
             return createSlider(id, label, 0, 4, 1, createDynamicFunction(valueTextFnString), currentValue);
         }
         function createBudgetSlider(id, label) {
             const currentValue = state.answers[id] !== undefined ? state.answers[id] : 0;
-            const currentText = budgetSliderValueToText(currentValue);
             const valueTextFnString = budgetSliderValueToText.toString();
-            // 修正：這裡的 createSlider 必須使用舊版（並排）結構，因為 Step 6 的預算滑桿需要數字在右側
-            // 但因為前面已經統一修改了 createSlider，這裡必須針對 Step 6 的滑桿做客製化處理，將其改回並排
-            // 為了不影響其他步驟，我將在這裡手動覆寫 createSlider 產生的結構，以實現 Step 6 的並排需求
-
-            // 使用原始的並排結構 (來自寵物問卷調查2 - 複製.html)
-            return `
-                <div class="space-y-2 py-2" id="container-${id}"> 
-                    <label class="font-medium text-gray-700 block">${label}</label>
-                    <div class="flex items-center">
-                        <span id="slider-value-${id}" class="text-xl font-bold text-blue-600 mr-4 whitespace-nowrap">
-                            ${valueTextFn(currentValue)}
-                        </span>
-                        <input type="range" data-id="${id}" id="${id}" min="-4" max="4" step="1" value="${currentValue}"
-                               data-valuetextfn="${encodeURIComponent(valueTextFn.toString())}" class="flex-grow budget-slider" data-type="budget-slider">
-                    </div>
-                </div>
-            `;
+            let sliderHTML = createSlider(id, label, -4, 4, 1, createDynamicFunction(valueTextFnString), currentValue);
+            sliderHTML = sliderHTML.replace(
+                '<input type="range" data-id', 
+                '<input type="range" class="budget-slider" data-type="budget-slider" data-id'
+            );
+            return sliderHTML;
         }
 
         // --- 建立 <textarea> ---
@@ -820,22 +770,21 @@
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第一部分：飼主與寵物基本背景</h2>
                     <div class="space-y-3">
                         <label class="font-medium text-gray-700 text-lg">1.1 您的寵物類型是？(一種以上可以多寫幾份!)</label>
-                        <!-- 2. 調整寵物選項的圖示大小 (從上一個版本中保留此優化) -->
                         <div class="grid grid-cols-3 gap-4" data-radio-group="1.1_寵物類型">
                             <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                                 <input type="radio" name="1.1_寵物類型" value="犬" class="hidden" data-id="1.1_寵物類型">
-                                <i class="fas fa-dog text-blue-400"></i>
-                                <span class="block font-bold text-gray-700">犬</span>
+                                <i class="fas fa-dog text-6xl text-blue-400"></i>
+                                <span class="block text-xl font-bold text-gray-700">犬</span>
                             </label>
                             <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                                 <input type="radio" name="1.1_寵物類型" value="貓" class="hidden" data-id="1.1_寵物類型">
-                                <i class="fas fa-cat text-blue-400"></i>
-                                <span class="block font-bold text-gray-700">貓</span>
+                                <i class="fas fa-cat text-6xl text-blue-400"></i>
+                                <span class="block text-xl font-bold text-gray-700">貓</span>
                             </label>
                             <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                                 <input type="radio" name="1.1_寵物類型" value="皆有" class="hidden" data-id="1.1_寵物類型">
-                                <i class="fas fa-paw text-blue-400"></i>
-                                <span class="block font-bold text-gray-700">皆有</span>
+                                <i class="fas fa-paw text-6xl text-blue-400"></i>
+                                <span class="block text-xl font-bold text-gray-700">皆有</span>
                             </label>
                         </div>
                     </div>
@@ -917,7 +866,6 @@
                 <div class="page-section active space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第四部分：平日在家與寵物相處時</h2>
                     <div class="space-y-6">
-                        <!-- 修改題目敘述 -->
                         ${createLikertSlider('4.1_願意花時間', '4.1 您在家時，是否願意花費時間陪伴寵物?')}
                         ${createLikertSlider('4.2_曾無法陪伴', '4.2 您是否曾經在某日因為生活上受限於時間、心力、個人興趣等原因無法陪伴寵物?')}
                         ${createSlider('4.3_無法陪伴頻率', '4.3 您遇到上述情況的頻率每周是?', 0, 7, 1,
@@ -942,13 +890,6 @@ function renderStep5() {
   setTimeout(() => {
     if (typeof update5_7BaseAmount === 'function') update5_7BaseAmount();
   }, 100); // 稍微延遲
-
-  // 注意：這裡的 createSlider 使用了原版（並排）結構，但因為 createSlider 已經被修改為新的垂直結構
-  // 為了保持 Step 5 的樣式，我們需要將 createSlider 的定義修改回您「複製」檔案中的並排結構。
-  // 但由於 createSlider 在其他步驟也被使用，我選擇在 createSlider 函數中判斷是否為 Step 6 (Step 6 需要並排)
-  // 而 Step 5 這裡的滑桿是單獨一行的，我將使用通用 createSlider (垂直佈局)
-  
-  // 由於上一個版本中，createSlider 已經改為垂直，這裡的結構將使用垂直結構。
 
   return `
     <div class="page-section active space-y-6">
@@ -987,12 +928,9 @@ function renderStep5() {
         <p class="text-sm text-gray-500">可透過滑桿調整增減金額：</p>
 
         <div class="space-y-2">
-          <!-- 這裡必須維持並排，因為需要顯示 -$15,000 $0 +$15,000 標記 -->
-          <div class="flex justify-between items-center">
-            <label class="font-medium text-gray-700">調整金額</label>
-            <span id="slider-value-5.7_年度總投入"
-                  class="text-lg font-bold text-blue-600">$0</span>
-          </div>
+          <label class="font-medium text-gray-700 block">調整金額</label>
+          <span id="slider-value-5.7_年度總投入" class="text-xl font-bold text-blue-600 block text-left">$0</span>
+
           <input type="range" id="slider-5_7" min="-15" max="15" step="1" 
                  value="${state.answers['5.7_年度調整'] || 0}"
                  oninput="update5_7Slider(this.value)">
@@ -1077,7 +1015,6 @@ function update5_7FinalAmount() {
                     </div>
 
                     <div class="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <!-- 更新 6.4 標題和預算 -->
                         <h3 class="font-medium text-gray-700 text-lg">6.4 如果您用12,000元選購一項寵物用品時，您最重視花錢投資的功能是？</h3>
                         <p class="text-sm text-gray-500">請左右拉動滑桿，分配您的 12,000 元預算。正值代表增加預算，負值代表減少預算。</p>
                         
@@ -1087,13 +1024,11 @@ function update5_7FinalAmount() {
                         </div>
 
                         <div id="budget-sliders-container" class="space-y-6">
-                            <!-- 這裡的 createBudgetSlider 內部邏輯已客製化，以實現並排顯示 -->
                             ${createBudgetSlider('6.4_開心使用', '寵物能開心使用')}
                             ${createBudgetSlider('6.4_安全使用', '寵物能安全使用')}
                             ${createBudgetSlider('6.4_節省時間', '節省飼主時間、精力')}
                             ${createBudgetSlider('6.4_持久耐用', '產品持久耐用')}
                             ${createBudgetSlider('6.4_容易清潔', '產品容易清潔整理')}
-                            <!-- 新增 6.4_節省空間 -->
                             ${createBudgetSlider('6.4_節省空間', '產品能有效節省空間')}
                         </div>
                     </div>
@@ -1101,7 +1036,7 @@ function update5_7FinalAmount() {
             `;
         }
         
-        // === 6.4 總和計算邏輯更新 (保持不變) ===
+        // === 6.4 總和計算邏輯更新 ===
         function updateBudgetTotal() {
             // 新增 6.4_節省空間
             const budgetIds = [
@@ -1135,7 +1070,7 @@ function update5_7FinalAmount() {
         // === 6.4 總和計算邏輯更新結束 ===
 
 
-        // --- 步驟一 (校正)：替換 renderStep7 函數 (已從上一個版本中保留此優化) ---
+        // --- 步驟一 (校正)：替換 renderStep7 函數 ---
         function renderStep7() {
              return `
                 <div class="page-section active space-y-6">
@@ -1696,6 +1631,13 @@ function update5_7FinalAmount() {
             };
             document.getElementById('interview-yes').onclick = () => {
                 state.interviewConsent = '願意'; // 紀錄選擇
+                // 修正：將彈窗標題/內容改為 Step 2 樣式
+                const modalContent = document.querySelector('#interview-modal .modal-content');
+                if (modalContent) {
+                    modalContent.querySelector('h2').textContent = '感謝您願意接受深度訪談！';
+                    modalContent.querySelector('p').innerHTML = '太好了！請留下您的聯絡資訊，<br>完成後即可開始進行訪談。';
+                }
+                
                 document.getElementById('interview-step-1').classList.add('hidden');
                 document.getElementById('interview-step-2').classList.remove('hidden');
             };
@@ -1707,7 +1649,15 @@ function update5_7FinalAmount() {
                 } else {
                     errorEl.classList.add('hidden');
                     state.contactInfo = input.value.trim();
-                    setState({ page: 'interviewSurvey', showInterviewModal: false });
+                    // 判斷是否由簡易文字訪談觸發
+                    if (state.interviewConsent === '接受文字訪問') {
+                        // 這是簡易文字訪談，直接進入訪談頁
+                         setState({ page: 'interviewSurvey', showInterviewModal: false });
+                    } else {
+                        // 這是深度訪談，直接進入結束頁面，顯示成功並等待聯絡
+                        handleFinalSubmit();
+                    }
+                   
                 }
             };
         }
@@ -2029,13 +1979,14 @@ function update5_7FinalAmount() {
         }
 
         // --- Google Apps Script 網址 ---
-        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSC-co1UtcQ0V2faXXuPIr5F7s3pri4ukLq9Tyu5unMfeVseAHsr_F04D0yzDssU-wbA/exec'; // 請替換成您的 Google Apps Script 網址 
+        const GOOGLE_SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSC-co1UtcQ0V2faXXuPIr5F7s3pri4ukLq9Tyu5unMfeVseAHsr_F04D0yzDssU-wbv/exec'; // 請替換成您的 Google Apps Script 網址 
 
         async function handleFirstSubmit() {
             if (state.submissionStatus === 'submitting') return;
             setState({ page: "end", submissionStatus: 'submitting' });
             const success = await sendDataToGoogle(false);
             if (success) {
+                // 首次提交成功，進入彈窗詢問是否訪談
                 setState({ 
                     page: 'survey', 
                     submissionStatus: 'idle',
@@ -2071,7 +2022,7 @@ function update5_7FinalAmount() {
 
 
         // --- 新增函式：取得問卷填寫人數 ---
-        const BASE_COUNT = 0; 
+        const BASE_COUNT = 76; // 初始人數
 
         /**
          * 透過 GET 請求從 Google Apps Script 獲取試算表中的資料筆數。
@@ -2085,7 +2036,7 @@ function update5_7FinalAmount() {
             
             try {
                 // 發送 GET 請求
-                const response = await fetch(GOOGLE_SHEET_SCRIPT_URL, {
+                const response = await fetch(GOOGLE_SHEET_SCRIPT_URL + '?action=getCount', { // 新增 action 參數
                     method: 'GET',
                 });
                 
@@ -2097,6 +2048,7 @@ function update5_7FinalAmount() {
 
                 if (data.result === 'success' && data.count !== undefined) {
                     const sheetCount = parseInt(data.count, 10);
+                    // 修正：這裡應該是 sheetCount + 初始人數
                     const totalCount = BASE_COUNT + sheetCount;
                     console.log(`成功讀取 GS 筆數: ${sheetCount}，顯示總數: ${totalCount}`);
                     return totalCount;
