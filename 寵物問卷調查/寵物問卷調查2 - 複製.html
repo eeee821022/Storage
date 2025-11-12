@@ -77,53 +77,54 @@
         #answer-summary span { color: #1d4ed8; font-weight: 500; }
         #answer-summary span pre { font-family: inherit; margin: 0; white-space: pre-wrap; word-wrap: break-word; }
 
-        /* Google 翻譯小工具容器 (隱藏起來) */
+        /* Google 翻譯小工具容器 (恢復顯示並簡化樣式) */
         #google_translate_element_container {
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 9999;
-            /* 關鍵：徹底隱藏小工具的視覺元素 */
-            opacity: 0; 
-            pointer-events: none;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-        }
-        
-        /* 隱藏 Google 翻譯的橫幅 (確保它不顯示在頂部) */
-        body > .skiptranslate:first-child {
-            display: none !important;
-        }
-
-        /* 實作自訂的翻譯按鈕樣式 */
-        #custom-translate-button {
             position: fixed;
             top: 1.5rem;
             left: 1.5rem;
             z-index: 9999;
-            background-color: #f59e0b; /* 橙色背景 */
-            color: white;
-            border: none;
-            border-radius: 0.75rem; /* 圓角 */
-            padding: 0.5rem 1rem;
+            opacity: 1; /* 確保可見 */
+            pointer-events: auto; /* 確保可互動 */
+            width: auto;
+            height: auto;
+            overflow: visible;
+        }
+        
+        /* 隱藏 Google 翻譯的橫幅 */
+        body > .skiptranslate:first-child {
+            display: none !important;
+        }
+
+        /* 簡化翻譯下拉選單的樣式，使其看起來更像按鈕 */
+        #google_translate_element .goog-te-gadget-simple {
+            background-color: #f59e0b !important; /* 橙色背景 */
+            color: white !important;
+            border: none !important;
+            border-radius: 0.75rem !important; /* 圓角 */
+            padding: 0.5rem 1rem !important;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 1rem !important;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             cursor: pointer;
             transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
+            line-height: 1.25rem; /* 調整行高 */
         }
-        #custom-translate-button:hover {
-            background-color: #ea580c; /* 深橙色 */
+        #google_translate_element .goog-te-gadget-simple:hover {
+            background-color: #ea580c !important; /* 深橙色 */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 隱藏下拉箭頭旁的 Google 翻譯文字 */
+        #google_translate_element .goog-te-gadget-simple span {
+            display: none !important;
+        }
+        /* 顯示下拉選單本身，以保留使用者選擇的邏輯 */
+        #google_translate_element select {
+            color: black !important; /* 確保下拉選單文字清晰 */
         }
         
         /* 3. 新增滑桿文字顯示樣式 (使其不佔用彈性空間) */
         .slider-value-display {
-             /* 使用絕對定位或固定寬度來防止跳動，但因為我們已經將其移到 label 內並使用 block，這裡無需特殊調整 */
-             /* 確保數值文字不會換行，且保持靠左 */
              text-align: left;
              width: 100%;
              margin-bottom: 0.5rem;
@@ -135,82 +136,26 @@
     <div id="app" class="quiz-card relative">
     </div>
     
-    <!-- 模擬您的一鍵翻譯按鈕 -->
-    <button id="custom-translate-button" title="點擊切換語言">
-        <i class="fas fa-globe mr-2"></i> <span id="lang-label">EN | 中</span>
-    </button>
-    
-    <!-- Google 翻譯小工具容器 (隱藏起來) -->
+    <!-- Google 翻譯小工具容器 (恢復原始顯示，但經過簡化樣式) -->
     <div id="google_translate_element_container">
-        <!-- 實際的翻譯小工具將會在這裡初始化 -->
         <div id="google_translate_element"></div>
     </div>
     
-
+    <!-- 移除原有的自定義按鈕，只保留 Google Widget -->
+    
     <button id="debugFillButton" title="快速填寫隨機答案以測試" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background-color: #f59e0b; color: white; border: none; border-radius: 9999px; width: 50px; height: 50px; font-size: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: all 0.2s ease;">
         <i class="fas fa-bolt"></i>
     </button>
     
 
     <script>
-        
-        // --- 核心翻譯邏輯：模擬一鍵切換 ---
-        
-        let isTranslated = false; // 追蹤當前狀態：false=中文, true=英文
-        const defaultLang = 'zh-TW';
-        const targetLang = 'en';
-
-        // 初始化 Google 翻譯小工具
+        // --- Google 翻譯小工具初始化函數 (使用原始配置，允許使用者選擇) ---
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
-                pageLanguage: defaultLang, // 網頁的原始語言
-                includedLanguages: `${targetLang},${defaultLang}`, // 僅包含英文和中文的選項
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                // **修正 1：阻止自動翻譯**
-                autoDisplay: false 
+                pageLanguage: 'zh-TW', // 網頁的原始語言
+                includedLanguages: 'en,zh-TW', // 包含的翻譯語言選項
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE // 簡約的下拉式選單樣式
             }, 'google_translate_element');
-            
-            // 延遲綁定點擊事件，確保 Google Translate 已經完全初始化
-            document.getElementById('custom-translate-button').onclick = toggleTranslation;
-        }
-        
-        // 觸發 Google 翻譯小工具來切換語言
-        function triggerGoogleTranslate(target) {
-            // 由於翻譯小工具的結構可能會變，我們使用一個更穩定的方式來觸發翻譯
-            const select = document.querySelector('#google_translate_element select');
-            
-            if (!select) {
-                console.error("找不到 Google 翻譯下拉選單");
-                showToast("翻譯元件尚未準備好，請稍候再試。", "error");
-                return;
-            }
-
-            // 設置目標語言
-            select.value = target;
-            
-            // 觸發 change 事件以執行翻譯
-            select.dispatchEvent(new Event('change'));
-        }
-
-        function toggleTranslation() {
-            const label = document.getElementById('lang-label');
-            
-            // 檢查 Google 翻譯的橫幅 (skiptranslate) 是否存在來判斷當前是否已經在翻譯狀態
-            const isCurrentlyTranslated = document.querySelector('html').classList.contains('translated-ltr');
-
-            if (isCurrentlyTranslated) {
-                // 從英文切換回中文
-                triggerGoogleTranslate(defaultLang);
-                isTranslated = false;
-                if (label) label.textContent = 'EN | 中';
-                showToast("已切換回中文", "info");
-            } else {
-                // 從中文切換到英文
-                triggerGoogleTranslate(targetLang);
-                isTranslated = true;
-                if (label) label.textContent = '中 | EN';
-                showToast("Switched to English", "info");
-            }
         }
         
         // --- 引入 Google 翻譯的 API 腳本 ---
@@ -600,7 +545,7 @@
                 ? '請留下您的聯絡資訊，<br>完成後即可開始填寫訪談問題。'
                 : '我們誠摯邀請您參與後續的訪談，<br>請問您是否願意接受深度訪問嗎？';
 
-            // 4. 修改按鈕排版為上下排列
+            // 4. 按鈕排版為上下排列 (已從上一個版本中保留此優化)
             return `
                 <div id="interview-modal" class="modal-overlay">
                     <div class="modal-content space-y-6">
@@ -722,7 +667,7 @@
         
         // --- 輔助函數 ---
         
-        // === 3. 調整滑桿顯示：將數值移到上方靠左 ===
+        // === 3. 調整滑桿顯示：將數值移到上方靠左 (已從上一個版本中保留此優化) ===
         function createSlider(id, label, min, max, step, valueTextFn, defaultValue) {
             const currentValue = state.answers[id] || defaultValue || min;
             // 題目獨立一行，確保有足夠的換行空間
@@ -761,6 +706,8 @@
                     const valueTextFn = eval('(' + decoded + ')'); // 保持原始程式碼中的 eval
                     const out = valueTextFn(val);
                     const labelEl = document.getElementById('slider-value-' + id);
+                    // 修正 5.7 顯示邏輯：由於 5.7 調整值的 ID 被硬編碼在 renderStep5() 中，這裡需要特殊處理。
+                    // 但因為 createSlider 已經改為將值放在上方，所以這裡只需要確保 labelEl 存在
                     if (labelEl && out != null) labelEl.textContent = out;
                 } catch (e) { console.warn('valueTextFn 執行錯誤 for', id, e); }
             }
@@ -812,13 +759,13 @@
                     <div class="grid grid-cols-2 gap-4" data-radio-group="${id}">
                         <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                             <input type="radio" name="${id}" value="${yesText}" class="hidden" data-id="${id}">
-                            <i class="fas ${yesIcon} text-green-400"></i>
-                            <span class="block text-xl font-bold text-gray-700">${yesText}</span>
+                            <i class="fas ${yesIcon} text-blue-400"></i>
+                            <span class="block font-bold text-gray-700">${yesText}</span>
                         </label>
                         <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                             <input type="radio" name="${id}" value="${noText}" class="hidden" data-id="${id}">
                             <i class="fas ${noIcon} text-red-400"></i>
-                            <span class="block text-xl font-bold text-gray-700">${noText}</span>
+                            <span class="block font-bold text-gray-700">${noText}</span>
                         </label>
                     </div>
                 </div>
@@ -834,12 +781,23 @@
             const currentValue = state.answers[id] !== undefined ? state.answers[id] : 0;
             const currentText = budgetSliderValueToText(currentValue);
             const valueTextFnString = budgetSliderValueToText.toString();
-            let sliderHTML = createSlider(id, label, -4, 4, 1, createDynamicFunction(valueTextFnString), currentValue);
-            sliderHTML = sliderHTML.replace(
-                '<input type="range" data-id', 
-                '<input type="range" class="budget-slider" data-type="budget-slider" data-id'
-            );
-            return sliderHTML;
+            // 修正：這裡的 createSlider 必須使用舊版（並排）結構，因為 Step 6 的預算滑桿需要數字在右側
+            // 但因為前面已經統一修改了 createSlider，這裡必須針對 Step 6 的滑桿做客製化處理，將其改回並排
+            // 為了不影響其他步驟，我將在這裡手動覆寫 createSlider 產生的結構，以實現 Step 6 的並排需求
+
+            // 使用原始的並排結構 (來自寵物問卷調查2 - 複製.html)
+            return `
+                <div class="space-y-2 py-2" id="container-${id}"> 
+                    <label class="font-medium text-gray-700 block">${label}</label>
+                    <div class="flex items-center">
+                        <span id="slider-value-${id}" class="text-xl font-bold text-blue-600 mr-4 whitespace-nowrap">
+                            ${valueTextFn(currentValue)}
+                        </span>
+                        <input type="range" data-id="${id}" id="${id}" min="-4" max="4" step="1" value="${currentValue}"
+                               data-valuetextfn="${encodeURIComponent(valueTextFn.toString())}" class="flex-grow budget-slider" data-type="budget-slider">
+                    </div>
+                </div>
+            `;
         }
 
         // --- 建立 <textarea> ---
@@ -862,7 +820,7 @@
                     <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第一部分：飼主與寵物基本背景</h2>
                     <div class="space-y-3">
                         <label class="font-medium text-gray-700 text-lg">1.1 您的寵物類型是？(一種以上可以多寫幾份!)</label>
-                        <!-- 2. 調整寵物選項的圖示大小 -->
+                        <!-- 2. 調整寵物選項的圖示大小 (從上一個版本中保留此優化) -->
                         <div class="grid grid-cols-3 gap-4" data-radio-group="1.1_寵物類型">
                             <label class="pet-choice cursor-pointer p-4 bg-white rounded-lg shadow-sm border-2 border-gray-200 text-center space-y-2">
                                 <input type="radio" name="1.1_寵物類型" value="犬" class="hidden" data-id="1.1_寵物類型">
@@ -985,6 +943,13 @@ function renderStep5() {
     if (typeof update5_7BaseAmount === 'function') update5_7BaseAmount();
   }, 100); // 稍微延遲
 
+  // 注意：這裡的 createSlider 使用了原版（並排）結構，但因為 createSlider 已經被修改為新的垂直結構
+  // 為了保持 Step 5 的樣式，我們需要將 createSlider 的定義修改回您「複製」檔案中的並排結構。
+  // 但由於 createSlider 在其他步驟也被使用，我選擇在 createSlider 函數中判斷是否為 Step 6 (Step 6 需要並排)
+  // 而 Step 5 這裡的滑桿是單獨一行的，我將使用通用 createSlider (垂直佈局)
+  
+  // 由於上一個版本中，createSlider 已經改為垂直，這裡的結構將使用垂直結構。
+
   return `
     <div class="page-section active space-y-6">
       <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">第五部分：寵物生活品質投入</h2>
@@ -1022,9 +987,11 @@ function renderStep5() {
         <p class="text-sm text-gray-500">可透過滑桿調整增減金額：</p>
 
         <div class="space-y-2">
+          <!-- 這裡必須維持並排，因為需要顯示 -$15,000 $0 +$15,000 標記 -->
           <div class="flex justify-between items-center">
             <label class="font-medium text-gray-700">調整金額</label>
-            <!-- 數值顯示已在 createSlider 中處理為獨立一行，這裡只處理 5.7 的滑桿 -->
+            <span id="slider-value-5.7_年度總投入"
+                  class="text-lg font-bold text-blue-600">$0</span>
           </div>
           <input type="range" id="slider-5_7" min="-15" max="15" step="1" 
                  value="${state.answers['5.7_年度調整'] || 0}"
@@ -1032,13 +999,6 @@ function renderStep5() {
           <div class="flex justify-between text-sm text-gray-500">
             <span>-$15,000</span><span>$0</span><span>+$15,000</span>
           </div>
-        </div>
-        
-        <!-- 額外新增 5.7 調整值的顯示區塊，避免使用 createSlider 的結構造成重複 -->
-        <div class="slider-value-display">
-            <span id="slider-value-5.7_年度調整" class="text-xl font-bold text-blue-600 whitespace-nowrap">
-                $0
-            </span>
         </div>
 
         <div class="mt-4 text-center p-4 bg-white rounded-lg shadow-inner">
@@ -1050,7 +1010,7 @@ function renderStep5() {
   `;
 }
 
-// === 5.7 計算邏輯 (需要微調以更新 5.7_年度調整的顯示) ===
+// === 5.7 計算邏輯 (保持不變) ===
 function update5_7BaseAmount() {
   const v5_1 = parseInt(state.answers['5.1_食品保健花費'] || 0);
   const v5_3 = parseInt(state.answers['5.3_玩具娛樂花費'] || 0);
@@ -1073,8 +1033,7 @@ function update5_7BaseAmount() {
 function update5_7Slider(value) {
   const v = parseInt(value);
   state.answers['5.7_年度調整'] = v; // 儲存滑桿位置 (-15 ~ 15)
-  // 修正：更新 5.7_年度調整 的顯示
-  const adjEl = document.getElementById('slider-value-5.7_年度調整'); 
+  const adjEl = document.getElementById('slider-value-5.7_年度總投入');
   if (adjEl) {
     const amount = v * 1000;
     adjEl.textContent = v === 0 ? '$0'
@@ -1128,6 +1087,7 @@ function update5_7FinalAmount() {
                         </div>
 
                         <div id="budget-sliders-container" class="space-y-6">
+                            <!-- 這裡的 createBudgetSlider 內部邏輯已客製化，以實現並排顯示 -->
                             ${createBudgetSlider('6.4_開心使用', '寵物能開心使用')}
                             ${createBudgetSlider('6.4_安全使用', '寵物能安全使用')}
                             ${createBudgetSlider('6.4_節省時間', '節省飼主時間、精力')}
@@ -1141,7 +1101,7 @@ function update5_7FinalAmount() {
             `;
         }
         
-        // === 6.4 總和計算邏輯更新 ===
+        // === 6.4 總和計算邏輯更新 (保持不變) ===
         function updateBudgetTotal() {
             // 新增 6.4_節省空間
             const budgetIds = [
@@ -1175,7 +1135,7 @@ function update5_7FinalAmount() {
         // === 6.4 總和計算邏輯更新結束 ===
 
 
-        // --- 步驟一 (校正)：替換 renderStep7 函數 ---
+        // --- 步驟一 (校正)：替換 renderStep7 函數 (已從上一個版本中保留此優化) ---
         function renderStep7() {
              return `
                 <div class="page-section active space-y-6">
