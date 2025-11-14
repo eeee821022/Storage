@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<title>智慧訓練機綜合分析報告：操作、安全與持有成本深度比較 - RWD互動式報告</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<style>
+    :root {
+        --primary-color: #003366;
+        --secondary-color: #0056b3;
+        --text-color: #333;
+        --sidebar-width: 280px; /* 側邊欄寬度 */
+        --bg-light: #f9f9f9;
+        --bg-white: #ffffff;
+        --border-color: #e9ecef;
+    }
+    body {
+        font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif;
+        background-color: var(--bg-light);
+        color: var(--text-color);
+    }
+    
+    /* --- START: 側邊欄與主內容區塊排版 --- */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: var(--sidebar-width);
+        background-color: var(--primary-color);
+        color: var(--bg-light);
+        padding: 1.5rem 0;
+        overflow-y: auto;
+        transition: width 0.3s ease;
+    }
+    #main-content {
+        margin-left: var(--sidebar-width);
+        padding: 20px;
+        height: 100vh;
+        overflow-y: auto;
+        transition: margin-left 0.3s ease;
+    }
+    /* 在窄螢幕上隱藏側邊欄，讓內容全寬 */
+    @media (max-width: 992px) {
+        :root { --sidebar-width: 0px; }
+        #sidebar { display: none; }
+    }
+    /* --- END: 側邊欄與主內容區塊排版 --- */
+
+    .page-content { display: none; }
+    .page-content.active { display: block; }
+
+    h1, h2, h3, h4, h5 { color: var(--primary-color); }
+    h1 { font-size: 2.2em; margin-top: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+    h2 { font-size: 1.8em; margin-top: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; scroll-margin-top: 20px; }
+    h3 { font-size: 1.4em; margin-top: 25px; color: var(--secondary-color); border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;}
+    
+    /* 統一的黃色強調樣式 */
+    .highlight {
+        background-color: #fffacd;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+    
+    /* --- START: 上標引用樣式 (優化版) --- */
+    sup {
+        font-size: 0.7em;
+        vertical-align: super;
+        margin-left: 2px;
+    }
+    sup a { 
+        text-decoration: none; 
+        color: #607D8B; /* 改為灰藍色 */
+        font-weight: bold; 
+        background-color: transparent; /* 移除背景色 */
+        padding: 2px 3px; 
+        border-radius: 4px; 
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    sup a:hover { 
+        color: var(--secondary-color);
+        text-decoration: underline; /* 滑鼠懸浮時改為底線 */
+    }
+    /* --- END: 上標引用樣式 (優化版) --- */
+
+    /* --- START: 側邊欄導覽樣式 --- */
+    #sidebar-header {
+        padding: 0 1.5rem 1rem 1.5rem;
+        border-bottom: 1px solid var(--secondary-color);
+    }
+    #sidebar-header h5 {
+        color: var(--bg-white);
+        margin: 0;
+    }
+    #sidebar .nav-link { 
+        color: #adb5bd; 
+        font-size: 1rem; 
+        padding: 0.7rem 1.5rem; 
+        border-left: 3px solid transparent;
+    }
+    #sidebar .nav-link:hover { 
+        color: var(--bg-white); 
+        background-color: var(--secondary-color);
+        border-left-color: #FFC107;
+    }
+    #sidebar .nav-link.active-main-link { /* 主要分頁啟用樣式 */
+        color: var(--bg-white);
+        font-weight: bold;
+        background-color: var(--secondary-color);
+    }
+    #sidebar .report-nav-link.active-link, 
+    #sidebar .product-nav-link.active-link { /* 報告/產品章節滾動啟用樣式 */
+        color: var(--bg-white);
+        font-weight: bold;
+    }
+
+    #sidebar .accordion-button { background-color: transparent !important; color: #adb5bd !important; font-size: 1rem; padding: 0.7rem 1.5rem; }
+    #sidebar .accordion-button:not(.collapsed) { box-shadow: none; color: var(--bg-white) !important; font-weight: bold; }
+    #sidebar .accordion-button:focus { box-shadow: none; }
+    #sidebar .accordion-button::after { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23adb5bd'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important; }
+    #sidebar .accordion-body { padding: 0; }
+    #sidebar .accordion-item { border: none; background-color: transparent; }
+    #sidebar .accordion-body .nav-link { padding-left: 2.5rem; }
+    /* --- END: 側邊欄導覽樣式 --- */
+
+    /* 產品介紹頁排版樣式 */
+    .product-section h3 {
+        margin-top: 40px;
+        padding-top: 10px;
+    }
+    .product-slide {
+        display: none; /* 預設隱藏所有產品 */
+        min-height: 80vh; 
+        padding-bottom: 80px;
+    }
+    .product-slide.active {
+        display: block;
+    }
+
+    /* 圖片和主描述的並排容器 */
+    .product-main-content {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 20px;
+        margin-bottom: 30px;
+    }
+    .product-image-container {
+        flex: 1 1 40%; /* 佔用約 40% 寬度 */
+        padding: 0 15px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .product-image-container img {
+        max-width: 100%;
+        width: 450px;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid var(--border-color);
+    }
+    .product-description {
+        flex: 1 1 55%; /* 佔用約 55% 寬度 */
+        padding: 0 15px;
+    }
+    @media (max-width: 768px) {
+        .product-image-container, .product-description {
+            flex: 1 1 100%; /* 在小螢幕上變為單欄 */
+            padding: 0;
+            margin-bottom: 20px;
+        }
+        .product-image-container {
+            order: 1; /* 圖片先顯示 */
+        }
+        .product-description {
+            order: 2; /* 描述後顯示 */
+        }
+    }
+    
+    /* 亮點特色與規格表樣式 */
+    .highlight-list li {
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+    .specs-table-wrap {
+        margin-top: 30px;
+        margin-bottom: 30px;
+    }
+
+    .citation-popup {
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 1055; background-color: white; border-top: 1px solid #ccc; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease-in-out; max-height: 40vh; display: flex; flex-direction: column;
+    }
+    .citation-popup.active { transform: translateY(0); }
+    .citation-popup-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+    .citation-popup-header h4 { margin: 0; font-size: 1.1rem; color: var(--primary-color); }
+    .citation-popup-body { padding: 1rem; overflow-y: auto; }
+    .citation-popup-body a { font-weight: 500; }
+    .citation-backdrop {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.4); z-index: 1054; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out;
+    }
+    .citation-backdrop.active { opacity: 1; visibility: visible; }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+    <div id="sidebar-header">
+        <h5>報告導覽</h5>
+    </div>
+    <div class="nav flex-column">
+        
+        <div class="accordion accordion-flush" id="reportAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button active-main-link" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        原始報告
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#reportAccordion">
+                    <div class="accordion-body">
+                         <nav class="nav flex-column">
+                            <a class="nav-link report-nav-link active-link" href="#" onclick="showPage('page-report', '#section-1')">1. 操作流程：阻力設定與動態調整</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-2')">2. 產品啟動與校正流程</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-3')">3. 訓練模式：恆定、變化與等速控制</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-4')">4. 安全機制與異常情境應對</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-5')">5. 訓練體驗：智慧與傳統器材的感受差異</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-6')">6. 產品耐用性與預期壽命</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-7')">7. 維修保養策略與成本</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('page-report', '#section-8')">總結與戰略啟示</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion accordion-flush" id="productAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo" onclick="showPage('page-product-intro', '#product-title', this)">
+                        產品介紹
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#productAccordion">
+                    <div class="accordion-body">
+                         <nav class="nav flex-column">
+                            <a class="nav-link product-nav-link" href="#" onclick="switchProduct(1, this)">Vitruvian Trainer+</a>
+                            <a class="nav-link product-nav-link" href="#" onclick="switchProduct(2, this)">Tonal 2</a>
+                            <a class="nav-link product-nav-link" href="#" onclick="switchProduct(3, this)">Speediance Gym Monster 2</a>
+                            <a class="nav-link product-nav-link" href="#" onclick="switchProduct(4, this)">OxeFit XS1</a>
+                            <a class="nav-link product-nav-link" href="#" onclick="switchProduct(5, this)">Beyond Power VOLTRA I</a>
+                            <a class="nav-link product-nav-link" href="#" onclick="switchProduct(6, this)">AEKE K1</a>
+                            <a class="nav-link product-nav-link" href="#" onclick="switchProduct(7, this)">MAXPRO SmartConnect</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <a class="nav-link main-nav-link" href="#" onclick="showPage('page-data-list', null, this)">資料列表</a>
+    </div>
+</nav>
+
+<main id="main-content">
+    <div class="container-fluid pb-5">
+        <h1 id="top-title">智慧訓練機綜合分析報告：操作、安全與持有成本深度比較</h1>
+
+        <div id="page-report" class="page-content active">
+            <div id="report-content">
+                <p>智慧訓練機（Smart Home Gyms）作為健身科技領域的新興浪潮，正迅速改變家庭健身的樣貌。這些整合了數位阻力、人工智慧教練與數據追蹤的一體化設備，不僅節省了空間，更為使用者帶來了前所未有的個人化與互動式訓練體驗。然而，市場上品牌眾多，技術路徑各異，使得潛在使用者在選擇時面臨挑戰。</p>
+                <p>本報告旨在針對市場上幾款主流的智慧訓練機，包括 Tonal、Vitruvian、Speediance 及 OxeFit，依據七大核心主題—— 操作流程 、 啟動校正 、 訓練模式 、 安全機制 、 訓練感受 、 產品耐用性 及 維修保養 ——進行深度、客觀的比較分析。我們的目標是為潛在使用者和產業決策者提供全面的技術洞察，揭示各品牌在設計哲學與使用者體驗上的核心差異。</p>
+                <hr>
+
+                <h2 id="section-1">1. 操作流程：阻力設定與動態調整</h2>
+                <p>智慧訓練機的阻力控制機制是其核心互動體驗的關鍵。使用者如何設定、啟動及調整訓練阻力，直接決定了訓練的流暢性、安全性與效率。本章節將深入分析各品牌設備如何實現阻力操控，並評估其便利性與即時性對整體訓練流程的影響。</p>
+                <h3>1.1 Tonal：AI 驅動的個人化阻力</h3>
+                <p>Tonal 的操作流程高度依賴其內建的人工智慧系統。在使用者完成初次的肌力評估後，AI 系統會為資料庫中的每一項運動自動推薦最適合的起始阻力重量 <sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup>。這種自動化設定極大簡化了使用者的決策過程。</p>
+                <p>此外，Tonal 的一大技術亮點在於其動態阻力調整能力。例如，其獨特的<b>「離心模式 (Eccentric Mode)」</b>能在單次動作的過程中即時改變阻力，特別是在肌肉伸展的離心（下放）階段策略性地增加負重，從而提供更強的訓練刺激 <sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-4')">[4]</a></sup>。</p>
+                <h3>1.2 Vitruvian：以應用程式為核心的精準控制</h3>
+                <p>Vitruvian 採用了極簡的硬體設計，機體本身無螢幕，所有操作完全透過手機或平板電腦上的應用程式進行 <sup><a href="javascript:void(0)" onclick="showCitation('cite-5')">[5]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-6')">[6]</a></sup>。使用者透過 App 介面精準設定與調整阻力，這種設計哲學賦予使用者極大的靈活性，可以搭配任何尺寸的螢幕（從手機到大電視）來觀看訓練內容 <sup><a href="javascript:void(0)" onclick="showCitation('cite-7')">[7]</a></sup>。</p>
+                <p>這種以 App 為中心的操作模式，對於在訓練組間需要快速切換負重的場景尤其高效 <sup><a href="javascript:void(0)" onclick="showCitation('cite-8')">[8]</a></sup>。使用者只需在行動裝置上輕點幾下，即可完成重量調整，無需中斷訓練流程。</p>
+                <h3>1.3 Speediance：多元化的阻力操控</h3>
+                <p>Speediance 在阻力控制上提供了最為多元與彈性的選擇，整合了三種不同的操控方式，以適應不同訓練情境和使用者偏好：</p>
+                <ul>
+                    <li><b>觸控螢幕</b> ：使用者可直接在機身搭載的 21.5 吋觸控螢幕上設定重量，介面直觀 <sup><a href="javascript:void(0)" onclick="showCitation('cite-9')">[9]</a></sup>。</li>
+                    <li><b>藍牙控制器 (Bluetooth Controller Ring)</b> ：這是一項創新設計，使用者可將控制器佩戴在手指上。透過按鍵一鍵啟動或關閉阻力，並透過旋轉控制器來即時微調或大幅調整重量，極大提升了在動作過程中的調整便利性 <sup><a href="javascript:void(0)" onclick="showCitation('cite-10')">[10]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-11')">[11]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-12')">[12]</a></sup>。</li>
+                    <li><b>智慧握把 (Smart Handles)</b> ：在特定的智慧握把上設有按鈕，使用者可以直接透過握把上的按鈕啟動或關閉阻力，無需額外操作 <sup><a href="javascript:void(0)" onclick="showCitation('cite-13')">[13]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-14')">[14]</a></sup>。</li>
+                </ul>
+                <p>此外，Speediance 的 AI 教練功能採用了速度依循訓練（Velocity-Based Training, VBT）的原理，能根據使用者在當前組別的動作速度，自動為下一組調整建議重量，實現了動態的訓練進程 <sup><a href="javascript:void(0)" onclick="showCitation('cite-15')">[15]</a></sup>。</p>
+                <h3>1.4 綜合比較分析</h3>
+                <p>為了清晰地呈現各品牌在阻力控制上的差異，下表總結了其主要特性：</p>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr><th>品牌</th><th>控制介面</th><th>調整方式</th><th>特色功能</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Tonal</td><td>機載觸控螢幕</td><td>AI 自動推薦、訓練中動態調整</td><td>離心模式、鐵鍊模式</td></tr>
+                        <tr><td>Vitruvian</td><td>手機/平板 App</td><td>App 內手動設定與調整</td><td>無螢幕設計，高度靈活</td></tr>
+                        <tr><td>Speediance</td><td>機載觸控螢幕、藍牙控制器、智慧握把</td><td>多模態手動調整、AI 自動建議</td><td>VBT 速度依循訓練、一鍵啟閉阻力</td></tr>
+                    </tbody>
+                </table>
+                <p>總結而言，不同品牌的阻力控制哲學反映了其產品定位的差異——從 Tonal 的 AI 自動化與引導式體驗，到 Vitruvian 的 App 中心化精準控制，再到 Speediance 的多模態彈性操作。這些設計選擇直接影響著產品的啟動流程與使用者校正體驗，我們將在下一章節深入探討。</p>
+                <hr>
+
+                <h2 id="section-2">2. 產品啟動與校正流程</h2>
+                <p>智慧訓練機的啟動與校正流程，不僅關係到首次使用的便捷性，更直接影響到後續訓練的安全與個人化精準度。一個高效的校正機制是確保數位阻力系統能準確匹配使用者身體能力的基礎。本章節旨在檢視各品牌設備從開機到正式訓練的完整步驟，並特別關注其校正機制的設計理念及其對訓練效果的影響。</p>
+                <h3>2.1 Tonal：全面的初始肌力評估</h3>
+                <p>Tonal 在使用者首次開機時，會引導其完成一套全面的肌力評估流程。該流程包含一系列的基礎動作，系統會根據使用者在這些動作中的表現，建立個人化的肌力基準數據，並生成一個綜合性的「肌力分數 (Strength Score)」<sup><a href="javascript:void(0)" onclick="showCitation('cite-1')">[1]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-16')">[16]</a></sup>。這套初始數據是 Tonal 後續所有 AI 推薦重量和訓練計畫的基礎。</p>
+                <p>在日常使用中，Tonal 的系統會持續追蹤並評估使用者的表現，動態調整數據。因此，使用者無需頻繁進行校正，僅在長時間未使用後，系統才可能建議重新進行評估 <sup><a href="javascript:void(0)" onclick="showCitation('cite-17')">[17]</a></sup>。</p>
+                <h3>2.2 Vitruvian：依動作即時校正運動範圍 (ROM)</h3>
+                <p>Vitruvian 採用了一種獨特的即時校正機制。在使用者每次執行一個 新動作 時，前幾次（通常是三次）不施加阻力的動作被定義為<b>「校正次數 (calibration reps)」</b><sup><a href="javascript:void(0)" onclick="showCitation('cite-18')">[18]</a></sup>。在這幾次動作中，系統會精確記錄使用者完整的運動範圍（Range of Motion, ROM），從起始點到終點。</p>
+                <p>完成校正後，阻力將只在使用者的這個特定運動範圍內作用。這個機制不僅確保了訓練的精準性，更是其核心安全系統的基礎：一旦使用者的動作低於校正的最低點，系統會判定其可能力竭，並立即卸載所有重量 <sup><a href="javascript:void(0)" onclick="showCitation('cite-19')">[19]</a></sup>。</p>
+                <h3>2.3 Speediance：簡便的即插即用設計</h3>
+                <p>Speediance 的啟動流程以簡便快捷為主要特點。根據使用者回饋，其開箱設定過程非常簡單，使用者只需將設備直立、插上電源、連接 Wi-Fi 並註冊帳號，即可立即開始訓練 <sup><a href="javascript:void(0)" onclick="showCitation('cite-20')">[20]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-21')">[21]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-22')">[22]</a></sup>。來源資料中並未提及需要進行類似 Tonal 的初始肌力評估或 Vitruvian 的即時 ROM 校正步驟，體現了其「即插即用」的設計理念。</p>
+                <h3>2.4 流程差異分析</h3>
+                <p>三種不同的啟動與校正模式，反映了各品牌在使用者體驗設計上的策略權衡：</p>
+                <ul>
+                    <li>Tonal 的前置式全面評估策略，優先考慮長期的程式化精準度與自動化，以較長的初始設定時間為代價，換取「一次設定，後續無憂」的使用體驗。</li>
+                    <li>相較之下，Vitruvian 的「依訓練、依動作」即時校正機制，則優先考慮每一次訓練情境下的即時安全性與生物力學準確性，體現了一種為每個獨特訓練動態重建安全協議的設計哲學。</li>
+                    <li>Speediance 的簡易啟動流程則將重點放在最大程度地降低使用門檻，實現無摩擦的「開箱即用」體驗，優先考慮易用性與便利性，但可能犧牲了初始訓練的個人化深度。</li>
+                </ul>
+                <p>總結而言，校正流程的設計直接體現了品牌對個人化深度與操作易用性的不同側重。這些基礎設定如何轉化為豐富多樣的訓練體驗，正是我們下一章節將深入探討的核心——訓練模式。</p>
+                <hr>
+
+                <h2 id="section-3">3. 訓練模式：恆定、變化與等速控制</h2>
+                <p>多樣化的數位訓練模式是智慧訓練機超越傳統器材的核心優勢。透過精密的馬達控制與演算法，這些設備能夠在單次動作中動態調整阻力，模擬出傳統自由重量或固定器械無法實現的訓練刺激。本章節將詳細解析各品牌提供的恆定阻力、變化阻力及等速訓練等關鍵模式，並剖析其背後的控制機制。</p>
+                <h3>3.1 恆定阻力模式 (Constant Resistance)</h3>
+                <p>此模式是所有數位阻力系統的基礎，其最大特點在於整個運動範圍內提供持續且穩定的張力（Constant Tension），完全消除了傳統配重的慣性（Inertia）問題 <sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-24')">[24]</a></sup>。這意味著肌肉在動作的每一個階段都受到同等的挑戰，沒有了可以「借力」的動量，使得相同重量下的訓練感受更為困難。</p>
+                <ul>
+                    <li>Vitruvian 將此模式稱為<b>「傳統模式 (Old School Mode)」</b><sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup>。</li>
+                    <li>Speediance 則將其定義為<b>「標準模式 (Standard Mode)」</b><sup><a href="javascript:void(0)" onclick="showCitation('cite-25')">[25]</a></sup>。</li>
+                </ul>
+                <h3>3.2 變化阻力模式 (Variable Resistance)</h3>
+                <p>變化阻力模式是智慧訓練機的精髓所在，它允許在單次動作的不同階段（向心與離心）施加不同的阻力，以達到特定的訓練目的。</p>
+                <h4>離心加強模式：</h4>
+                <ul>
+                    <li>Tonal 和 Speediance 均提供<b>「離心模式 (Eccentric Mode)」</b>。在此模式下，系統會在動作的離心（下放）階段自動增加阻力，研究表明這對肌力與肌肉成長有顯著效益 <sup><a href="javascript:void(0)" onclick="showCitation('cite-2')">[2]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-3')">[3]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-4')">[4]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-25')">[25]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-26')">[26]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-27')">[27]</a></sup>。</li>
+                    <li>Vitruvian 提供了兩種獨特的離心模式：
+                        <ul>
+                            <li><b>「純離心模式 (Eccentric Only Mode)」</b> ：此模式極具挑戰性，完全移除了向心（舉起）階段的阻力，僅在離心階段施加負重 <sup><a href="javascript:void(0)" onclick="showCitation('cite-28')">[28]</a></sup>。</li>
+                            <li><b>「幫浦模式 (Pump Mode)」</b> ：此模式鼓勵使用者進行爆發性的向心動作，然後在離心階段進行有控制的慢速下放，以提升力量與肌肉耐力 <sup><a href="javascript:void(0)" onclick="showCitation('cite-29')">[29]</a></sup>。</li>
+                        </ul>
+                    </li>
+                </ul>
+                <h4>向心加強模式：</h4>
+                <ul>
+                    <li>Tonal 和 Speediance 都提供了<b>「鐵鍊模式 (Chains Mode)」</b>。此模式模擬在槓鈴上加掛真實鐵鍊的效果——隨著向心（舉起）階段的推進，阻力會逐漸增加，在動作頂點達到最大值 <sup><a href="javascript:void(0)" onclick="showCitation('cite-4')">[4]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-25')">[25]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-30')">[30]</a></sup>。</li>
+                </ul>
+                <h4>其他獨特模式：</h4>
+                <ul>
+                    <li>OxeFit 獨有的<b>「擾動模式 (Perturbation Mode)」</b>是一項創新功能。在訓練過程中，系統會隨機在單邊纜繩上施加額外的瞬間拉力，迫使使用者的核心肌群和穩定肌群必須即時參與以維持平衡，極大增強了功能性訓練的效果 <sup><a href="javascript:void(0)" onclick="showCitation('cite-31')">[31]</a></sup>。</li>
+                </ul>
+                <h3>3.3 等速與高強度模式 (Isokinetic & High-Intensity)</h3>
+                <p>等速訓練模式改變了傳統的「重量設定」邏輯，轉而控制「速度」。機器會智慧匹配使用者的發力，使用者發力越快，阻力也越大。</p>
+                <ul>
+                    <li>Vitruvian 的<b>「迴聲模式 (Echo Mode)」</b>是一種等速模式。在此模式下，使用者可以盡其所能地快速發力，機器會即時匹配其力量輸出，並在隨後的離心階段增加阻力，提供極大的訓練強度 <sup><a href="javascript:void(0)" onclick="showCitation('cite-32')">[32]</a></sup>。</li>
+                    <li>Tonal 2.0 的<b>「Arrow 模式」</b>則專為高強度間歇訓練（HIIT）設計。使用者不再設定具體重量，而是選擇 1 到 10 的強度等級。此模式融合了肌力與有氧訓練，能夠有效燃燒卡路里並提升心肺耐力 <sup><a href="javascript:void(0)" onclick="showCitation('cite-33')">[33]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-34')">[34]</a></sup>。</li>
+                </ul>
+                <h3>訓練模式綜合比較</h3>
+                <p>為提供各品牌訓練模式的快速概覽，下表總結其關鍵特性：</p>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr><th>訓練模式類型</th><th>模式名稱</th><th>適用品牌</th><th>主要訓練機制／效果</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>恆定阻力</td><td>標準模式 (Standard Mode) / 傳統模式 (Old School Mode)</td><td>Speediance, Vitruvian</td><td>在整個運動範圍提供恆定張力，無慣性。</td></tr>
+                        <tr><td>變化阻力 (離心)</td><td>離心模式 (Eccentric Mode)</td><td>Tonal, Speediance</td><td>在動作的離心（下放）階段增加阻力。</td></tr>
+                        <tr><td>變化阻力 (離心)</td><td>純離心模式 (Eccentric Only Mode)</td><td>Vitruvian</td><td>僅在離心階段施加阻力，向心階段無阻力。</td></tr>
+                        <tr><td>變化阻力 (離心)</td><td>幫浦模式 (Pump Mode)</td><td>Vitruvian</td><td>鼓勵爆發性向心與慢速離心，提升力量與耐力。</td></tr>
+                        <tr><td>變化阻力 (向心)</td><td>鐵鍊模式 (Chains Mode)</td><td>Tonal, Speediance</td><td>模擬鐵鍊效果，在向心（舉起）階段阻力遞增。</td></tr>
+                        <tr><td>功能性/穩定性</td><td>擾動模式 (Perturbation Mode)</td><td>OxeFit</td><td>隨機在單側施加拉力，挑戰核心與穩定肌群。</td></tr>
+                        <tr><td>等速訓練</td><td>迴聲模式 (Echo Mode)</td><td>Vitruvian</td><td>阻力匹配使用者發力速度，發力越快阻力越大。</td></tr>
+                        <tr><td>高強度間歇</td><td>Arrow 模式</td><td>Tonal</td><td>結合肌力與有氧，依強度等級設定，非重量。</td></tr>
+                    </tbody>
+                </table>
+                <p>總結：智慧訓練機透過精密的演算法與馬達控制，實現了遠超傳統健身器材的訓練多樣性與效益。從基礎的恆定張力到複雜的動態變化阻力，再到專業的等速訓練，這些功能為使用者提供了前所未有的個人化訓練工具。然而，這些複雜功能也對系統的安全性提出了更高的要求，這正是下一章節將要探討的關鍵問題。</p>
+                <hr>
+
+                <h2 id="section-4">4. 安全機制與異常情境應對</h2>
+                <p>對於無實體配重的數位阻力系統而言，安全機制的設計與可靠性是使用者最為關切的核心議題之一。一套完善的安全系統不僅應在正常操作下提供保障，更需能在使用者力竭、失誤或設備故障等異常情境下迅速反應，避免傷害。本章節將深入探討各品牌在軟硬體層面的安全設計，並評估其在緊急狀況下的應對能力。</p>
+                <h3>4.1 自動安全員 (Automatic Spotter)</h3>
+                <p>「自動安全員」是智慧訓練機最核心的數位安全功能，它模擬了真人夥伴在訓練中的保護作用，能在偵測到使用者力竭時即時介入。</p>
+                <ul>
+                    <li>Tonal ：當系統偵測到使用者在動作中掙扎或速度顯著減慢時，會自動降低阻力，幫助使用者安全地完成該次動作 <sup><a href="javascript:void(0)" onclick="showCitation('cite-35')">[35]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-36')">[36]</a></sup>。</li>
+                    <li>Speediance ：其安全員機制相似，當偵測到使用者動作速度變慢或停止時，會主動降低阻力或提供輔助，確保使用者不會被困在力竭點 <sup><a href="javascript:void(0)" onclick="showCitation('cite-37')">[37]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-38')">[38]</a></sup>。</li>
+                    <li>Vitruvian ：其安全機制與 ROM 校正流程緊密結合。當系統偵測到使用者的動作低於校準的運動範圍最低點時，會判定使用者已無法完成動作，並立即完全卸載所有重量 <sup><a href="javascript:void(0)" onclick="showCitation('cite-19')">[19]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-28')">[28]</a></sup>。</li>
+                    <li>OxeFit ：同樣具備有效的虛擬安全員功能，能在使用者需要時提供即時輔助 <sup><a href="javascript:void(0)" onclick="showCitation('cite-39')">[39]</a></sup>。</li>
+                </ul>
+                <h3>4.2 物理與數位安全設計</h3>
+                <p>除了自動安全員，各品牌也整合了其他的數位與物理安全措施。</p>
+                <h4>數位安全 ：</h4>
+                <ul>
+                    <li>Speediance 具備「纜繩速度過高」的警示與介入功能。如果使用者動作過快，系統會發出警示並可能觸發安全員介入，以防止因失控導致的危險 <sup><a href="javascript:void(0)" onclick="showCitation('cite-40')">[40]</a></sup>。</li>
+                    <li>Speediance 的使用者可透過藍牙控制器或智慧握把上的按鈕，隨時 一鍵卸載重量 ，提供了最高優先級的手動安全保障 <sup><a href="javascript:void(0)" onclick="showCitation('cite-13')">[13]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-41')">[41]</a></sup>。</li>
+                </ul>
+                <h4>物理安全 ：</h4>
+                <ul>
+                    <li>Vitruvian 提供了一對選配的 實體安全纜繩 (Safety Cables) 。這些纜繩可以連接在槓鈴和機身之間，作為最後一道防線。即使在數位系統完全卸載重量後，它們也能防止槓鈴等配件意外掉落，對使用者造成衝擊 <sup><a href="javascript:void(0)" onclick="showCitation('cite-42')">[42]</a></sup>。</li>
+                </ul>
+                <h3>4.3 使用者異常操作情境分析</h3>
+                <p>以下根據來源資料，模擬幾種典型的異常情境，分析各系統的可能反應：</p>
+                <ul>
+                    <li>情境一：力竭卡住 各品牌的「自動安全員」機制均能有效應對此情境。系統會透過降低阻力（Tonal, Speediance）或完全卸載重量（Vitruvian）的方式，讓使用者從力竭位置安全脫離。</li>
+                    <li>情境二：突然放手 這是一個極具風險的操作。Vitruvian 的實體安全纜繩在此情境下能發揮關鍵作用，接住掉落的槓鈴。對於 Speediance，其「纜繩速度過高」的偵測機制可能會被觸發，從而卸載重量。然而，突然放手仍可能導致握把或槓鈴高速回彈，存在一定風險 <sup><a href="javascript:void(0)" onclick="showCitation('cite-42')">[42]</a></sup>。</li>
+                    <li>情境三：馬達突然失去動力 無論是因斷電或其他電子故障，馬達失去動力意味著數位阻力會瞬間消失 <sup><a href="javascript:void(0)" onclick="showCitation('cite-43')">[43]</a></sup>。雖然這避免了被重量壓住的風險，但也突顯了使用者對電子設備長期可靠性的普遍擔憂 <sup><a href="javascript:void(0)" onclick="showCitation('cite-44')">[44]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-45')">[45]</a></sup>。</li>
+                </ul>
+                <p>總結而言，智慧訓練機透過多層次的數位安全功能，提供了遠超傳統無保護自由重量訓練的安全性。然而，這些系統並非萬無一失。使用者仍需充分理解其運作原理，並在訓練中保持應有的謹慎與專注。這種高度數位化的體驗，也從根本上改變了訓練的主觀感受。</p>
+                <hr>
+
+                <h2 id="section-5">5. 訓練體驗：智慧與傳統器材的感受差異</h2>
+                <p>從傳統的槓鈴、啞鈴過渡到智慧訓練機，使用者最直接的感受是訓練體驗的根本性改變。這種差異源於數位阻力獨特的物理特性，它重新定義了肌肉在負荷下的感受。本章節將深入剖析數位阻力的核心特徵，並整合多方使用者回饋，闡明其與傳統器材在主觀感受上的核心不同。</p>
+                <h3>5.1 恆定張力與無慣性</h3>
+                <p>智慧訓練機的核心體驗來自其數位馬達所產生的電阻。這種阻力具有兩大關鍵特性：</p>
+                <ul>
+                    <li>恆定張力 (Constant Tension) ：與自由重量不同，數位阻力在整個運動範圍（從起點到終點）都能提供持續且穩定的張力。肌肉在向心和離心階段的每一寸行程中，都必須對抗同樣的負重 <sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-24')">[24]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-27')">[27]</a></sup>。</li>
+                    <li>無慣性 (Inertia) ：傳統配重存在慣性，一旦啟動，動量會幫助使用者更輕鬆地完成動作的後續部分。數位阻力則完全消除了慣性，使用者無法「借力」或利用動量 <sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup>。</li>
+                </ul>
+                <p>這兩大特性的結合，導致了使用者普遍回饋：在同等重量標示下，數位阻力感覺「重了約 20%」 <sup><a href="javascript:void(0)" onclick="showCitation('cite-23')">[23]</a></sup> 或 「困難得多」 <sup><a href="javascript:void(0)" onclick="showCitation('cite-24')">[24]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-46')">[46]</a></sup>。因為肌肉在整個運動過程中都被迫持續工作，無法在任何節點得到喘息，這也使得數位阻力對肌肉的刺激更為深刻和有效。</p>
+                <h3>5.2 阻力感受的細微差異</h3>
+                <p>儘管底層技術相似，但不同品牌在馬達調校、纜繩系統和硬體設計上的差異，導致了主觀感受上的細微不同：</p>
+                <ul>
+                    <li>Speediance ：部分使用者回饋，其阻力感受在某些動作中會有些許「晃動 (wobbly)」 <sup><a href="javascript:void(0)" onclick="showCitation('cite-47')">[47]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-48')">[48]</a></sup>。這種被感知的「晃動」，可能源於其馬達控制系統中用於響應使用者速度的演算法，其阻力微調的精細度可能不如 Tonal 或 OxeFit 等被譽為「流暢」的系統。</li>
+                    <li>OxeFit ：其纜繩作動被普遍評價為「流暢 (fluid)」 且 「動作平順 (nice motion)」，沒有卡頓感，提供了高品質的運動體驗 <sup><a href="javascript:void(0)" onclick="showCitation('cite-49')">[49]</a></sup>。</li>
+                    <li>Tonal ：其阻力感受被描述為非常 一致且順暢 (consistent) ，給予使用者穩定可靠的回饋 <sup><a href="javascript:void(0)" onclick="showCitation('cite-50')">[50]</a></sup>。</li>
+                </ul>
+                <h3>5.3 綜合評價</h3>
+                <p>總結來說，智慧訓練機的核心訓練感受是無慣性的持續張力。這對追求高效肌肉刺激的使用者來說是一大優勢，但也意味著初次使用者需要一段時間來適應這種全新的發力模式。各品牌在馬達控制演算法和硬體工程上的細微差別，最終形成了各自獨特的「手感」，從 Speediance 的輕微晃動到 OxeFit 和 Tonal 的高度流暢，這些都成為影響使用者選擇的主觀因素。</p>
+                <p>訓練感受的差異是智慧訓練技術的直接體現。然而，這種高度依賴電子與機械整合的技術，其長期可靠性——即產品的耐用度與預期壽命——是使用者在進行這項重大投資前，必須審慎考量的關鍵因素。</p>
+                <hr>
+
+                <h2 id="section-6">6. 產品耐用性與預期壽命</h2>
+                <p>智慧訓練機是一項結合了精密機械結構與複雜電子元件的長期投資，因此，其耐用性與預期壽命是評估其總體價值與持有成本的核心指標。本章節將系統性地整理各主流品牌的使用者長期回饋與評論，深入探討它們在結構、材質與關鍵零組件方面的耐用度表現。</p>
+                <h3>6.1 Tonal：毀譽參半的長期表現</h3>
+                <p>Tonal 的長期耐用性在使用者社群中呈現出兩極化的評價。</p>
+                <ul>
+                    <li>正面評價 ：部分使用者稱讚 Tonal 的結構「如坦克般堅固 (built like a tank)」，表示在長期高頻率使用後，設備依然運作良好，未出現重大問題 <sup><a href="javascript:void(0)" onclick="showCitation('cite-51')">[51]</a></sup>。</li>
+                    <li>負面案例 ：然而，也有使用者報告了令人擔憂的問題。一位使用 2.5 年的使用者發現，機件內部出現了「生鏽 (rust)」 ，並導致了明顯的「吱吱作響 (squeaking sound)」 <sup><a href="javascript:void(0)" onclick="showCitation('cite-52')">[52]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-53')">[53]</a></sup>。此外，有評論指出 Tonal 機身使用了較多的「塑膠 (plastic)」 材質，在受力較大的動作中可能會產生一些異響或形變感 <sup><a href="javascript:void(0)" onclick="showCitation('cite-54')">[54]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-55')">[55]</a></sup>。</li>
+                </ul>
+                <h3>6.2 Vitruvian：備受好評的硬體品質</h3>
+                <p>Vitruvian 的硬體品質普遍受到使用者的高度讚揚。多數評論認為其結構非常「堅固 (solid)」。基於其優良的製造品質，有使用者預期在妥善保養的情況下，設備能擁有「10 年以上的使用壽命」 <sup><a href="javascript:void(0)" onclick="showCitation('cite-56')">[56]</a></sup>。</p>
+                <p>評論同時指出，Vitruvian 最可能磨損的部件是其纜繩，但這一部件的更換成本不高，且設計上允許使用者自行操作更換，降低了長期維護的難度與成本 <sup><a href="javascript:void(0)" onclick="showCitation('cite-56')">[56]</a></sup>。</p>
+                <h3>6.3 Speediance：結構堅固但配件耐用度受關注</h3>
+                <p>Speediance 的主體結構品質獲得了使用者的普遍肯定。有評論形容其品質「完美 (absolutely perfect)」 且 「非常堅固 (so sturdy)」，能夠承受高強度的訓練 <sup><a href="javascript:void(0)" onclick="showCitation('cite-57')">[57]</a></sup>。</p>
+                <p>然而，其部分配件的耐用性則引發了一些關注。例如，有使用者回報其創新的 藍牙控制器 在一次意外摔落後即告損壞 <sup><a href="javascript:void(0)" onclick="showCitation('cite-58')">[58]</a></sup>。此外，與其他電子健身設備類似，部分使用者對其內部電子元件的長期可靠性表示擔憂，並指出其保固期為三年 <sup><a href="javascript:void(0)" onclick="showCitation('cite-44')">[44]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-45')">[45]</a></sup>。</p>
+                <h3>6.4 OxeFit：以金屬材質為主的堅固設計</h3>
+                <p>OxeFit 以其大量使用「金屬 (metal)」 材質和極為堅固的結構設計而受到稱讚，使用者甚至用 「猛獸 (a beast)」 來形容其紮實感 <sup><a href="javascript:void(0)" onclick="showCitation('cite-59')">[59]</a></sup>。</p>
+                <p>儘管主體結構可靠，OxeFit 的配件和部分細節也出現了一些耐用性問題。有使用者報告了藍牙控制器固定座的塑膠部件發生斷裂 <sup><a href="javascript:void(0)" onclick="showCitation('cite-60')">[60]</a></sup>。同時，也有案例指出單邊纜繩在使用過程中出現了噪音問題 <sup><a href="javascript:void(0)" onclick="showCitation('cite-61')">[61]</a></sup>。</p>
+                <p>總結而言，主流智慧訓練機的耐用性普遍呈現出一個共同趨勢：核心的機械結構和框架普遍堅固可靠，能夠滿足長期使用需求。然而，電子元件、塑膠材質的配件以及活動部件（如纜繩）是潛在的弱點。當這些問題發生時，品牌的維修政策與保養體驗就顯得至關重要。</p>
+                <hr>
+
+                <h2 id="section-7">7. 維修保養策略與成本</h2>
+                <p>任何複雜的機電整合設備都無法完全避免維護與維修的需求。對於智慧訓練機這類高價投資品而言，其售後服務的品質、保養要求的繁簡、維修流程的效率及相關成本，共同構成了評估其長期持有價值的隱性層面。本章節將聚焦於各品牌的售後策略，評估其對使用者體驗和總體成本的影響。</p>
+                <h3>7.1 維修政策與成本</h3>
+                <ul>
+                    <li>Tonal ：Tonal 的售後維修成本相對高昂。資料顯示，該品牌 不提供延長保固 <sup><a href="javascript:void(0)" onclick="showCitation('cite-62')">[62]</a></sup>。一旦超過保固期，維修費用不菲，例如更換整機的報價高達 $795 美元 <sup><a href="javascript:void(0)" onclick="showCitation('cite-63')">[63]</a></sup>。此外，Tonal 的壁掛式設計也帶來了額外的搬遷成本：即使在同一戶內移動，重新安裝服務費為 $300 美元；若搬至新家，費用則高達 $500 美元 <sup><a href="javascript:void(0)" onclick="showCitation('cite-64')">[64]</a></sup>。</li>
+                    <li>Vitruvian ：Vitruvian 在設計上強調低維護。使用者回饋指出，該設備幾乎「無需持續保養 (doesn't require consistent maintenance)」 <sup><a href="javascript:void(0)" onclick="showCitation('cite-65')">[65]</a></sup>。其最主要的易損件——纜繩，被設計為可由使用者自行以低成本更換，極大降低了長期持有的後顧之憂 <sup><a href="javascript:void(0)" onclick="showCitation('cite-56')">[56]</a></sup>。</li>
+                    <li>Speediance & OxeFit ：對於這兩款獨立式設備，Speediance 的日常保養需求極低，主要集中在定期的軟體更新 <sup><a href="javascript:void(0)" onclick="showCitation('cite-66')">[66]</a></sup>。當發生配件損壞時，如 Speediance 的藍牙控制器 <sup><a href="javascript:void(0)" onclick="showCitation('cite-58')">[58]</a></sup> 或 OxeFit 的控制器固定座 <sup><a href="javascript:void(0)" onclick="showCitation('cite-60')">[60]</a></sup>，使用者需直接聯繫客服尋求解決方案。</li>
+                </ul>
+                <h3>7.2 客戶服務體驗</h3>
+                <p>客戶服務的響應速度與處理能力，直接影響了維修過程中的使用者體驗。</p>
+                <ul>
+                    <li>OxeFit ：根據多位使用者的回饋，OxeFit 的客戶服務表現「極好 (fabulous)」 和 「傑出 (outstanding)」 <sup><a href="javascript:void(0)" onclick="showCitation('cite-60')">[60]</a></sup><sup><a href="javascript:void(0)" onclick="showCitation('cite-67')">[67]</a></sup>。在面對配件損壞或設備噪音等問題時，客服團隊能迅速反應，不僅快速寄送替換零件，甚至在必要時派遣技術人員上門處理，贏得了使用者的高度評價 <sup><a href="javascript:void(0)" onclick="showCitation('cite-60')">[60]</a></sup>。</li>
+                </ul>
+                <h3>7.3 長期持有成本分析</h3>
+                <p>綜合來看，各品牌的長期持有成本存在顯著差異：</p>
+                <ul>
+                    <li>Tonal 由於其高昂的過保維修費、搬遷費用以及強制性的訂閱服務，其長期隱性成本可能是市場上最高的。</li>
+                    <li>Vitruvian 憑藉其堅固的硬體、低保養需求的設計以及使用者可自行更換易損件的特點，長期持有成本預期較低。</li>
+                    <li>Speediance 和 OxeFit 雖然存在配件耐用性的潛在問題，但 OxeFit 憑藉其積極響應的客戶服務，使其長期持有成本相對可控；Speediance 的長期支援體驗則尚待更多市場驗證。</li>
+                </ul>
+                <hr>
+
+                <h2 id="section-8">總結與戰略啟示</h2>
+                <p>智慧訓練機無疑在訓練功能、個人化體驗及安全性上帶來了革命性的進步，為家庭健身開創了新的可能。然而，正如本報告所分析，不同品牌在技術實現與產品哲學上各有側重，從而形成了獨特的優勢與潛在的權衡。</p>
+                <p>Tonal 以其成熟的 AI 生態系統和豐富的引導式內容，為使用者提供了無縫且高度個人化的訓練體驗，但其高昂的初始投資、訂閱費用和長期維護成本構成了較高的門檻。 Vitruvian 則以其極簡的硬體、卓越的製造品質和強大的數位阻力，吸引了追求極致性能與訓練自由度的使用者，其開放的平台設計也使其長期持有成本更具優勢。 Speediance 和 OxeFit 則以其多功能的一體化設計和相對更具彈性的操作模式，在市場中找到了自己的定位，特別是 Speediance，在控制便利性上展現了獨特的創新。</p>
+                <p>最終，對於潛在購買者而言，決策的關鍵在於清晰地認識自身的需求。您是需要一位隨時待命的 AI 教練，還是一位沉默而強大的訓練夥伴？您對操作的便利性、訓練模式的多樣性、產品的長期耐用度以及總持有成本的看重程度如何？權衡各品牌在這些核心維度上的表現，才能選擇到最符合自身訓練目標、生活方式與長期預算的智慧訓練解決方案。最終，此決策也反映了使用者的風險承受能力：是選擇投資於 Tonal 成熟但成本高昂且封閉的生態系統，還是採納像 Vitruvian 或 Speediance 這樣更靈活的新興平台，後者雖提供了更高的成本效益，卻也依賴於年輕公司持續的成長與支持。</p>
+            </div>
+        </div>
+
+        <div id="page-product-intro" class="page-content product-section">
+            <h2 id="product-title">產品介紹</h2>
+
+            <div id="product-slides-container">
+                <div id="product-slide-1" class="product-slide active">
+                    <h3 id="product-vitruvian">Vitruvian Trainer+</h3>
+                    <p><b>重新定義家用力量訓練的旗艦級平台式阻力設備</b></p>
+                    <div class="product-main-content">
+                        <div class="product-image-container">
+                            <img src="https://cdn.gamma.app/hyixrfjrsmcp2fh/7bc2cfa749da47b1b9181e6e6d54f6f0/original/image.png" alt="Vitruvian Trainer+ 產品示意圖">
+                        </div>
+                        <div class="product-description">
+                            <p>Vitruvian Trainer+ 以工業級馬達與碳纖維外殼打造，是目前家庭健身市場中最強的扁平式數位阻力平台。其設計理念旨在提供無與倫比的效能與便利性，讓高強度力量訓練不再受限於傳統健身房的空間與設備。它能提供高達 440 lb（約 200 公斤）的智能阻力，完美契合追求極限的高強度、爆發力與進階肌力訓練者需求。</p>
+                            
+                            <h4>亮點特色</h4>
+                            <ul class="highlight-list">
+                                <li><span class="highlight">440 lb 智能阻力 · 同級最強</span>：搭載精密雙纜獨立控制系統，每一毫秒都能精準補償阻力，有效激發肌肉潛力。</li>
+                                <li><span class="highlight">平台式極致收納</span>：厚度僅 115 mm，配備靈活移動輪，可輕易推入沙發下方、床底，或直立靠牆，實踐無感收納。</li>
+                                <li><span class="highlight">智慧訓練系統</span>：透過專屬應用程式，實現自動調整阻力、即時姿勢計算、專家級課程引導與個人化進度追蹤，全面整合您的訓練體驗。</li>
+                                <li>核心技術： 自動調重、離心增負、等長/等速模式、高速控制迴路、App 訓練與數據紀錄。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="specs-table-wrap">
+                    <h4>規格與售價</h4>
+                    <table class="table table-bordered table-hover">
+                        <thead><tr><th>規格項目</th><th>詳細資訊</th></tr></thead>
+                        <tbody>
+                            <tr><td>阻力範圍</td><td>0–200 kg（0–440 lb）</td></tr>
+                            <tr><td>尺寸</td><td>1170 × 520 × 115 mm</td></tr>
+                            <tr><td>重量</td><td>約 38 kg</td></tr>
+                            <tr><td>電源</td><td>110–240 V</td></tr>
+                            <tr><td>材質</td><td>擠型鋁框、碳纖維外殼</td></tr>
+                            <tr><td>售價</td><td>主機 US$2,990–3,600；App 會員 US$39/月（非強制性訂閱）</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div id="product-slide-2" class="product-slide">
+                    <h3 id="product-tonal">Tonal 2</h3>
+                    <p><b>多角度力量訓練 × AI 姿勢偵測的壁掛式健身機</b></p>
+                    <div class="product-main-content">
+                        <div class="product-image-container">
+                            <img src="https://cdn.gamma.app/hyixrfjrsmcp2fh/f00d616b02df42989a124c74d65f594b/original/image.png" alt="Tonal 2 產品示意圖">
+                        </div>
+                        <div class="product-description">
+                            <p>Tonal 2 是一款壁掛式健身機，提供 250 磅數位阻力，特色是 AI 即時姿勢偵測與多角度靈活調整的雙臂設計。它提供高達 250 lb（約 113 公斤）的數位阻力，雙臂可靈活調整角度，支援數十種訓練軌跡。</p>
+                            
+                            <h4>亮點特色</h4>
+                            <ul class="highlight-list">
+                                <li><span class="highlight">AI 即時姿勢偵測</span>：內建高解析度鏡頭與尖端演算法，能即時分析您的動作姿勢，提供精確的指導與修正。</li>
+                                <li><span class="highlight">250 lb 數位阻力</span>：雙臂可靈活調整角度，支援數十種自由重量訓練軌跡，涵蓋全身肌肉群。</li>
+                                <li><span class="highlight">內容生態完整</span>：從 HIIT、有氧運動到增肌、雕塑課程，所有訓練內容均已全面整合，搭配專業教練的引導。</li>
+                                <li>核心技術： AI 姿勢分析、自適應調重、Aero HIIT（結合力量與有氧）、使用者自動紀錄。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="specs-table-wrap">
+                    <h4>規格與售價</h4>
+                    <table class="table table-bordered table-hover">
+                        <thead><tr><th>規格項目</th><th>詳細資訊</th></tr></thead>
+                        <tbody>
+                            <tr><td>最大阻力</td><td>250 lb</td></tr>
+                            <tr><td>安裝方式</td><td>壁掛式（需專業技師安裝）</td></tr>
+                            <tr><td>互動</td><td>大尺寸觸控螢幕、鏡面顯示、內建高清鏡頭</td></tr>
+                            <tr><td>連線</td><td>Wi-Fi / Bluetooth</td></tr>
+                            <tr><td>售價</td><td>主機：US$4,295；專業安裝：US$295；會員訂閱：US$59.95/月（需承諾 12 個月）</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div id="product-slide-3" class="product-slide">
+                    <h3 id="product-speediance">Speediance Gym Monster 2</h3>
+                    <p><b>免打牆、可折疊收納的全功能家庭健身站</b></p>
+                    <div class="product-main-content">
+                        <div class="product-image-container">
+                            <img src="https://cdn.gamma.app/hyixrfjrsmcp2fh/978e620b1a8244e89970c348f9c4363a/original/image.png" alt="Speediance Gym Monster 2 產品示意圖">
+                        </div>
+                        <div class="product-description">
+                            <p>Speediance Gym Monster 2（GM2）將尖端的電控阻力、直觀的螢幕教學與全面的全身訓練功能，巧妙地整合於一台可折疊設備中。這款創新設計特別適合那些追求多元化訓練動作與模式、並期望全家人能共同使用的消費者。其免打牆的便捷特性與極致收納能力，使其成為現代家庭健身的理想之選。</p>
+                            
+                            <h4>亮點特色</h4>
+                            <ul class="highlight-list">
+                                <li><span class="highlight">可折疊收納 · 不用壁掛</span>：展開即可立即使用，收起後深度僅 37 公分，大幅節省居家空間。</li>
+                                <li><span class="highlight">全功能訓練模式</span>：支援多種訓練模式快速切換，包括站姿推拉、划船、滑雪模擬等。</li>
+                                <li><span class="highlight">21.5” 大螢幕導訓</span>：配備 21.5 吋高清大螢幕，提供清晰的動作拆解、回合進度顯示及即時教學。</li>
+                                <li>核心技術： 智能重量調整系統、App 課程與詳細數據紀錄、藍牙指環快速調整阻力與啟動訓練。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="specs-table-wrap">
+                    <h4>規格與售價</h4>
+                    <table class="table table-bordered table-hover">
+                        <thead><tr><th>規格項目</th><th>詳細資訊</th></tr></thead>
+                        <tbody>
+                            <tr><td>最大阻力</td><td>單臂 110 lb（約 50 公斤）；2S 版本可達 130 lb（約 59 公斤）</td></tr>
+                            <tr><td>螢幕</td><td>21.5" 1080p 全高清顯示器</td></tr>
+                            <tr><td>馬達</td><td>800 W×2 PMSM（永磁同步馬達）</td></tr>
+                            <tr><td>重量</td><td>約 78 kg</td></tr>
+                            <tr><td>尺寸</td><td>展開：1.22 × 0.69 × 1.85 公尺；收納深度：0.37 公尺</td></tr>
+                            <tr><td>售價</td><td>GM2 約 US$3,749（常見優惠價約 US$3,186 起）</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div id="product-slide-4" class="product-slide">
+                    <h3 id="product-oxefit">OxeFit XS1</h3>
+                    <p><b>力量 + 體能 + 運動模擬的一體式旗艦平台</b></p>
+                    <div class="product-main-content">
+                        <div class="product-image-container">
+                            <img src="https://cdn.gamma.app/hyixrfjrsmcp2fh/df92e02e76f1491386681e7dcae8a7bb/original/image.png" alt="OxeFit XS1 產品示意圖">
+                        </div>
+                        <div class="product-description">
+                            <p>OxeFit XS1 是一款專為高階訓練者與追求極致家庭健身房體驗而設計的旗艦級平台。它巧妙地將多種運動訓練，包括滑雪、划船、皮划艇等，融合於堅固的平台結構之中，提供無與倫比的全面訓練解決方案。XS1 不僅是力量訓練的強大工具，更是體能與運動模擬的綜合中心，滿足您對多元訓練的渴望。</p>
+                            
+                            <h4>亮點特色</h4>
+                            <ul class="highlight-list">
+                                <li><span class="highlight">多運動整合</span>：獨特的多功能設計，讓您在同一設備上完成力量訓練、划船、滑雪及多種體能模式。</li>
+                                <li><span class="highlight">商用級穩固平台</span>：約 300 磅的沉穩重量與寬敞的平台設計，確保在進行高強度動作時的極致穩定性。</li>
+                                <li><span class="highlight">32" 觸控螢幕</span>：搭載 32 吋高清觸控螢幕，提供視覺清晰的指導內容與即時數據回饋。</li>
+                                <li>核心技術： 獨特的四掛點動作模式、精密的數位張力調控系統、Strength 與 Performance 雙模式訓練選項。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="specs-table-wrap">
+                    <h4>規格與售價</h4>
+                    <table class="table table-bordered table-hover">
+                        <thead><tr><th>規格項目</th><th>詳細資訊</th></tr></thead>
+                        <tbody>
+                            <tr><td>阻力上限</td><td>平台 Deck：250 lb（約 113 公斤）；柱端 Cable：140 lb（約 63 公斤）</td></tr>
+                            <tr><td>螢幕</td><td>32" 觸控高清顯示器</td></tr>
+                            <tr><td>重量</td><td>約 300 lb（約 136 公斤）</td></tr>
+                            <tr><td>類型</td><td>平台式綜合訓練機</td></tr>
+                            <tr><td>售價</td><td>US$5,948（包含 12 個月會員資格）</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div id="product-slide-5" class="product-slide">
+                    <h3 id="product-voltra">Beyond Power VOLTRA I</h3>
+                    <p><b>便攜、直驅、可掛牆的全功能智慧電纜機</b></p>
+                    <div class="product-main-content">
+                        <div class="product-image-container">
+                            <img src="https://cdn.gamma.app/hyixrfjrsmcp2fh/d6d3927813b24436b7285a3431a3ee52/original/image.png" alt="Beyond Power VOLTRA I 產品示意圖">
+                        </div>
+                        <div class="product-description">
+                            <p>VOLTRA I 是一款革新的智慧電纜機，採用直驅馬達與七種獨特訓練模式，以其小巧的體積、靈活的安裝方式（可掛牆、可上架、可落地），重新定義了便攜式力量訓練。它不僅適合專業教練進行到府服務，更是商務差旅人士、以及追求功能性與多場地佈署訓練者的理想選擇，讓您隨時隨地都能享受高效精準的訓練。</p>
+                            
+                            <h4>亮點特色</h4>
+                            <ul class="highlight-list">
+                                <li><span class="highlight">直驅馬達 · 線性反應最強</span>：業界領先的直驅馬達技術，提供最直接、最接近真實重量的力回饋。</li>
+                                <li><span class="highlight">體積小 · 安裝彈性高</span>：極致精簡的機身設計，無論是牆掛、放置於支架上，或直接在地面使用，都能輕鬆適應。</li>
+                                <li><span class="highlight">7 種曲線模式</span>：內建離心超載、阻尼、等速、等長、力量曲線客製等多達七種訓練模式。</li>
+                                <li>核心技術： 1:1 直驅阻力提供無延遲的即時反饋、OTA（Over-The-Air）更新保持軟體最新、Wi-Fi 與 App 控制。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="specs-table-wrap">
+                    <h4>規格與售價</h4>
+                    <table class="table table-bordered table-hover">
+                        <thead><tr><th>規格項目</th><th>詳細資訊</th></tr></thead>
+                        <tbody>
+                            <tr><td>阻力範圍</td><td>5–200 lb</td></tr>
+                            <tr><td>行程</td><td>約 2.6 m</td></tr>
+                            <tr><td>連線</td><td>Wi-Fi（支援 OTA 更新）</td></tr>
+                            <tr><td>類型</td><td>可攜式智慧電纜機</td></tr>
+                            <tr><td>售價</td><td>新定價 US$2,199（預計於 2025/06/01 起實施）</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div id="product-slide-6" class="product-slide">
+                    <h3 id="product-aeke">AEKE K1</h3>
+                    <p><b>鏡面顯示 + AI 課程的一體式力量塔</b></p>
+                    <div class="product-main-content">
+                        <div class="product-image-container">
+                            <img src="https://cdn.gamma.app/hyixrfjrsmcp2fh/cdce3d08bed84cc9a7dc44a4e18d965b/original/image.png" alt="AEKE K1 產品示意圖">
+                        </div>
+                        <div class="product-description">
+                            <p>AEKE K1 是一款將科技與美學完美結合的一體式力量塔，透過其引人注目的鏡面大螢幕與先進 AI 授課系統，為居家健身帶來革命性的體驗。它不僅支援多種力量訓練模式，更提供即時輔助動作教學，特別適合那些追求高效率訓練、同時希望降低內容訂閱成本的智慧型健身設備用戶。</p>
+                            
+                            <h4>亮點特色</h4>
+                            <ul class="highlight-list">
+                                <li><span class="highlight">43" 4K 鏡面螢幕</span>：超大尺寸 4K 鏡面螢幕，不僅提供高視覺享受的教學內容，更能直接呈現您的姿勢分析。</li>
+                                <li><span class="highlight">AI 課程、姿勢偵測</span>：內建智慧 AI 教練系統，能自動判斷您的動作品質並給予即時回饋，如同擁有專屬私人教練。</li>
+                                <li><span class="highlight">100 kg 數位阻力</span>：提供高達 100 公斤的數位阻力，雙臂各具 50 公斤的負載能力。</li>
+                                <li>核心技術： 五種力量模式提供多元訓練選擇、先進的姿勢 AI 分析、智慧握把與配件的無縫整合。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="specs-table-wrap">
+                    <h4>規格與售價</h4>
+                    <table class="table table-bordered table-hover">
+                        <thead><tr><th>規格項目</th><th>詳細資訊</th></tr></thead>
+                        <tbody>
+                            <tr><td>最大負載</td><td>單側 50 kg；總計 100 kg</td></tr>
+                            <tr><td>尺寸</td><td>1475×705×1773 mm</td></tr>
+                            <tr><td>晶片</td><td>RK3588（8 GB RAM + 128 GB 儲存空間）</td></tr>
+                            <tr><td>連線</td><td>2.4 GHz / 5 GHz 無線雙頻</td></tr>
+                            <tr><td>售價</td><td>依各通路銷售方案不同，建議參考當地銷售頁面獲取最新資訊。</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div id="product-slide-7" class="product-slide">
+                    <h3 id="product-maxpro">MAXPRO SmartConnect</h3>
+                    <p><b>9–10 lb 超輕便攜的電纜訓練機</b></p>
+                    <div class="product-main-content">
+                        <div class="product-image-container">
+                            <img src="https://cdn.gamma.app/hyixrfjrsmcp2fh/72a23f812aed4edbaa87a30a0086ade3/original/image.png" alt="MAXPRO SmartConnect 產品示意圖">
+                        </div>
+                        <div class="product-description">
+                            <p>MAXPRO SmartConnect 是市場上最輕巧的智慧電纜訓練機之一，僅重 9–10 磅（約 4–4.5 公斤），卻能提供高達 300 磅（約 136 公斤）的驚人阻力。其多功能設計支援門框、地錨與滑輪等多種使用模式，讓您無論身在何處，都能輕鬆進行全身訓練。MAXPRO 完美結合了便攜性與強大功能，是現代生活中追求效率與便利的健身愛好者不可或缺的夥伴。</p>
+                            
+                            <h4>亮點特色</h4>
+                            <ul class="highlight-list">
+                                <li><span class="highlight">10 lb 超輕量</span>：輕盈設計可輕鬆放入背包，無論是旅館房間、辦公室或戶外，都能隨時隨地展開訓練。</li>
+                                <li><span class="highlight">專利 PowerClutch</span>：獨家旋鈕設計提供 50 段阻力調整，最高可達 300 磅，精準滿足各種訓練需求。</li>
+                                <li><span class="highlight">App 訓練與紀錄</span>：透過專屬 App 進行動作數據記錄、課程導引與個人化訓練計畫，智慧追蹤您的進度。</li>
+                                <li>核心技術： 採用多片式 PowerClutch 阻力離合器提供高效阻力、藍牙 App 連線、以及多種配件擴充。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="specs-table-wrap">
+                    <h4>規格與售價</h4>
+                    <table class="table table-bordered table-hover">
+                        <thead><tr><th>規格項目</th><th>詳細資訊</th></tr></thead>
+                        <tbody>
+                            <tr><td>阻力範圍</td><td>5–300 lb</td></tr>
+                            <tr><td>重量</td><td>約 9–10 lb</td></tr>
+                            <tr><td>連線</td><td>Bluetooth</td></tr>
+                            <tr><td>使用方式</td><td>門框、地錨、滑輪等多模式</td></tr>
+                            <tr><td>售價</td><td>US$599–900（依通路促銷活動有所不同）</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <button id="prev-product-btn" class="btn btn-outline-secondary" onclick="switchProduct(-1)">
+                    &lt; 上一頁 (Previous)
+                </button>
+                <button id="next-product-btn" class="btn btn-primary" onclick="switchProduct(1)">
+                    下一頁 (Next) &gt;
+                </button>
+            </div>
+        </div>
+        
+        <div id="page-data-list" class="page-content">
+            <h2>引用資料來源</h2>
+            <div class="data-list">
+                <ol>
+                    <li id="cite-1">Honest Tonal Home Gym Review | Pros vs Cons.mp4---so when you first get it before you do anything it has you do an assessment uh you go through various exercises so tonal can get a feel for your fitness level and your strength level and that way it can build a foundation and build some data on you and when you start doing your workouts it can recommend a specific weight for each exercise 中文翻譯：所以當你第一次拿到它時，在做任何事之前，它會讓你做一個評估，你會完成各種練習，這樣 tonal 就能了解你的健康水平和力量水平，從而為你建立一個基礎和數據，當你開始鍛鍊時，它就能為每個練習推薦一個特定的重量。</li>
+                    <li id="cite-2">Unlock More Strength in Your Workouts with Eccentric Mode on Tonal.mp4---with eentric mode tonal automatically increases your weight by 25% on the lowering phase of each rep challenging your muscles where they're strongest 中文翻譯：透過離心模式，Tonal 會在每次重複的下放階段自動增加 25% 的重量，在肌肉最強壯的地方挑戰它們。</li>
+                    <li id="cite-3">Honest Tonal Home Gym Review | Pros vs Cons.pdf---maybe you're doing 20 pounds on the press and then on the way down it moves up to 30 pounds or to 40 pounds to make that set even harder 中文翻譯：也許你推舉時用 20 磅，然後在放下來的時候，它會增加到 30 磅或 40 磅，讓這一組變得更難。</li>
+                    <li id="cite-4">5 Tonal Alternatives that won't Break The Bank.pdf---you can't follow classes and programs of course but you also can't create your own workouts view any sort of movement Library track or record progress of any sort or even utilize basic digital weight features like chain or eccentric load modes 中文翻譯：你當然不能跟隨課程和計畫，但你也無法創建自己的鍛鍊、查看任何動作庫、追蹤或記錄任何進度，甚至無法使用像鐵鍊或離心負重模式這樣的基本數位重量功能。</li>
+                    <li id="cite-5">14 Reasons why the Vitruvian may be the Best exercise machine for you!.mp4---so the petran doesn't come with any screens now you might think that's a disadvantage but that's actually something that I loved about it because you can choose any type of screen that you want so you can just use your phone you can use a tablet or at home if you've got a big 中文翻譯：所以 Vitruvian 沒有附帶任何螢幕，現在你可能會認為這是一個缺點，但這實際上是我喜歡它的一點，因為你可以選擇任何你想要的螢幕類型，所以你可以只用你的手機，你可以用平板電腦，或者在家裡如果你有一個大的。</li>
+                    <li id="cite-6">Vitruvian Trainer+ Review | Best Compact Smart Home Gym?.pdf---instead of using a screen you access the Vitruvian app on your device so your phone or your tablet and it's important to know that you can't use the Vitruvian without the app so you'll need to use you know your phone or something like that to even use the Vitruvian without the app when you pull the handles there isn't any resistance and they don't retract 中文翻譯：您可以在您的設備上訪問 Vitruvian 應用程序，而不是使用螢幕，所以您的手機或平板電腦，重要的是要知道您不能在沒有應用程序的情況下使用 Vitruvian，所以您需要使用您的手機之類的東西來使用 Vitruvian，即使沒有應用程序，當您拉動手柄時，沒有任何阻力，它們也不會縮回。</li>
+                    <li id="cite-7">14 Reasons why the Vitruvian may be the Best exercise machine for you!.mp4---huge TV well then of course you can use that and it actually makes a lot more sense because a lot of exercises you're not just standing facing a screen you could be lying down doing thigh curls facing the floor you could be doing a bench press facing up so in those positions if there was a screen you wouldn't be able to see it anyway so having that flexibility is a big Advantage 中文翻譯：巨大的電視，那麼你當然可以使用它，這實際上更有意義，因為很多運動你不是只站著面向螢幕，你可能會躺著做大腿彎舉，面朝地板，你可能會做臥推，面朝上，所以在那些位置上，如果有螢幕，你無論如何也看不到，所以擁有這種靈活性是一個很大的優勢。</li>
+                    <li id="cite-8">Using the Vitruvian Trainer - What's it actually like Q&A.mp4---I don't have to p pull out the barbell I don't have to pull out stuff you know I just go over there open the app throw on a few weights with the app and you know just start warming up with the movement that I want to do and I can just jump right into it so easily so there's so little friction from me going from work to getting in a quick strength workout that I really do find myself using Vitruvian uh much more often 中文翻譯：我不需要拿出槓鈴，我不需要拿出東西，你知道的，我只要走過去，打開應用程式，用應用程式加上一些重量，然後就開始用我想做的動作熱身，我可以直接投入其中，非常輕鬆。所以從工作到進行快速的力量訓練，對我來說幾乎沒有任何阻礙，我真的發現自己更頻繁地使用 Vitruvian。</li>
+                    <li id="cite-9">I Tried the Speedience Gym Monster 2 - Was it Worth it [Smart Home Gym].mp4---number three the screen because you get a 21.5 in 1080P touchcreen that's also articulating you can angle it down if you're working on the bench 中文翻譯：第三是螢幕，因為你得到一個 21.5 吋 1080P 的觸控螢幕，它也是可調整角度的，如果你在臥推凳上工作，你可以把它向下傾斜。</li>
+                    <li id="cite-10">I Tried the $4500 Smart Home Gym (NOT Sponsored).mp4---All right, so what I'm gonna do, we're actually gonna increase the weight by turning the dial on this remote controller. 中文翻譯：好的，所以我要做的是，我們實際上要通過轉動這個遙控器上的撥盤來增加重量。</li>
+                    <li id="cite-11">Is This $3500 Smart Gym By Speediance Worth It My 6 Month Experience.mp4---so basically sliding this thing on your finger then you hold the bar and you just press this button to turn on or off the weight and then you can spin this dial to either increase the weight or decrease the weight 中文翻譯：所以基本上就是把這個東西滑到你的手指上，然後你握住槓，你只要按這個按鈕來開啟或關閉重量，然後你可以轉動這個轉盤來增加或減少重量。</li>
+                    <li id="cite-12">Speediance Gym Monster Home Gym Review (WFH) Workout From Home.mp4---lastly please don't forget this little Bluetooth controller here it can be the most important component with it you can take the weight off with just one click before the workout or when you feel the weight is unbearable duing the session I truly believe this is a must to use controller during each set 中文翻譯：最後，請不要忘記這裡這個小小的藍牙控制器，它可能是最重要的組件，有了它，你可以在鍛鍊前一鍵卸下重量，或者當你在訓練中覺得重量難以承受時。我真的相信在每一組訓練中都必須使用這個控制器。</li>
+                    <li id="cite-13">Speediance Gym Monster 2 IN-DEPTH Review.pdf---and when you you use them you can tap the button on either side to immediately turn on or off the weight 中文翻譯：當你使用它們時，你可以點擊任一側的按鈕，立即開啟或關閉重量。</li>
+                    <li id="cite-14">I Tried the $4,500 Smart Home Gym (NOT Sponsored).mp4---Pause, there's a Bluetooth ring, heart rate monitor device, smart handles that we can turn on and off. 中文翻譯：暫停，有一個藍牙戒指、心率監測設備、我們可以打開和關閉的智慧手柄。</li>
+                    <li id="cite-15">Honest Review of the Speediance Smart Home Gym as a Fit Mom!.mp4---it's velocity based training to maximize your workout results it just increased me to 47 again that it knows that I can do more 中文翻譯：這是基於速度的訓練，以最大化您的鍛煉效果，它再次將我提升到47，因為它知道我可以做得更多。</li>
+                    <li id="cite-16">Tonal Smart Home Gym Review The TRUTH After 6 Months.mp4---now one of the unique things that they offer is called a strength score and that strength score they're determining what your strength score is based upon the amount of weight you lift the volume everything like that i think it's out of like a thousand my strength score is 956. 中文翻譯：他們提供的一項獨特功能叫做力量分數，他們根據你舉起的重量、訓練量等所有因素來決定你的力量分數，我想滿分大概是 1000 分，我的力量分數是 956 分。</li>
+                    <li id="cite-17">Tonal Home Gym - Your Top Questions Answered!.mp4---the only time you might need to recalibrate is if you step away from the tonal for a long time so maybe you would start getting a lot stronger and then time goes by and maybe goes three six maybe longer months and you haven't used it you know you've gotten weaker and the levels that you used to be at or maybe a little too much well then that's when you might want to go through a recalibration let 中文翻譯：你唯一可能需要重新校準的時候，是你長時間不使用 Tonal。也許你開始變得更強壯，然後時間過去了，可能三、六個月或更久你都沒用它，你知道你變弱了，而你過去的水平可能有點太高了，那麼這時候你可能就想進行一次重新校準。</li>
+                    <li id="cite-18">14 Reasons why the Vitruvian may be the Best exercise machine for you!.mp4---so so for instance I'm going to do a squat what it does is the first couple of reps are called calibration reps so you're telling the machine okay I'm going to start here I'm going to finish there and then after I do a couple of those then the weight's going to kick in 中文翻譯：例如，我準備做深蹲，它的運作方式是，前幾次重複稱為校準重複，所以你告訴機器，好的，我要從這裡開始，在那裡結束，然後在我做了幾次之後，重量就會啟動。</li>
+                    <li id="cite-19">Vitruvian Trainer Review A Busy NYC Doctor's Home Gym Solution.mp4---if you set the machine that you only want to do five reps and on the fourth rep the machine notices that you dip well below your standard range of motion it will turn on this automatic spotter feature where the weights will completely unload 中文翻譯：如果你設定機器只做五次，而在第四次時，機器注意到你下降的幅度遠低於你的標準活動範圍，它會啟動這個自動保護功能，重量會完全卸載。</li>
+                    <li id="cite-20">Better than Tonal 🤷‍♂️ | Speediance Gym Monster Review.mp4---unlike the tonal the speedi and setup process is a breeze it's literally one step unbox it you unbox it you turn it right side up you plug it in and you're Off to the Races you're able to quickly connect your Wi-Fi put your information 中文翻譯：與 tonal 不同，speedi 的安裝過程輕而易舉，基本上只有一個步驟：開箱，把它正著放好，插上電，然後就可以開始了。你可以快速連接 Wi-Fi，輸入你的資訊。</li>
+                    <li id="cite-21">Speediance Gym Monster Review After 6 Months - Best Compact Home Gym?.mp4---the installation or the setup process was basically nothing like it comes 98% setup like it it was the one of the easiest things that I've ever had to put together in fact I wouldn't even say that I had to put it together like there was no screws nothing like that that I can remember I mean this was 6 months ago but I remember the setup process taking less than 2 or 3 minutes 中文翻譯：安裝或設置過程基本上是沒有的，因為它有98%都已經設置好了，這是我組裝過最簡單的東西之一，事實上我甚至不會說我需要組裝它，因為我記得沒有任何螺絲之類的東西，我的意思是這是6個月前的事了，但我記得設置過程只花了不到2或3分鐘。</li>
+                    <li id="cite-22">Tried A Gym Monster 2 In My Home Gym Does It Deserve A Space In Here?.mp4---so this thing comes out of the box and is ready to go you just simply wheel it to wherever you want to put it uh in my case here up against the wall it is the complete opposite of my squatch rack which arrived with an instruction manual that might as well have just said good luck you then just plug it in you hook it up to your Wi-Fi you set yourself up a profile for yourself and anybody else that's going to be using it and away you go 中文翻譯：所以這東西一出箱就準備好了，你只需把它滾到你想放的任何地方，以我為例，就是靠牆放。這和我的深蹲架完全相反，那個架子送來時附的說明書簡直就像在說「祝你好運」。你接著只要插上電，連上你的 Wi-Fi，為自己和任何其他會使用它的人設定一個個人資料，然後就可以開始了。</li>
+                    <li id="cite-23">14 Reasons why the Vitruvian may be the Best exercise machine for you!.mp4---so when you use electronic resistance using these electric motors it actually gives you constant tension so there's no inertia and that actually is more effective than using traditional weights where when you get a little bit of momentum then it takes the pressure off the muscle so with this as you're doing it you'll probably be about 20% less weight than you will because you don't have inertia and you're just getting that constant tension all the way up and all the way down and that's old school mode 中文翻譯：因此，當您使用電子阻力，使用這些電動馬達時，它實際上會給您持續的張力，所以沒有慣性，這實際上比使用傳統重物更有效，因為當您獲得一點動量時，它會減輕肌肉的壓力。因此，當您這樣做時，您可能會使用比平時少約20%的重量，因為您沒有慣性，而且您在整個上升和下降過程中都得到持續的張力，這就是傳統模式。</li>
+                    <li id="cite-24">Honest Tonal Home Gym Review | Pros vs Cons.mp4---harder so if you're someone wondering if the 200 pounds is going to be enough to you that's something to keep in mind that it is substantially harder than other forms of resistance that i've used in the past 中文翻譯：更難，所以如果你想知道 200 磅對你來說是否足夠，你需要記住，這比我過去使用過的其他形式的阻力要難得多。</li>
+                    <li id="cite-25">I Tried the $4,500 Smart Home Gym (NOT Sponsored).mp4---I have the dynamic weight. You have Standard Mode for all workouts. You have Chains Mode, so it changes the weight based on where you are in the motion. Eccentric Mode where it increases the weight on the way back from the exercise. 中文翻譯：我有動態重量。所有訓練都有標準模式。還有鏈條模式，它會根據你在動作中的位置改變重量。離心模式則是在運動回程時增加重量。</li>
+                    <li id="cite-26">Better than Tonal 🤷‍♂️ | Speediance Gym Monster Review.mp4---that is they can actually change the resistance on the Fly I'm not kidding so as you can imagine with something like a bicep curl when you curl that weight you can only lift a certain amount of weight but when you lower that weight your body is absolutely able to basic basically handle more weight on the resistance and that's what this can do on certain exercises it will increase or decrease the weight on the concentric or Ecentric motion of that rep 中文翻譯：那就是它們可以即時改變阻力，我不是在開玩笑。所以你可以想像，像二頭肌彎舉這樣的動作，當你舉起重量時，你只能舉起一定的重量，但是當你放下重量時，你的身體絕對能夠承受更大的阻力，這就是這個機器在某些運動中可以做到的，它會在該次重複的向心或離心動作中增加或減少重量。</li>
+                    <li id="cite-27">Speediance Gym Monster Review - It Is The Best Smart Home Gym I've Tested (so far).pdf---first off you have your standard and this is the one I primarily use in all of my lifts and this is just that you have constant tension the entire time through the exercise range of motion and this doesn't change it's just that standard constant tensio n next up are chains this basically just simulates you putting chains on like a barbell or something um again I never really even do this in real life but if you want to simulate having chains on the bar go ahead and try this option moving on we have The Eccentric option this basically removes any tension or as much attention as possible from um doing the concentric or the shortening part of the lift 中文翻譯：首先，你有你的標準模式，這是我在所有舉重中主要使用的模式，這只是在整個運動範圍內一直有恆定的張力，這不會改變，只是標準的恆定張力。接下來是鍊子模式，這基本上只是模擬你在槓鈴之類的東西上掛上鍊子，嗯，再說一次，我從來沒有在現實生活中這樣做過，但是如果你想模擬在槓鈴上有鍊子的感覺，可以試試這個選項。接下來，我們有離心選項，這基本上是從向心或縮短部分的舉重中移除任何張力或盡可能多的張力。</li>
+                    <li id="cite-28">Vitruvian Trainer Review A Busy NYC Doctor's Home Gym Solution.mp4---then there's the different training methods my most favorite one is The Eccentric only training there's a lot of research to show that The Eccentric components of an exercise is very important for both strength gain and muscle hypertrophy I often will use the eccentric only mode for some of my lagging muscle groups like The biceps then there's the automatic spotter where the machine knows to turn off the weight if it detects that you are failing a repetition 中文翻譯：然後是不同的訓練方法，我最喜歡的是純離心訓練。有很多研究表明，運動的離心部分對於力量增長和肌肉肥大都非常重要。我經常對一些我比較弱的肌群使用純離心模式，比如二頭肌。然後是自動保護裝置，機器知道在你重複失敗時關閉重量。</li>
+                    <li id="cite-29">14 Reasons why the Vitruvian may be the Best exercise machine for you!.mp4---speed now the great thing with vetruvian is there's a Mode called pump mode which allows you to go explosive and then controlled on the accentric and that's been shown to be even more effective than traditional strength training so with pump mode you go explosive and controlled on the negative 中文翻譯：現在，Vitruvian 的一大優點是有一種叫做「幫浦模式」的模式，它能讓你在離心階段進行爆發性然後有控制的動作，這已被證明比傳統的力量訓練更有效。所以在幫浦模式下，你在負向階段進行爆發性且有控制的動作。</li>
+                    <li id="cite-30">Is a $3000 Smart Home Gym Worth It Speediance Gym Monster 2 Review.pdf---resistance training should work because chain mode does exactly that. So, if we select chain mode, what it's now telling me is that I've got 14 kilos still as my dumbbell, but I've got 7 kilos of additional chain. So, when I turn this on now, at the bottom here, it's 14 kilos. As I start to lift it, it increases the weight. 中文翻譯：阻力訓練應該要有效，因為鏈條模式正是如此。所以，如果我們選擇鏈條模式，它現在告訴我，我的啞鈴仍然是 14 公斤，但我還有 7 公斤的額外鏈條。所以，當我現在打開它，在底部這裡，是 14 公斤。當我開始舉起它時，它會增加重量。</li>
+                    <li id="cite-31">Oxefit Review and Quick initial workout.mp4---now they added this thing called perturber hurt perturbation whatever it's called perturbation i guess i don't know but anyway um what it does is basically i did it on the squat yesterday so you you pick your weight on the squat and you can set the uh pert urbation um intensity level like there's a scale to come down the bottom you set the intensity level so say you're doing a squat and you're like you're dipping down with the squat and coming up instead of the weight being distributed evenly across the bar what it's going to do is after two reps so if you go down and come up go down and come up and it has your range of motion set so that it can adjust the weight for you on either side you're going to feel a tug randomly on either side so what it does is it makes you have to use your core engage your core and use some more accessory muscles in that exercise 中文翻譯：他們現在增加了一個叫做擾動（perturbation）的東西，不管它叫什麼，我想是擾動吧，我不知道。但總之，它的作用是，基本上我昨天在做深蹲時試過了。你選擇深蹲的重量，然後可以設定擾動的強度等級，底部有一個刻度尺，你設定強度等級。所以，比如說你在做深蹲，你下蹲然後起來，重量並不是均勻分佈在槓鈴上。它會在兩次重複之後，也就是你下去上來，下去上來，它設定了你的運動範圍，以便它可以為你在任一側調整重量，你會隨機地感覺到某一側有拉力。它的作用是讓你必須使用你的核心，啟動你的核心，並在那個練習中使用更多的輔助肌肉。</li>
+                    <li id="cite-32">Vitruvian Trainer+ NEW ECHO MODE Hands on - Awesome!.mp4---ing kind of like a spotter make sure that you're able to squeak up that bar and then with that increased Ecentric mode add some weight on it for that we down so you're really maximizing you know what you're getting out of it and not only is that like just a really good way for beginners to lift because you may not know you know which weight you want to use or what's going to be best if you use that mode it pretty much just decides the weight for you and is going to ensure that you get results but even as somebody who's more of an advanced lifter it's a really good mode to use 中文翻譯：有點像一個保護員，確保你能把槓鈴舉起來，然後在離心階段增加一些重量，這樣你就能真正最大化你從中得到的效益。這不僅對初學者來說是一種非常好的舉重方式，因為你可能不知道該用什麼重量，或者什麼重量最好，如果你用那個模式，它基本上就幫你決定了重量，並能確保你得到結果。但即使是對於更進階的舉重者來說，這也是一個非常好用的模式。</li>
+                    <li id="cite-33">Aero A High-Intensity, Full-Body Powerhouse Strength Workout | Only on Tonal.mp4---Arrow is a new category of hit style workouts that's become a fast favorite on the Tonal 2 Arrow blends cardio and strength training that's kind of like a rowing machine meets a skier crossed with a medicine ball slam But it's also not like any of those things You know what All you need to know is that it torches calories and helps you build full body endurance To get started you can find guided arrow workouts on the explore tab or arrow moves in a custom workout Then you'll adjust the resistance dial to your preferred level of effort 中文翻譯：Arrow 是 Tonal 2 上一種全新的高強度間歇訓練（HIIT）風格的鍛煉，並迅速成為熱門選擇。Arrow 融合了有氧和力量訓練，有點像划船機、滑雪機和藥球猛砸的結合，但又與這些都不同。你只需要知道的是，它能燃燒大量卡路里，並幫助你建立全身耐力。要開始，你可以在「探索」標籤頁找到引導式的 Arrow 鍛煉，或在自訂鍛煉中找到 Arrow 動作，然後將阻力轉盤調整到你偏好的努力程度。</li>
+                    <li id="cite-34">Tonal 2.0 Smart Home Gym Review - Better Than 1.0 Or...?.mp4---this one the new one does one thing that this one the old one doesn't and that's called Arrow arrow is essentially a mode that they say utilizes strength and cardio it doesn't use resistance in the typical way it's basically you adjust by intensity so you would essentially adjust the intensity from 1 to 10 中文翻譯：這台新的機器有一個舊款沒有的功能，叫做 Arrow。Arrow 基本上是一種他們聲稱結合了力量和有氧的模式，它不以傳統方式使用阻力，你基本上是透過強度來調整，所以你會將強度從 1 調整到 10。</li>
+                    <li id="cite-35">The Tonal Home Gym Is Great BUT 10 Things.pdf---Don't worry, spotter mode will recognize when you're starting to struggle and pull back on the resistance. So, not only are you safe, but you can finish that set. 中文翻譯：別擔心，觀察員模式會在你開始掙扎時識別出來，並減輕阻力。所以，你不僅安全，還能完成那組動作。</li>
+                    <li id="cite-36">The Tonal Home Gym Is Great!!! BUT.... 10 Things!.mp4---spotter mode will recognize when you're starting to struggle and pull back on the resistance so not only are you safe but you can finish that set 中文翻譯：當你開始掙扎時，觀察員模式會識別出來並減輕阻力，所以你不僅安全，還能完成那一組動作。</li>
+                    <li id="cite-37">Tried A Gym Monster 2 In My Home Gym Does It Deserve A Space In Here?.mp4---assistance mode is going to help you a bit like having a spotter and doing forced reps so 30 kilos okay I'm doing my tricep push downs and it's 30 kilos and I'm able to do it so no huge drama but let's imagine I got towards the end of my set and I struggle i can't go any further it's lowered the weight to 24 kilos detected that I couldn't do anymore and it dropped the weight effectively creating a drop set 中文翻譯：輔助模式有點像有個夥伴幫你做強迫次數。好的，30公斤，我正在做三頭肌下壓，重量是30公斤，我還能做，所以沒什麼大問題。但想像一下，當我快要做完一組時，我開始掙扎，我再也做不下去了，它把重量降到了24公斤，偵測到我做不動了，然後它就減輕了重量，有效地創造了一個遞減組。</li>
+                    <li id="cite-38">Speediance Gym Monster Review This Changes Home Fitness.pdf---if you start going slower spotter mode will allow you to kind of go up a little bit less weight or if the bar just essentially stops moving the spot mode will kick in and it'll assist you kind of out of that repetition range 中文翻譯：如果你開始變慢，觀察員模式會讓你用稍微輕一點的重量，或者如果槓鈴基本上停止移動，觀察員模式會啟動並協助你完成那個重複範圍。</li>
+                    <li id="cite-39">Is the Oxefit Still Worth It 1 Week out | Oxefit Review, Likes & Dislikes.mp4---the virtual spotter works the change worked the concentric works I mean I haven't found anything not working yet and it's phenomenal 中文翻譯：虛擬安全員功能有用，模式切換有用，向心模式也有用，我的意思是，我還沒發現任何東西不能用，這真是太棒了。</li>
+                    <li id="cite-40">I Tried the $4,500 Smart Home Gym (NOT Sponsored).mp4---Oh, so I went a little too fast, and now it's saying "Too high cable speed, pulling back will trigger the spotter. Please ensure safe training." So that's one of the safety features in action. 中文翻譯：哦，所以我速度快了一點，現在它顯示「纜繩速度過高，後拉將觸發保護裝置。請確保訓練安全。」所以這就是其中一個安全功能的實際運作。</li>
+                    <li id="cite-41">Tried A Gym Monster 2 In My Home Gym Does It Deserve A Space In Here?.mp4---if I wanted to do something like a drop set I could just roll it down to whatever 12 kilos haven't had to go and get a new dumbbell haven't had to go and do anything at all the weight is right there if I wanted to drop set again turn the weight off take the weight down even further 8 12 kilos double tap again turn the weight back on and now doing an 8 and a half kilo three dumbbells haven't had to move my feet all very cool 中文翻譯：如果我想做遞減組，我可以直接把重量調到12公斤，不需要去拿新的啞鈴，什麼都不用做，重量就在那裡。如果我想再做一次遞減組，關掉重量，再把重量調低到8.5公斤，輕點兩下，再次打開重量，現在我正在做8.5公斤的重量。三個啞鈴，我連腳都沒動過，非常酷。</li>
+                    <li id="cite-42">Vitruvian Trainer vs Speediance - IN DEPTH Comparison.pdf---for some reason the barbell was to for example slip out of your hands it wouldn't snap onto you at full force possibly causing an injury or maybe damaging the machine because Speedin doesn't have these safety cables as fail safe you do need to be extra careful especially when lifting heavier weights 中文翻譯：如果槓鈴因某種原因從你手中滑落，它不會以全力撞向你，可能導致受傷或損壞機器。因為 Speediance 沒有這些安全纜繩作為故障保護，所以你在舉重較重時需要格外小心。</li>
+                    <li id="cite-43">felipearbustopotd：And if you have a power cut, you have an expensive piece of tech 中文翻譯：felipearbustopotd：如果你停電了，你就多了一件昂貴的科技產品。</li>
+                    <li id="cite-44">7 Reasons Not To Buy Vitruvian Get The Speediance Instead.pdf---if you don't trust the company or any of these companies if you don't trust the company to be around in 3 to five years and be able to provide product support both for the hardware and software uh then don't get the machine 中文翻譯：如果你不信任這家公司或任何這些公司，如果你不信任這家公司能在 3 到 5 年後仍然存在並為硬件和軟件提供產品支持，那就不要買這台機器。</li>
+                    <li id="cite-45">Tried A Gym Monster 2 In My Home Gym Does It Deserve A Space In Here?.pdf---I know a rack, barbell and plates or dumbells/kettlebells will last decades. What is this thing in 3-5 years time? Will there be updates? What's the durability of this mechanism and the electronics? 中文翻譯：我知道一個架子、槓鈴和鐵片或啞鈴/壺鈴可以用幾十年。這東西在 3-5 年後會怎麼樣？會有更新嗎？這個機械裝置和電子設備的耐用性如何？</li>
+                    <li id="cite-46">Is This $3500 Smart Gym By Speediance Worth It My 6 Month Experience.mp4---for example bench press I can typically do 220 no problem 225 but on here I really struggled to even get one rep and I want to say it's because I wasn't really used to the magnetic resistance that it uses 中文翻譯：例如，臥推我通常可以輕鬆做到 220 磅，225 磅也沒問題，但在這台機器上，我連一次都 struggled to get。我想說，這是因為我不太習慣它使用的磁力阻力。</li>
+                    <li id="cite-47">I Tried the Speedience Gym Monster 2 - Was it Worth it [Smart Home Gym].mp4---there is a little bit of lateral movement in it as well a little wobbly isn't it 中文翻譯：它也有一點橫向移動，有點晃，不是嗎？</li>
+                    <li id="cite-48">I Tried the $4,500 Smart Home Gym (NOT Sponsored).pdf---it doesn't feel the same as a real weight would. Like if I was doing a barbell deadlift, it doesn't feel the same. It feels a little more like wobbly 中文翻譯：感覺和真實的重量不一樣。就像我在做槓鈴硬舉，感覺也不一樣。感覺更像是搖搖晃晃的。</li>
+                    <li id="cite-49">Is the Oxefit Still Worth It 1 Week out | Oxefit Review, Likes & Dislikes.mp4---um the cables themselves they're fluid they're they're kind of they have a nice motion they're not jerky or anything like that so you're going to feel fine it's not like there's a stutter um when you're trying to kind of you know push the bar or pull the cables there's no stutter in it um it's one fluid motion 中文翻譯：纜繩本身是流暢的，它們有一種很好的運動感，不會有卡頓或任何類似的情況，所以你會感覺很好，不會在你試圖推動槓鈴或拉動纜繩時出現停頓，它是一氣呵成的流暢動作。</li>
+                    <li id="cite-50">Tonal Home Gym - Your Top Questions Answered!.mp4---it is consistent it's there the whole way through and it does a great job of adapting to what you're doing so resistance wise that's one of the scariest things because a lot of people don't necessarily know what they're getting into with the tonal and considering the price points at you don't know if that's gonna be something you like or not and I can tell you it's been one of my favorite things the resistance is phenomenal with these things 中文翻譯：它是持續的，全程都在，並且能很好地適應你的動作。所以在阻力方面，這是最令人擔憂的事情之一，因為很多人不一定知道他們在使用 Tonal 時會遇到什麼，而且考慮到價格，你也不知道這是不是你會喜歡的東西。但我可以告訴你，這是我最喜歡的事情之一，這些東西的阻力非常棒。</li>
+                    <li id="cite-51">5 Tonal Alternatives that won't Break The Bank.pdf---used the Tonal is built like a tank, I’ve had no issues. 中文翻譯：用過的 Tonal 就像坦克一樣堅固，我從沒遇到過任何問題。</li>
+                    <li id="cite-52">2024 Tonal Smart Home Gym Review Is it Worth the Price After 2 Years of Wear and Tear .mp4---it has a small squeaking noise from the gears they kind of started to rust over time a little bit 中文翻譯：它的齒輪有一點點吱吱作響的聲音，隨著時間的推移，它們有點開始生鏽了。</li>
+                    <li id="cite-53">2024 Tonal Smart Home Gym Review Is it Worth the Price After 2 Years of Wear and Tear .mp4---I'm going to take this down so you guys can see kind of the rust that has started in the gears I don't know if you can see that in there but there's a little bit of rust in the gears which causes a bit of a squeaking sound 中文翻譯：我現在要把它拆下來，讓你們看看齒輪裡開始生鏽的情況。我不知道你們是否能看到裡面，但齒輪裡有一點鏽，這會導致一些吱吱作響的聲音。</li>
+                    <li id="cite-54">Dear Smart Home Gyms....mp4---same thing with tonal tonal by and large is one of my favorites of the smart home gym techs that's available however it still creaks and has all t his plastic 中文翻譯：同樣的情況也發生在 Tonal 身上，Tonal 總體而言是我最喜歡的智慧家庭健身科技之一，但是它仍然會嘎吱作響，而且全是塑膠。</li>
+                    <li id="cite-55">Tonal vs Oxefit- What Are the Differences (Watch This Before You BUY).pdf---because they're made of plastic there is quite a bit of creaking that happens so when you move them and you're starting to like pull on the machine everything like that it does start to make some noises that are kind of unsavory 中文翻譯：因為它們是塑膠做的，所以會有很多吱吱作響的聲音，所以當你移動它們，開始拉動機器之類的時候，它確實會開始發出一些令人不悅的噪音。</li>
+                    <li id="cite-56">Using the Vitruvian Trainer - What's it actually like Q&A.mp4---maybe in like 5 years is like the cables but I saw the replacement for that is like $50 or $60 and you can kind of easily replace a cable yourself so that's really not a big deal if the cable does indeed break I haven't had any sign of that it's just what I assume would be the first thing to break down based on how this machine works but I would say as long as you're taking care of it then I would expect the vvan trainer to last 10 or more years the hardware seems very solid and it seems like it's holding up very well 中文翻譯：也許再過5年左右，會是纜線的問題，但我看到替換纜線大約是50或60美元，而且你可以自己輕鬆更換，所以如果纜線真的斷了，那也不是什麼大問題。我還沒有看到任何跡象，這只是我根據這台機器的運作方式，推測最先會壞掉的東西。但我會說，只要你好好保養，我預計這台 vvan 訓練機能用上10年或更久，硬體看起來非常堅固，而且似乎很耐用。</li>
+                    <li id="cite-57">Speediance Gym Monster Review After 6 Months - Best Compact Home Gym?.mp4---the build quality of the speeden gym monster is absolutely perfect like it there is absolutely no worry that I have when I'm lifting really heavy weights even from the top tier of the tower in the back that kind of makes like a like almost a U an upside down u in the back it it'll wobble a little bit if I'm pulling it uh to the side or diagonal a little bit but it's never been something that I've been worried about at all so in terms of build quality the thing is so sturdy 中文翻譯：speeden gym monster 的製造品質絕對是完美的，當我舉起很重的重量時，即使是從後面塔架的頂層，我完全沒有任何擔心。後面那個塔架有點像一個倒U形，如果我向側面或斜向拉動它，它會有點晃動，但這從來都不是我擔心的事情。所以在製造品質方面，這東西非常堅固。</li>
+                    <li id="cite-58">Is This $3500 Smart Gym By Speediance Worth It My 6 Month Experience.mp4---but one day I made the mistake of rowing and I didn't grab this off the top and this happen now honestly I'd expect a drop like that to not really affec t anything but as you can see here this thing kind of flew out so now what happens is it still actually works so if I put this back in I can press it I can go weight up weight down everything like that but it won't stay on 中文翻譯：但有一天，我犯了一個錯誤，在划船時沒有從頂部拿起這個，結果就發生了這種情況。老實說，我本以為那樣的掉落不會真的影響任何東西，但正如你所見，這個東西有點飛出來了。所以現在的情況是，它實際上仍然能用。如果我把它放回去，我可以按它，我可以增加重量，減少重量，一切都行，但它就是固定不住。</li>
+                    <li id="cite-59">Is the Oxefit Still Worth It 1 Week out | Oxefit Review, Likes & Dislikes.mp4---the next thing I like about the oxfit is it's again like I said in the day one it's a beast it's it's sturdy it's stable it's it's metal it's it's not going it's not plasticy feel and it's definitely you feel like you're getting what you're paying for 中文翻譯：我喜歡 oxfit 的下一點是，就像我第一天說的，它是一頭猛獸，它堅固、穩定，是金屬的，它不會有塑膠感，你絕對會感覺物有所值。</li>
+                    <li id="cite-60">Oxefit Busted Again | More Found Issues | Danger warning for oxefit.mp4---the first one that I broke was on the multibar and the rubber band part snapped and then this was on the barbell and the plastic snapped and to be honest I'm not even sure how it snapped um really really not 100% sure how it snapped um it's plastic and I thought it would have held and then you just slide it along the bar to position it where you want it so it's not even like it's grinding but I mean there is that um gnarling on the bar I think that's how you say it but either way that's something to look out for I did reach out to oxfit about it because I was kind of frustrated um again it's you pay over five thousand dollars for a piece of machinery and you would think that they engineered the hell out of it um and you're getting your money's worth but I understand that they're under time pressure and just want to get it out and they're still working on it and there's a lot of things coming about so I did reach out to oxfit um I emailed Silas texted someone in the company that I became friends with and third grade I mean what I could say is Customer Service Customer Support is fabulous Bar None they did mail out um new ones 中文翻譯：我弄壞的第一個是在多功能桿上，橡膠圈部分斷了，然後這個是在槓鈴上，塑膠斷了，老實說我甚至不確定它是怎麼斷的，嗯，真的真的不確定它是怎麼斷的。它是塑膠的，我以為它能撐住，然後你只要沿著桿子滑動它來定位你想要的位置，所以它甚至不是在磨損，但我的意思是，桿子上有那個滾花，我想是這麼說的吧。但無論如何，這是需要注意的事情。我確實聯繫了 oxfit，因為我有點沮喪。嗯，再說一次，你花超過五千美元買一台機器，你會覺得他們把它設計得天衣無縫，而且你物有所值，但我明白他們有時間壓力，只想把它推出市場，而且他們還在開發中，還有很多事情正在進行。所以我聯繫了 oxfit，我給 Silas 發了郵件，給公司裡一個我從三年級就認識的朋友發了短信，我的意思是，我能說的是，客戶服務，客戶支持絕對是無與倫比的，他們確實寄出了新的。</li>
+                    <li id="cite-62">5 Tonal Alternatives that won't Break The Bank.pdf---The problem with Tonal is that they do not offer an extended warranty! 中文翻譯：Tonal 的問題是他們不提供延長保固！</li>
+                    <li id="cite-63">2024 Tonal Smart Home Gym Review Is it Worth the Price After 2 Years of Wear and Tear.pdf---tells me since my Tonal is out of warranty all they can do is replace it for $795. 中文翻譯：告訴我，由於我的 Tonal 已過保固期，他們唯一能做的就是以 795 美元的價格更換它。</li>
+                    <li id="cite-64">5 Tonal Alternatives that won't Break The Bank.pdf---Plus, if you want to move it to another room at some point :$300. Another house? $500 中文翻譯：此外，如果你想把它搬到另一個房間：300 美元。另一棟房子？500 美元。</li>
+                    <li id="cite-65">7 Reasons Not To Buy Vitruvian Get The Speediance Instead.pdf---and even mountain bikes require like consistent maintenance so and the good thing the retrieving doesn't require that 中文翻譯：即使是登山車也需要持續的保養，而好處是，這款回收裝置不需要。</li>
+                    <li id="cite-66">I Tried the $4,500 Smart Home Gym (NOT Sponsored).mp4---Maintenance is minimal other than software updates. 中文翻譯：除了軟體更新外，維護工作極少。</li>
+                    <li id="cite-67">OxeFit updates & Answering Comments.mp4---the customer service is outstanding they are going to replace the shackle 中文翻譯：客戶服務非常出色，他們將會更換那個吊環。</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="citation-backdrop" class="citation-backdrop"></div>
+<div id="citation-popup" class="citation-popup">
+    <div class="citation-popup-header">
+        <h4>引用資料來源</h4>
+        <button type="button" class="btn-close" aria-label="Close" onclick="hideCitation()"></button>
+    </div>
+    <div id="citation-popup-body" class="citation-popup-body">
+        </div>
+</div>
+<script>
+    let currentProductIndex = 1;
+    const totalProducts = 7;
+
+    /* --- 頁面內容切換 --- */
+    function showPage(pageId, anchor, element) {
+        document.querySelectorAll('.page-content').forEach(page => page.classList.remove('active'));
+        const pageToShow = document.getElementById(pageId);
+        if (pageToShow) pageToShow.classList.add('active');
+        
+        // 更新主導覽連結的 active 狀態
+        document.querySelectorAll('.main-nav-link').forEach(link => link.classList.remove('active-main-link'));
+        document.querySelectorAll('.accordion-button').forEach(button => button.classList.remove('active-main-link'));
+        document.querySelectorAll('.product-nav-link').forEach(link => link.classList.remove('active-link'));
+
+        if (element && element.classList.contains('main-nav-link')) {
+            element.classList.add('active-main-link');
+        } else if (pageId === 'page-report') {
+            document.querySelector('#headingOne button').classList.add('active-main-link');
+        } else if (pageId === 'page-product-intro') {
+             document.querySelector('#headingTwo button').classList.add('active-main-link');
+        }
+
+
+        const mainContent = document.getElementById('main-content');
+        if (anchor) {
+            setTimeout(() => {
+                const targetElement = document.querySelector(anchor);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // 添加滾動到目標的視覺高亮效果 (僅限報告頁)
+                    if (pageId === 'page-report') {
+                        targetElement.style.transition = 'background-color 0.5s ease-in-out';
+                        targetElement.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+                        setTimeout(() => { targetElement.style.backgroundColor = ''; }, 1500);
+                    }
+                }
+            }, 100);
+        } else {
+             mainContent.scrollTo(0, 0);
+        }
+        
+        // 如果切換到產品介紹頁，確保顯示當前產品
+        if (pageId === 'page-product-intro') {
+            updateProductView(currentProductIndex);
+        }
+    }
+    
+    /* --- 產品切換邏輯 --- */
+    function updateProductView(index) {
+        // 隱藏所有產品頁
+        document.querySelectorAll('.product-slide').forEach(slide => slide.classList.remove('active'));
+        // 顯示目標產品頁
+        const targetSlide = document.getElementById(`product-slide-${index}`);
+        if (targetSlide) {
+            targetSlide.classList.add('active');
+        }
+        
+        // 更新當前索引
+        currentProductIndex = index;
+        
+        // 更新按鈕狀態
+        document.getElementById('prev-product-btn').disabled = (index === 1);
+        document.getElementById('next-product-btn').disabled = (index === totalProducts);
+
+        // 更新側邊欄產品連結的 active 狀態
+        document.querySelectorAll('.product-nav-link').forEach((link, i) => {
+            link.classList.remove('active-link');
+            if (i + 1 === index) {
+                link.classList.add('active-link');
+            }
+        });
+        
+        // 確保主內容滾動到頂部，讓使用者看到產品標題
+        document.getElementById('main-content').scrollTo(0, 0);
+    }
+    
+    function switchProduct(direction, element = null) {
+        let newIndex = currentProductIndex;
+        
+        if (element && element.classList.contains('product-nav-link')) {
+             // 來自側邊欄點擊
+             const linkIndex = Array.from(document.querySelectorAll('.product-nav-link')).indexOf(element) + 1;
+             newIndex = linkIndex;
+        } else {
+             // 來自左右按鈕或鍵盤
+             newIndex += direction;
+        }
+
+        if (newIndex >= 1 && newIndex <= totalProducts) {
+            // 確保產品介紹頁是活動頁
+            showPage('page-product-intro');
+            updateProductView(newIndex);
+        }
+    }
+    
+    /* --- 鍵盤監聽實現左右換頁 --- */
+    document.addEventListener('keydown', (event) => {
+        // 只有在產品介紹頁面活躍時才響應鍵盤事件
+        if (document.getElementById('page-product-intro').classList.contains('active')) {
+            if (event.key === 'ArrowLeft') {
+                switchProduct(-1);
+            } else if (event.key === 'ArrowRight') {
+                switchProduct(1);
+            }
+        }
+    });
+
+
+    /* --- 引用資料彈出視窗的 JavaScript 功能 --- */
+    const citationPopup = document.getElementById('citation-popup');
+    const citationBody = document.getElementById('citation-popup-body');
+    const citationBackdrop = document.getElementById('citation-backdrop');
+
+    function showCitation(citationId) {
+        const citationElement = document.getElementById(citationId);
+        if (citationElement) {
+            const index = citationId.split('-')[1];
+            let contentHtml = citationElement.innerHTML;
+            
+            citationBody.innerHTML = `<h4>編號 ${index}</h4>${contentHtml}`;
+            citationPopup.classList.add('active');
+            citationBackdrop.classList.add('active');
+        }
+    }
+
+    function hideCitation() {
+        citationPopup.classList.remove('active');
+        citationBackdrop.classList.remove('active');
+    }
+    citationBackdrop.addEventListener('click', hideCitation);
+
+    /* --- 初始化 --- */
+    window.onload = function() {
+        // 報告頁的 Scrollspy 初始化 (保持原報告目錄滾動高亮功能)
+        const mainContent = document.getElementById('main-content');
+        const sections = document.querySelectorAll('#page-report h2[id]');
+        const navLinks = document.querySelectorAll('.report-nav-link');
+        
+        mainContent.addEventListener('scroll', () => {
+            window.requestAnimationFrame(() => {
+                let currentSectionId = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - mainContent.offsetTop - 50; 
+                    if (mainContent.scrollTop >= sectionTop) {
+                        currentSectionId = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('active-link');
+                    const linkMatch = link.getAttribute('onclick').match(/#section-\d+/);
+                    if (linkMatch && linkMatch[0] === '#' + currentSectionId) {
+                        link.classList.add('active-link');
+                    }
+                });
+            });
+        });
+
+        // 預設狀態：顯示報告首頁，並初始化產品介紹頁
+        const firstReportLink = document.querySelector('.report-nav-link');
+        if (firstReportLink) {
+             firstReportLink.classList.add('active-link');
+        }
+        
+        // 初始化產品介面：顯示第一個產品，並更新導航按鈕
+        updateProductView(1);
+    };
+</script>
+
+</body>
+</html>
