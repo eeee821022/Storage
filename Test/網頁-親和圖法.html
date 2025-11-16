@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>親和圖法 (Affinity Diagram) 工具</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 html2canvas (用於截圖) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- 載入 Inter 字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 自訂樣式 */
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        kbd {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        /* 畫布背景 */
+        #board {
+            background-color: #f1f5f9;
+            transition: transform 0.1s linear;
+            position: relative;
+        }
+
+        #board-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .connection-line {
+            stroke: #4b5563; /* gray-600 */
+            stroke-width: 2px;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        #temp-line {
+            stroke: #3b82f6; /* blue-500 */
+            stroke-width: 2px;
+            stroke-dasharray: 5, 5;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        /* 便利貼 */
+        .sticky-note {
+            width: 220px;
+            min-height: 100px; /* [MODIFIED] 高度從 120px 縮減為 100px (Req 2) */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s, transform 0.2s, opacity 0.2s;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            z-index: 10; 
+        }
+
+        .sticky-note:active {
+            cursor: grabbing;
+            transform: scale(1.03);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            z-index: 50 !important;
+        }
+        
+        .sticky-note.note-title {
+            min-height: 0;
+        }
+        .sticky-note.note-title .editable {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 700; /* bold */
+            background-color: transparent !important;
+            padding: 0.5rem 1rem;
+        }
+        .sticky-note.note-title .editable:focus {
+             background-color: #ffffff !important;
+        }
+        
+        /* 群組區塊 */
+        .group-container {
+            min-width: 400px;
+            min-height: 300px;
+            background-color: rgba(229, 231, 235, 0.7); /* bg-gray-200/70 */
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            z-index: 5 !important; 
+            backdrop-filter: blur(2px);
+            /* [NEW] 讓 resize handle 可以定位 (Req 1) */
+            position: absolute; 
+        }
+        .group-container .editable {
+            background-color: transparent !important;
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* semibold */
+            color: #1f2937; /* text-gray-800 */
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #d1d5db;
+            flex-grow: 0; 
+            min-height: 0;
+            border-radius: 0;
+        }
+        .group-container .editable:focus {
+            background-color: #fff !important;
+        }
+        .group-container.selected {
+            border-color: #3b82f6;
+        }
+
+
+        .sticky-note.selected {
+            box-shadow: 0 0 0 2px #3b82f6, 0 10px 20px rgba(0, 0, 0, 0.2);
+            z-index: 40 !important;
+        }
+        
+        .editable {
+            flex-grow: 1;
+            padding: 0.75rem;
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1.4;
+            outline: none;
+            border-radius: 0 0 0.5rem 0.5rem;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            cursor: inherit;
+        }
+        
+        .editable:focus {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+            cursor: text;
+            background-color: #fff;
+        }
+        
+        /* 浮動工具列 */
+        .toolbar {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+            z-index: 1000;
+            position: fixed;
+            background-color: white;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+            padding: 0.5rem; /* p-2 */
+            display: flex;
+            align-items: center;
+        }
+        
+        .toolbar.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .align-button {
+            width: 2rem; /* w-8 */
+            height: 2rem; /* h-8 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem; /* rounded */
+            color: #4b5563; /* text-gray-600 */
+        }
+        .align-button:hover:not(:disabled) {
+            background-color: #f3f4f6; /* hover:bg-gray-100 */
+        }
+        .align-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .align-button svg {
+            width: 1.25rem; /* w-5 */
+            height: 1.25rem; /* h-5 */
+        }
+        .toolbar-divider {
+            width: 1px;
+            height: 1.5rem; /* h-6 */
+            background-color: #d1d5db; /* bg-gray-300 */
+            margin-left: 0.25rem; /* mx-1 */
+            margin-right: 0.25rem;
+        }
+
+        .connector-node {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #fff;
+            border: 2px solid #3b82f6; /* blue-500 */
+            border-radius: 50%;
+            z-index: 11;
+            cursor: crosshair;
+            opacity: 0;
+            transition: opacity 0.2s, background-color 0.2s;
+            pointer-events: none;
+        }
+        
+        /* [MODIFIED] 群組被選取時不顯示節點 (Req 1) */
+        .sticky-note.selected.single-select:not(.group-container) .connector-node {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* [MODIFIED] 群組作為目標時不顯示節點 (Req 1) */
+        .sticky-note.connection-target:not(.group-container) .connector-node {
+            opacity: 1;
+        }
+        
+        .connector-node:hover {
+            background-color: #3b82f6;
+        }
+
+        .node-top { top: -6px; left: 50%; transform: translateX(-50%); }
+        .node-right { right: -6px; top: 50%; transform: translateY(-50%); }
+        .node-bottom { bottom: -6px; left: 50%; transform: translateX(-50%); }
+        .node-left { left: -6px; top: 50%; transform: translateY(-50%); }
+
+        #selection-box {
+            position: absolute;
+            border: 1px dashed #3b82f6; /* blue-500 */
+            background-color: rgba(59, 130, 246, 0.1);
+            z-index: 999;
+            pointer-events: none;
+            display: none;
+        }
+        
+        .action-button {
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+            background-color: #ffffff;
+            color: #374151; /* text-gray-700 */
+            font-size: 0.875rem; /* 14px */
+            font-weight: 500; /* medium */
+            padding: 0.5rem 1rem; /* 8px 16px */
+            border-radius: 0.5rem; /* 8px */
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .action-button:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-color: #9ca3af; /* border-gray-400 */
+        }
+        .action-button svg {
+            width: 1.25rem; /* 20px */
+            height: 1.25rem; /* 20px */
+            margin-right: 0.5rem; /* 8px */
+            color: #6b7280; /* text-gray-500 */
+        }
+        
+        .warning-button {
+            background-color: #ef4444; /* bg-red-500 */
+            color: #ffffff; /* text-white */
+            border-color: #ef4444;
+        }
+        .warning-button:hover {
+            background-color: #dc2626; /* hover:bg-red-600 */
+            border-color: #dc2626;
+        }
+        .warning-button svg {
+            color: #fef2f2; /* text-red-50 */
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* [NEW] 群組的 resize handle (Req 1) */
+        /* [MODIFIED] 替換舊的 .resize-handle (Req 1) */
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #fff;
+            border: 2px solid #3b82f6; /* blue-500 */
+            border-radius: 2px;
+            z-index: 6;
+            display: none; /* 預設隱藏 */
+            opacity: 0.8;
+        }
+        .resize-handle:hover {
+            opacity: 1;
+            background-color: #3b82f6;
+        }
+        .group-container.selected .resize-handle {
+            display: block; /* 選取群組時顯示 */
+        }
+        .resize-handle-tl { top: -6px; left: -6px; cursor: nwse-resize; }
+        .resize-handle-t  { top: -6px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+        .resize-handle-tr { top: -6px; right: -6px; cursor: nesw-resize; }
+        .resize-handle-l  { top: 50%; left: -6px; transform: translateY(-50%); cursor: ew-resize; }
+        .resize-handle-r  { top: 50%; right: -6px; transform: translateY(-50%); cursor: ew-resize; }
+        .resize-handle-bl { bottom: -6px; left: -6px; cursor: nesw-resize; }
+        .resize-handle-b  { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+        .resize-handle-br { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+        /* [NEW] 智慧對齊線 (Req 2) */
+        .snap-line {
+            position: absolute;
+            background-color: #ef4444; /* red-500 */
+            z-index: 1000;
+            display: none;
+            opacity: 0.7;
+        }
+        #snap-line-v { width: 1px; height: 100%; top: 0; }
+        #snap-line-h { height: 1px; width: 100%; left: 0; }
+
+    </style>
+</head>
+<body class="bg-gray-100 overflow-hidden"> 
+
+    <!-- 頂部工具列 -->
+    <header class="fixed top-4 left-4 z-50 flex space-x-2">
+        <button id="add-group-btn" class="action-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5-13.5h16.5a1.5 1.5 0 0 1 1.5 1.5v10.5a1.5 1.5 0 0 1-1.5 1.5h-16.5a1.5 1.5 0 0 1-1.5-1.5v-10.5a1.5 1.5 0 0 1 1.5-1.5z" />
+            </svg>
+            新增群組
+        </button>
+        <div class="w-px h-10 bg-gray-300 mx-1"></div>
+        <input type="file" id="import-input" accept="application/json" class="hidden">
+        <button id="import-btn" class="action-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+            </svg>
+            匯入 JSON
+        </button>
+        <button id="export-btn" class="action-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            匯出 JSON
+        </button>
+        <button id="screenshot-btn" class="action-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.5v8.25a2.31 2.31 0 0 1-1.641 2.175l-1.31.393M6.827 6.175L20.31 2.188a2.31 2.31 0 0 1 2.175 1.641l.393 1.31a2.31 2.31 0 0 1-1.641 2.175L6.827 9.175m0-3L6.827 9.175m13.483-3l-1.31.393a2.31 2.31 0 0 1-2.175 1.641l-1.31.393M6.827 6.175l.393 1.31a2.31 2.31 0 0 1-1.641 2.175L2.5 9.875m4.327-3.7l.393 1.31a2.31 2.31 0 0 1-1.641 2.175L2.5 9.875m17.813-1.641l.393 1.31a2.31 2.31 0 0 1-1.641 2.175l-1.31.393m0 0L20.31 2.188m0 0l-1.31.393m1.31-.393l.393 1.31m-1.31-.393l-1.31.393m0 0l-1.31.393m0 0l-1.31.393m12.12 10.875l-1.31.393a2.31 2.31 0 0 1-2.175 1.641l-1.31.393m0 0l-1.31.393a2.31 2.31 0 0 1-2.175 1.641l-1.31.393m0 0l-1.31.393a2.31 2.31 0 0 1-2.175 1.641l-1.31.393M6.827 21.175L20.31 17.188a2.31 2.31 0 0 1 2.175-1.641l.393-1.31a2.31 2.31 0 0 1-1.641-2.175L6.827 15.175m0 6l-1.31.393a2.31 2.31 0 0 1-2.175-1.641l-.393-1.31a2.31 2.31 0 0 1 1.641-2.175l1.31-.393m0 6l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m-12.12 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393M6.827 15.175l.393-1.31a2.31 2.31 0 0 1 1.641-2.175l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m-17.813 0l.393-1.31a2.31 2.31 0 0 1 1.641-2.175l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393" />
+            </svg>
+            截圖
+        </button>
+        <button id="clear-btn" class="action-button warning-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12.503 0l-.165.51a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0l-3.477-.397m-12.503 0l3.477.397m6.51 0l-3.477-.397M4.772 5.79L4.5 5.25m0 0l-.346-1.023a1.125 1.125 0 0 1 1.123-1.404h10.004a1.125 1.125 0 0 1 1.123 1.404l-.346 1.023m-1.715 0a48.108 48.108 0 0 0-3.478-.397m-4.788 0a48.108 48.108 0 0 1-3.478-.397" />
+            </svg>
+            清空畫布
+        </button>
+    </header>
+
+    <!-- 主畫布 -->
+    <div id="board-container" class="w-screen h-screen relative overflow-hidden cursor-grab">
+        <div id="board" class="absolute inset-0 w-full h-full">
+            <svg id="board-svg">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                          refX="8" refY="3.5" orient="auto" markerUnits="strokeWidth">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#4b5563" />
+                    </marker>
+                </defs>
+            </svg>
+            
+            <div id="selection-box"></div>
+
+            <!-- [NEW] 智慧對齊線 (Req 2) -->
+            <div id="snap-line-v" class="snap-line"></div>
+            <div id="snap-line-h" class="snap-line"></div>
+        </div>
+    </div>
+
+    <!-- 浮動工具列 (單一物件) -->
+    <div id="context-menu" class="toolbar space-x-1">
+        <button data-color="bg-yellow-200" class="w-6 h-6 rounded-full bg-yellow-200 border-2 border-white hover:ring-2 hover:ring-blue-500"></button>
+        <button data-color="bg-green-200" class="w-6 h-6 rounded-full bg-green-200 border-2 border-white hover:ring-2 hover:ring-blue-500"></button>
+        <button data-color="bg-blue-200" class="w-6 h-6 rounded-full bg-blue-200 border-2 border-white hover:ring-2 hover:ring-blue-500"></button>
+        <button data-color="bg-pink-200" class="w-6 h-6 rounded-full bg-pink-200 border-2 border-white hover:ring-2 hover:ring-blue-500"></button>
+        <button data-color="bg-purple-200" class="w-6 h-6 rounded-full bg-purple-200 border-2 border-white hover:ring-2 hover:ring-blue-500"></button>
+        <button data-color="bg-gray-200" class="w-6 h-6 rounded-full bg-gray-200 border-2 border-white hover:ring-2 hover:ring-blue-500"></button>
+        <div class="toolbar-divider"></div>
+        <button data-action="title" title="切換為標題" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4H4a2 2 0 00-2 2v10m9-12v12m-5-7h10"></path></svg>
+        </button>
+        <!-- [NEW] 新增 "移除關聯線" 按鈕 -->
+        <button data-action="delete-lines" title="移除關聯線" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+        </button>
+        <button data-action="delete" title="刪除" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-red-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        </button>
+    </div>
+
+    <!-- 對齊工具列 (多物件) -->
+    <div id="align-toolbar" class="toolbar space-x-0">
+        <button id="align-left" class="align-button" title="靠左對齊">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3zm8 4a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1V7z" clip-rule="evenodd"></path></svg>
+        </button>
+        <button id="align-center-h" class="align-button" title="水平置中">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 00-1 1v12a1 1 0 002 0V4a1 1 0 00-1-1zM4 3a1 1 0 00-1 1v12a1 1 0 002 0V4a1 1 0 00-1-1zM16 3a1 1 0 00-1 1v12a1 1 0 002 0V4a1 1 0 00-1-1z"></path></svg>
+        </button>
+        <button id="align-right" class="align-button" title="靠右對齊">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M13 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1h-2a1 1 0 01-1-1V3zm-8 4a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1H6a1 1 0 01-1-1V7z" clip-rule="evenodd"></path></svg>
+        </button>
+        <div class="toolbar-divider"></div>
+        <button id="align-top" class="align-button" title="靠上對齊">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="rotate-90"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3zm8 4a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1V7z" clip-rule="evenodd"></path></svg>
+        </button>
+        <button id="align-middle-v" class="align-button" title="垂直置中">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="rotate-90"><path d="M10 3a1 1 0 00-1 1v12a1 1 0 002 0V4a1 1 0 00-1-1zM4 3a1 1 0 00-1 1v12a1 1 0 002 0V4a1 1 0 00-1-1zM16 3a1 1 0 00-1 1v12a1 1 0 002 0V4a1 1 0 00-1-1z"></path></svg>
+        </button>
+        <button id="align-bottom" class="align-button" title="靠下對齊">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="rotate-90"><path fill-rule="evenodd" d="M13 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1h-2a1 1 0 01-1-1V3zm-8 4a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1H6a1 1 0 01-1-1V7z" clip-rule="evenodd"></path></svg>
+        </button>
+        <div class="toolbar-divider"></div>
+        <button id="dist-h" class="align-button" title="水平均分">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a1 1 0 00-1 1v12a1 1 0 001 1h2a1 1 0 001-1V4a1 1 0 00-1-1H4zm-2 7a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zm12-7a1 1 0 00-1 1v12a1 1 0 001 1h2a1 1 0 001-1V4a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path></svg>
+        </button>
+        <button id="dist-v" class="align-button" title="垂直均分">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="rotate-90"><path fill-rule="evenodd" d="M4 3a1 1 0 00-1 1v12a1 1 0 001 1h2a1 1 0 001-1V4a1 1 0 00-1-1H4zm-2 7a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zm12-7a1 1 0 00-1 1v12a1 1 0 001 1h2a1 1 0 001-1V4a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path></svg>
+        </button>
+        <!-- [NEW] 多選刪除按鈕 -->
+        <div class="toolbar-divider"></div>
+        <button id="delete-selected-btn" class="align-button" title="刪除選取項目">
+            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        </button>
+    </div>
+
+    <!-- [MODIFIED] 提示訊息 (Req 3) -->
+    <button id="help-button" class="fixed top-4 right-4 z-50 p-3 bg-white rounded-full shadow-lg text-blue-600 hover:bg-blue-50 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+           <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+       </svg>
+    </button>
+    
+    <!-- [NEW] 說明 Modal (Req 3) -->
+    <div id="help-modal" class="hidden fixed inset-0 z-[1001] overflow-y-auto"> <!-- z-index 必須高於 modal-overlay -->
+        <!-- [MODIFIED] 加上 z-10 (Req 2) -->
+        <div id="help-modal-overlay" class="modal-overlay fixed inset-0 w-full h-full z-10" style="background-color: rgba(0, 0, 0, 0.5);"></div>
+        
+        <!-- [MODIFIED] 加上 relative z-20 (Req 2) -->
+        <div class="flex items-center justify-center min-h-screen p-4 relative z-20">
+            <div class="modal-content relative w-full max-w-3xl bg-white p-6 md:p-8 rounded-lg shadow-xl overflow-y-auto" style="max-height: 80vh;">
+                <!-- 關閉按鈕 -->
+                <button id="close-modal-button" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                
+                <!-- 彈窗內容 -->
+                <div class="space-y-4">
+                    <h2 class="text-2xl font-bold text-gray-800">方法介紹：親和圖法 (Affinity Diagram / KJ 法)</h2>
+                    <div class="prose max-w-none text-gray-700">
+                        <table class="w-full border-collapse border border-gray-200">
+                            <tbody class="align-baseline">
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-3 bg-gray-50 font-semibold w-1/4">一句話總結</td>
+                                    <td class="p-3">讓大量的零散資訊「自動歸位」，從混亂中浮現出洞見與結構。</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-3 bg-gray-50 font-semibold">核心概念</td>
+                                    <td class="p-3">這是一種「由下而上 (Bottom-up)」的資料分類法。它不預先設定任何分類框架，而是讓團隊成員透過直覺與合作，將大量的質化資料（如：用戶訪談筆記、點子、觀察）進行分組，最終讓資料本身的關聯性「自然地長出」有意義的主題與架構。</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-3 bg-gray-50 font-semibold">解決的核心問題</td>
+                                    <td class="p-3">當你面對一大堆看似混亂、零散的質化數據（例如：上百張的便利貼、訪談逐字稿、腦力激盪的點子），感到不知所措時。親和圖法能幫助團隊綜觀與收斂、發掘模式，並建立共識。</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-3 bg-gray-50 font-semibold">最佳使用時機</td>
+                                    <td class="p-3">主要用於「探索期」與「發想期」。<br>• 用戶研究後： 用來統整和分析所有質化發現。<br>• 腦力激盪後： 用來分類和組織大量的創意點子。</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 bg-gray-50 font-semibold">使用流程說明</td>
+                                    <td class="p-3">
+                                        <ol class="list-decimal list-inside space-y-1">
+                                            <li><strong>準備資料：</strong> 將所有的資料點（如：一句用戶原話）分別寫在「一張」便利貼上。</li>
+                                            <li><strong>隨機貼上：</strong> 將所有便利貼隨機貼在白板上。</li>
+                                            <li><strong>靜默分組：</strong> 團隊成員「安靜地」開始移動便利貼，將相似的聚集在一起。</li>
+                                            <li><strong>命名與討論：</strong> 為每一個群組下一個精準的「標題卡」。</li>
+                                            <li><strong>建立架構：</strong> 檢查群組之間是否還有更高層次的關聯。</li>
+                                            <li><strong>總結洞見：</strong> 討論浮現的關鍵主題、痛點與機會點。</li>
+                                        </ol>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 清空確認 Modal -->
+    <div id="clear-modal" class="modal-overlay hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">確認清空畫布？</h2>
+            <p class="text-gray-700 mb-6">此動作將移除所有便利貼、群組和關聯線，且無法復原。您確定要繼續嗎？</p>
+            <div class="flex justify-end space-x-2">
+                <button id="cancel-clear-btn" class="action-button">取消</button>
+                <button id="confirm-clear-btn" class="action-button warning-button">確認清空</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const board = document.getElementById('board');
+            const boardContainer = document.getElementById('board-container');
+            const contextMenu = document.getElementById('context-menu');
+            const boardSvg = document.getElementById('board-svg');
+            const alignToolbar = document.getElementById('align-toolbar');
+            const distHBtn = document.getElementById('dist-h');
+            const distVBtn = document.getElementById('dist-v');
+            const selectionBox = document.getElementById('selection-box');
+
+            // [NEW] 取得多選刪除按鈕 (Req 4)
+            const deleteSelectedBtn = document.getElementById('delete-selected-btn'); // (Req 4)
+            
+            const addGroupBtn = document.getElementById('add-group-btn');
+            const importBtn = document.getElementById('import-btn');
+            const importInput = document.getElementById('import-input');
+            const exportBtn = document.getElementById('export-btn');
+            const screenshotBtn = document.getElementById('screenshot-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            
+            const clearModal = document.getElementById('clear-modal');
+            const cancelClearBtn = document.getElementById('cancel-clear-btn');
+            const confirmClearBtn = document.getElementById('confirm-clear-btn');
+            
+            // [MODIFIED] 取得 headerToolbar (Req 3)
+            const headerToolbar = document.querySelector('header');
+            // [MODIFIED] 取得 help-button (Req 3)
+            const helpButton = document.getElementById('help-button');
+            const helpModal = document.getElementById('help-modal');
+            const closeModalButton = document.getElementById('close-modal-button');
+            const helpModalOverlay = document.getElementById('help-modal-overlay');
+
+            let selectedNotes = [];
+            let isDraggingNote = false;
+            let isPanning = false;
+            let dragOffsets = new Map();
+            let connections = [];
+            let isDrawingLine = false;
+            let tempLine = null;
+            let startNodeInfo = null;
+            let zIndexCounter = 100;
+            let currentTargetNote = null; 
+            let tempSnapTarget = null;
+            let history = [];
+            let historyPointer = -1;
+            let isRestoring = false;
+            let scale = 1;
+            let panX = 0;
+            let panY = 0;
+            let isSpacePressed = false;
+            let panStartX = 0;
+            let panStartY = 0;
+            let isMarqueeing = false;
+            let marqueeStartX = 0;
+            let marqueeStartY = 0;
+            
+            let childNotesToDrag = new Map();
+            
+            // [NEW] 複製貼上剪貼簿 (Req 1)
+            let clipboard = [];
+            
+            // [NEW] 智慧對齊線 (Req 2)
+            const snapLineV = document.getElementById('snap-line-v');
+            const snapLineH = document.getElementById('snap-line-h');
+            const SNAP_THRESHOLD = 5; // 5px (螢幕像素)
+            
+            // [FIX] 將輔助函數定義移到最前面
+            // --- [NEW] 智慧對齊線 邏輯 (Req 2) ---
+            function showVLine(x) {
+                snapLineV.style.left = `${x}px`;
+                snapLineV.style.display = 'block';
+            }
+            function showHLine(y) {
+                snapLineH.style.top = `${y}px`;
+                snapLineH.style.display = 'block';
+            }
+            function hideSnapLines() {
+                snapLineV.style.display = 'none';
+                snapLineH.style.display = 'none';
+            }
+
+            function updateBoardTransform() {
+                board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            }
+
+            // --- 事件監聽 (平移/縮放/框選) ---
+
+            boardContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const rect = boardContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const mouseXInWorld = (mouseX - panX) / scale;
+                const mouseYInWorld = (mouseY - panY) / scale;
+                const delta = -e.deltaY * 0.001;
+                scale = Math.max(0.1, Math.min(3, scale + delta));
+                panX = mouseX - mouseXInWorld * scale;
+                panY = mouseY - mouseYInWorld * scale;
+                updateBoardTransform();
+                updateToolbarPositions();
+            }, { passive: false });
+
+            boardContainer.addEventListener('mousedown', (e) => {
+                if (e.target === boardContainer || e.target === board) {
+                    if (isSpacePressed || e.button === 1) { 
+                        isPanning = true;
+                        panStartX = e.clientX - panX;
+                        panStartY = e.clientY - panY;
+                        boardContainer.style.cursor = 'grabbing';
+                    } else if (e.button === 0) { 
+                        isMarqueeing = true;
+                        const { x, y } = getBoardCoordinates(e.clientX, e.clientY, true); 
+                        marqueeStartX = e.clientX;
+                        marqueeStartY = e.clientY;
+                        
+                        selectionBox.style.left = `${(marqueeStartX - panX) / scale}px`;
+                        selectionBox.style.top = `${(marqueeStartY - panY) / scale}px`;
+                        selectionBox.style.width = '0px';
+                        selectionBox.style.height = '0px';
+                        selectionBox.style.display = 'block';
+
+                        if (!e.ctrlKey && !e.metaKey) {
+                            clearSelection();
+                        }
+                    }
+                }
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    panX = e.clientX - panStartX;
+                    panY = e.clientY - panStartY;
+                    updateBoardTransform();
+                    updateToolbarPositions();
+                }
+                
+                if (isMarqueeing) {
+                    const currentX = e.clientX;
+                    const currentY = e.clientY;
+                    const { x: startXWorld, y: startYWorld } = getBoardCoordinates(marqueeStartX, marqueeStartY);
+                    const { x: currentXWorld, y: currentYWorld } = getBoardCoordinates(currentX, currentY);
+                    const left = Math.min(startXWorld, currentXWorld);
+                    const top = Math.min(startYWorld, currentYWorld);
+                    const width = Math.abs(currentXWorld - startXWorld);
+                    const height = Math.abs(currentYWorld - startYWorld);
+                    selectionBox.style.left = `${left}px`;
+                    selectionBox.style.top = `${top}px`;
+                    selectionBox.style.width = `${width}px`;
+                    selectionBox.style.height = `${height}px`;
+                }
+            });
+            
+            document.addEventListener('mouseup', (e) => {
+                if (isPanning) {
+                    isPanning = false;
+                    boardContainer.style.cursor = isSpacePressed ? 'grab' : 'grab';
+                    if (!isSpacePressed) {
+                        boardContainer.style.cursor = 'grab';
+                    }
+                }
+                
+                if (isMarqueeing) {
+                    isMarqueeing = false;
+                    selectionBox.style.display = 'none';
+                    const rect = selectionBox.getBoundingClientRect();
+                    const boardRect = boardContainer.getBoundingClientRect();
+                    const selLeft = (parseFloat(selectionBox.style.left) * scale) + panX + boardRect.left;
+                    const selTop = (parseFloat(selectionBox.style.top) * scale) + panY + boardRect.top;
+                    const selRight = selLeft + (parseFloat(selectionBox.style.width) * scale);
+                    const selBottom = selTop + (parseFloat(selectionBox.style.height) * scale);
+
+                    board.querySelectorAll('.sticky-note').forEach(note => {
+                        const noteRect = note.getBoundingClientRect();
+                        const isOverlapping = !(noteRect.right < selLeft || 
+                                              noteRect.left > selRight || 
+                                              noteRect.bottom < selTop || 
+                                              noteRect.top > selBottom);
+                        if (isOverlapping) {
+                            addNoteToSelection(note);
+                        }
+                    });
+                    updateToolbarStates();
+                }
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (document.activeElement.isContentEditable) return;
+                const isCtrl = e.ctrlKey || e.metaKey;
+
+                // [MODIFIED] 整合 Undo/Redo/Copy/Paste
+                if (isCtrl) {
+                    switch (e.key.toLowerCase()) {
+                        case 'z':
+                            e.preventDefault();
+                            undo();
+                            break;
+                        case 'y':
+                            e.preventDefault();
+                            redo();
+                            break;
+                        // [NEW] 複製功能 (Req 1)
+                        case 'c':
+                            e.preventDefault();
+                            copySelectedNotes();
+                            break;
+                        // [NEW] 貼上功能 (Req 1)
+                        case 'v':
+                            e.preventDefault();
+                            pasteNotes();
+                            break;
+                    }
+                }
+                
+                if (e.code === 'Space' && !isSpacePressed) {
+                    e.preventDefault();
+                    isSpacePressed = true;
+                    if (!isPanning) boardContainer.style.cursor = 'grab';
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                if (e.code === 'Space') {
+                    isSpacePressed = false;
+                    if (!isPanning) boardContainer.style.cursor = 'grab';
+                }
+            });
+
+            boardContainer.addEventListener('dblclick', (e) => {
+                if (e.target !== boardContainer && e.target !== board) return;
+                if (e.target.closest('header') || e.target.closest('#help-button')) return; // [MODIFIED] (Req 3)
+                
+                const { x, y } = getBoardCoordinates(e.clientX, e.clientY);
+                createNote({ x, y });
+            });
+
+            boardContainer.addEventListener('mousedown', (e) => {
+                if (e.target === boardContainer || e.target === board) {
+                    if (!isMarqueeing) {
+                        clearSelection();
+                    }
+                }
+            });
+
+            // --- 建立便利貼/群組 ---
+            function createNote(options, isRestoring = false) {
+                // [MODIFIED] 加入 width/height (Req 1)
+                const { id = `note_${crypto.randomUUID()}`, x = 100, y = 100, isTitle = false, color = 'bg-yellow-200', content = '', isGroup = false, width, height } = options;
+                const note = document.createElement('div');
+                note.id = id;
+                note.className = 'sticky-note rounded-lg p-0 flex flex-col';
+                note.style.left = `${x}px`;
+                note.style.top = `${y}px`;
+                // [NEW] 恢復 w/h (Req 1)
+                if (width) note.style.width = width;
+                if (height) note.style.height = height;
+                
+                note.classList.add(color);
+                note.dataset.color = color;
+                
+                const editable = document.createElement('div');
+                editable.className = 'editable';
+                editable.contentEditable = false;
+                
+                note.appendChild(editable);
+                
+                if (isTitle) {
+                    note.classList.add('note-title');
+                }
+                
+                if (isGroup) {
+                    note.classList.add('group-container');
+                    editable.innerHTML = content || '群組標題';
+                    
+                    // [NEW] 新增 resize handle (Req 1)
+                    // [MODIFIED] 替換舊的 handle，改為 8 向 (Req 1)
+                    const directions = ['tl', 't', 'tr', 'l', 'r', 'bl', 'b', 'br'];
+                    directions.forEach(dir => {
+                        const resizeHandle = document.createElement('div');
+                        resizeHandle.className = `resize-handle resize-handle-${dir}`;
+                        resizeHandle.dataset.direction = dir;
+                        note.appendChild(resizeHandle);
+                        // [MODIFIED] Call the new, unified resize function
+                        resizeHandle.addEventListener('mousedown', (e) => onResizeMouseDown(e, note, dir));
+                    });
+
+                } else {
+                    editable.innerHTML = content || (isTitle ? '標題' : '輸入文字...');
+                }
+
+                note.addEventListener('dblclick', (e) => {
+                    if ((e.target === note || e.target === editable) && !e.target.closest('.connector-node') && !e.target.closest('.resize-handle')) {
+                        editable.contentEditable = true;
+                        editable.focus();
+                        document.execCommand('selectAll', false, null);
+                    }
+                });
+                editable.addEventListener('blur', () => {
+                    editable.contentEditable = false;
+                    saveState();
+                });
+                note.addEventListener('mousedown', (e) => onNoteMouseDown(e, note));
+                board.appendChild(note);
+                
+                // [MODIFIED] 只有非群組才建立節點 (Req 1)
+                if (!isGroup) {
+                    createConnectorNodes(note);
+                }
+
+                if (!isRestoring) {
+                    clearSelection();
+                    addNoteToSelection(note);
+                    saveState();
+                }
+                return note;
+            }
+            
+            // --- [NEW] 調整群組大小 (Req 1) ---
+            // [MODIFIED] 替換舊的 onResizeMouseDown (Req 1)
+            function onResizeMouseDown(e, note, direction) {
+                e.stopPropagation(); // 停止冒泡，避免觸發拖曳
+                
+                let isResizing = true;
+                const startMouseX = e.clientX;
+                const startMouseY = e.clientY;
+                
+                const rect = note.getBoundingClientRect();
+                const startLeft = parseFloat(note.style.left);
+                const startTop = parseFloat(note.style.top);
+                const startWidth = note.offsetWidth;
+                const startHeight = note.offsetHeight;
+
+                const minWidth = 200;
+                const minHeight = 150;
+
+                function onResizeMove(moveEvent) {
+                    if (!isResizing) return;
+                    
+                    const deltaX = (moveEvent.clientX - startMouseX) / scale;
+                    const deltaY = (moveEvent.clientY - startMouseY) / scale;
+
+                    let newLeft = startLeft;
+                    let newTop = startTop;
+                    let newWidth = startWidth;
+                    let newHeight = startHeight;
+
+                    // Handle horizontal changes
+                    if (direction.includes('l')) { // left, top-left, bottom-left
+                        newWidth = startWidth - deltaX;
+                        if (newWidth > minWidth) {
+                            newLeft = startLeft + deltaX;
+                        } else {
+                            newWidth = minWidth;
+                        }
+                    } else if (direction.includes('r')) { // right, top-right, bottom-right
+                        newWidth = startWidth + deltaX;
+                    }
+
+                    // Handle vertical changes
+                    if (direction.includes('t')) { // top, top-left, top-right
+                        newHeight = startHeight - deltaY;
+                        if (newHeight > minHeight) {
+                            newTop = startTop + deltaY;
+                        } else {
+                            newHeight = minHeight;
+                        }
+                    } else if (direction.includes('b')) { // bottom, bottom-left, bottom-right
+                        newHeight = startHeight + deltaY;
+                    }
+                    
+                    // Apply constraints
+                    if (newWidth >= minWidth) {
+                        note.style.left = `${newLeft}px`;
+                        note.style.width = `${newWidth}px`;
+                    }
+                    if (newHeight >= minHeight) {
+                        note.style.top = `${newTop}px`;
+                        note.style.height = `${newHeight}px`;
+                    }
+
+                    updateConnectionsForNote(note); // 尺寸改變時也要更新連線
+                }
+
+                function onResizeEnd(upEvent) {
+                    isResizing = false;
+                    document.removeEventListener('mousemove', onResizeMove);
+                    document.removeEventListener('mouseup', onResizeEnd);
+                    saveState(); // 調整大小後儲存
+                }
+                
+                document.addEventListener('mousemove', onResizeMove);
+                document.addEventListener('mouseup', onResizeEnd, { once: true });
+            }
+
+            // --- 拖曳邏輯 (含群組拖曳) ---
+            function onNoteMouseDown(e, note) {
+                const editable = note.querySelector('.editable');
+                if (editable && editable.isContentEditable) return;
+                if (e.target.closest('button')) return;
+                if (e.target.closest('.connector-node')) return;
+                if (e.target.closest('.resize-handle')) return; // [NEW] 點擊 resize handle 時不拖曳 (Req 1)
+                if (isSpacePressed || e.button === 1) {
+                    isPanning = true;
+                    panStartX = e.clientX - panX;
+                    panStartY = e.clientY - panY;
+                    boardContainer.style.cursor = 'grabbing';
+                    return;
+                }
+                
+                e.stopPropagation();
+                
+                let dragStarted = false;
+                isDraggingNote = true;
+                note.style.zIndex = zIndexCounter++;
+                
+                const isCtrl = e.ctrlKey || e.metaKey;
+                if (isCtrl) {
+                    // 點擊時不切換，等到 mouseup 再切換
+                } else if (!selectedNotes.includes(note)) {
+                    clearSelection();
+                    addNoteToSelection(note);
+                }
+                
+                let elementsToDrag = [];
+                if (selectedNotes.includes(note)) {
+                    elementsToDrag = [...selectedNotes];
+                } else {
+                    elementsToDrag = [note];
+                }
+
+                childNotesToDrag.clear();
+                const groups = elementsToDrag.filter(n => n.classList.contains('group-container'));
+                
+                if (groups.length > 0) {
+                    const groupRects = groups.map(g => ({ group: g, rect: g.getBoundingClientRect() }));
+                    const allNotes = board.querySelectorAll('.sticky-note:not(.group-container)');
+                    
+                    allNotes.forEach(child => {
+                        if (elementsToDrag.includes(child)) return; 
+                        
+                        const childRect = child.getBoundingClientRect();
+                        for (const { group, rect } of groupRects) {
+                            const isOverlapping = !(childRect.right < rect.left || 
+                                                  childRect.left > rect.right || 
+                                                  childRect.bottom < rect.top || 
+                                                  childRect.top > rect.bottom);
+                                                  
+                            if (isOverlapping) {
+                                elementsToDrag.push(child);
+                                childNotesToDrag.set(child, group); 
+                                break; 
+                            }
+                        }
+                    });
+                }
+                
+                elementsToDrag.forEach(el => {
+                    if (el !== note) el.style.zIndex = zIndexCounter - 1;
+                });
+                
+                dragOffsets.clear();
+                elementsToDrag.forEach(n => {
+                    const rect = n.getBoundingClientRect();
+                    dragOffsets.set(n, {
+                        offsetX: (e.clientX - rect.left) / scale,
+                        offsetY: (e.clientY - rect.top) / scale
+                    });
+                });
+                
+                function onNoteDrag(moveEvent) {
+                    if (!isDraggingNote) return;
+                    if (!dragStarted) {
+                        if (Math.abs(moveEvent.clientX - e.clientX) > 3 || Math.abs(moveEvent.clientY - e.clientY) > 3) {
+                            dragStarted = true;
+                            if (document.activeElement.isContentEditable) {
+                                document.activeElement.blur();
+                            }
+                        } else {
+                            return;
+                        }
+                    }
+
+                    const { x: boardX, y: boardY } = getBoardCoordinates(moveEvent.clientX, moveEvent.clientY);
+                    
+                    // 1. 取得主要拖曳物件
+                    // note 變數來自 onNoteMouseDown 的閉包
+                    const primaryOffset = dragOffsets.get(note); 
+                    if (!primaryOffset) return; // 防禦
+                    
+                    let newX = boardX - primaryOffset.offsetX;
+                    let newY = boardY - primaryOffset.offsetY;
+
+                    // 2. [NEW] 智慧對齊線邏輯 (Req 2)
+                    hideSnapLines(); // [FIX] 呼叫移到前面的函數
+                    let snappedX = false;
+                    let snappedY = false;
+                    
+                    // 取得主要物件的「預期」對齊點 (世界座標)
+                    const primaryRect = {
+                        left: newX,
+                        top: newY,
+                        width: note.offsetWidth,
+                        height: note.offsetHeight,
+                        right: newX + note.offsetWidth,
+                        bottom: newY + note.offsetHeight,
+                        hCenter: newX + note.offsetWidth / 2,
+                        vCenter: newY + note.offsetHeight / 2
+                    };
+                    
+                    const allNotes = board.querySelectorAll('.sticky-note');
+                    const threshold = SNAP_THRESHOLD / scale; // 門檻值需要根據縮放調整
+
+                    for (const targetNote of allNotes) {
+                        if (selectedNotes.includes(targetNote)) continue; // 不跟自己對齊
+
+                        // 取得目標物件的對齊點 (世界座標)
+                        const targetRect = {
+                            left: parseFloat(targetNote.style.left),
+                            top: parseFloat(targetNote.style.top),
+                            width: targetNote.offsetWidth,
+                            height: targetNote.offsetHeight,
+                        };
+                        targetRect.right = targetRect.left + targetRect.width;
+                        targetRect.bottom = targetRect.top + targetRect.height;
+                        targetRect.hCenter = targetRect.left + targetRect.width / 2;
+                        targetRect.vCenter = targetRect.top + targetRect.height / 2;
+                        
+                        // 檢查 X 軸 (垂直線)
+                        if (!snappedX) {
+                            if (Math.abs(primaryRect.left - targetRect.left) < threshold) {
+                                newX = targetRect.left;
+                                showVLine(targetRect.left * scale + panX); // 轉換回螢幕座標
+                                snappedX = true;
+                            } else if (Math.abs(primaryRect.hCenter - targetRect.hCenter) < threshold) {
+                                newX = targetRect.hCenter - primaryRect.width / 2;
+                                showVLine(targetRect.hCenter * scale + panX);
+                                snappedX = true;
+                            } else if (Math.abs(primaryRect.right - targetRect.right) < threshold) {
+                                newX = targetRect.right - primaryRect.width;
+                                showVLine(targetRect.right * scale + panX);
+                                snappedX = true;
+                            } else if (Math.abs(primaryRect.left - targetRect.right) < threshold) { // [FIX] 增加對齊 (左->右)
+                                newX = targetRect.right;
+                                showVLine(targetRect.right * scale + panX);
+                                snappedX = true;
+                            } else if (Math.abs(primaryRect.right - targetRect.left) < threshold) { // [FIX] 增加對齊 (右->左)
+                                newX = targetRect.left - primaryRect.width;
+                                showVLine(targetRect.left * scale + panX);
+                                snappedX = true;
+                            }
+                        }
+
+                        // 檢查 Y 軸 (水平線)
+                        if (!snappedY) {
+                            if (Math.abs(primaryRect.top - targetRect.top) < threshold) {
+                                newY = targetRect.top;
+                                showHLine(targetRect.top * scale + panY); // 轉換回螢幕座標
+                                snappedY = true;
+                            } else if (Math.abs(primaryRect.vCenter - targetRect.vCenter) < threshold) {
+                                newY = targetRect.vCenter - primaryRect.height / 2;
+                                showHLine(targetRect.vCenter * scale + panY);
+                                snappedY = true;
+                            } else if (Math.abs(primaryRect.bottom - targetRect.bottom) < threshold) {
+                                newY = targetRect.bottom - primaryRect.height;
+                                showHLine(targetRect.bottom * scale + panY);
+                                snappedY = true;
+                            } else if (Math.abs(primaryRect.top - targetRect.bottom) < threshold) { // [FIX] 增加對齊 (上->下)
+                                newY = targetRect.bottom;
+                                showHLine(targetRect.bottom * scale + panY);
+                                snappedY = true;
+                            } else if (Math.abs(primaryRect.bottom - targetRect.top) < threshold) { // [FIX] 增加對齊 (下->上)
+                                newY = targetRect.top - primaryRect.height;
+                                showHLine(targetRect.top * scale + panY);
+                                snappedY = true;
+                            }
+                        }
+                        
+                        if (snappedX && snappedY) break;
+                    }
+                    
+                    // 3. 計算位移 (Delta)
+                    const deltaX = newX - parseFloat(note.style.left);
+                    const deltaY = newY - parseFloat(note.style.top);
+
+                    // 4. 套用 Delta 到所有被選取的物件
+                    dragOffsets.forEach((offset, element) => {
+                        element.style.left = `${parseFloat(element.style.left) + deltaX}px`;
+                        element.style.top = `${parseFloat(element.style.top) + deltaY}px`;
+                        updateConnectionsForNote(element);
+                    });
+                    
+                    updateToolbarPositions();
+                }
+
+                function onNoteDragEnd(upEvent) {
+                    isDraggingNote = false;
+                    document.removeEventListener('mousemove', onNoteDrag);
+                    document.removeEventListener('mouseup', onNoteDragEnd);
+                    
+                    // [NEW] 拖曳結束，隱藏對齊線 (Req 2)
+                    hideSnapLines(); // [FIX] 呼叫移到前面的函數
+
+                    if (!dragStarted) {
+                        const isCtrlEnd = upEvent.ctrlKey || upEvent.metaKey;
+                        if (isCtrlEnd) {
+                            toggleNoteInSelection(note);
+                        } else {
+                            clearSelection();
+                            addNoteToSelection(note);
+                        }
+                    } else {
+                        saveState(); 
+                    }
+                    
+                    dragOffsets.clear();
+                    childNotesToDrag.clear();
+                    updateToolbarStates();
+                }
+
+                document.addEventListener('mousemove', onNoteDrag);
+                document.addEventListener('mouseup', onNoteDragEnd, { once: true });
+            }
+            
+            // --- [NEW] 複製/貼上 邏輯 (Req 1) ---
+            function getNoteState(note) {
+                const editable = note.querySelector('.editable');
+                return {
+                    id: note.id, // 僅用於計算相對位置，貼上時會產生新 ID
+                    x: parseFloat(note.style.left),
+                    y: parseFloat(note.style.top),
+                    isTitle: note.classList.contains('note-title'),
+                    color: note.dataset.color,
+                    content: editable ? editable.innerHTML : '',
+                    isGroup: note.classList.contains('group-container'),
+                    width: note.style.width || null,
+                    height: note.style.height || null
+                };
+            }
+
+            function copySelectedNotes() {
+                if (selectedNotes.length > 0) {
+                    clipboard = selectedNotes.map(getNoteState);
+                    // console.log('Copied:', clipboard.length, 'items');
+                }
+            }
+            
+            function pasteNotes() {
+                if (clipboard.length > 0) {
+                    clearSelection();
+                    const newNotes = [];
+                    const newClipboard = [];
+                    
+                    clipboard.forEach(noteData => {
+                        const newData = { ...noteData }; // 複製
+                        newData.id = `note_${crypto.randomUUID()}`; // 產生全新 ID
+                        newData.x += 20 / scale; // 位移 (受縮放影響)
+                        newData.y += 20 / scale;
+                        
+                        const newNote = createNote(newData, true); // true = 正在恢復，不觸發 saveState
+                        addNoteToSelection(newNote);
+                        newClipboard.push(getNoteState(newNote)); // 將 *新* 資訊存入剪貼簿
+                    });
+                    
+                    clipboard = newClipboard; // 更新剪貼簿，以便連續貼上
+                    updateToolbarStates();
+                    saveState(); // 所有動作完成後，儲存一次歷史紀錄
+                }
+            }
+            
+            // --- 多選管理 ---
+            function addNoteToSelection(note) {
+                if (!selectedNotes.includes(note)) {
+                    selectedNotes.push(note);
+                    note.classList.add('selected');
+                }
+            }
+            
+            function removeNoteFromSelection(note) {
+                selectedNotes = selectedNotes.filter(n => n !== note);
+                note.classList.remove('selected', 'single-select');
+            }
+            
+            function toggleNoteInSelection(note) {
+                if (selectedNotes.includes(note)) {
+                    removeNoteFromSelection(note);
+                } else {
+                    addNoteToSelection(note);
+                }
+            }
+
+            function clearSelection() {
+                selectedNotes.forEach(note => {
+                    note.classList.remove('selected', 'single-select');
+                });
+                selectedNotes = [];
+                updateToolbarStates();
+            }
+            
+            // --- 工具列管理 ---
+            function updateToolbarStates() {
+                if (selectedNotes.length === 1) {
+                    const note = selectedNotes[0];
+                    note.classList.add('single-select');
+                    showContextMenu(note);
+                    contextMenu.classList.add('visible');
+                } else {
+                    contextMenu.classList.remove('visible');
+                    board.querySelectorAll('.single-select').forEach(n => n.classList.remove('single-select'));
+                }
+                
+                if (selectedNotes.length > 1) {
+                    showAlignToolbar();
+                    alignToolbar.classList.add('visible');
+                    distHBtn.disabled = selectedNotes.length < 3;
+                    distVBtn.disabled = selectedNotes.length < 3;
+                } else {
+                    alignToolbar.classList.remove('visible');
+                }
+            }
+            
+            function updateToolbarPositions() {
+                if (contextMenu.classList.contains('visible') && selectedNotes.length === 1) {
+                    showContextMenu(selectedNotes[0]);
+                }
+                if (alignToolbar.classList.contains('visible') && selectedNotes.length > 1) {
+                    showAlignToolbar();
+                }
+            }
+
+            function showContextMenu(note) {
+                if (!note) return;
+                const rect = note.getBoundingClientRect();
+                const menuRect = contextMenu.getBoundingClientRect();
+                let top = rect.top - menuRect.height - 8;
+                let left = rect.left + (rect.width / 2) - (menuRect.width / 2);
+                if (top < 8) top = rect.bottom + 8;
+                if (left < 8) left = 8;
+                if (left + menuRect.width > window.innerWidth - 8) {
+                    left = window.innerWidth - menuRect.width - 8;
+                }
+                contextMenu.style.top = `${top}px`;
+                contextMenu.style.left = `${left}px`;
+            }
+            
+            function showAlignToolbar() {
+                if (selectedNotes.length < 2) return;
+                let minTop = Infinity, minLeft = Infinity, maxBottom = -Infinity, maxRight = -Infinity;
+                selectedNotes.forEach(note => {
+                    const rect = note.getBoundingClientRect();
+                    minTop = Math.min(minTop, rect.top);
+                    minLeft = Math.min(minLeft, rect.left);
+                    maxBottom = Math.max(maxBottom, rect.bottom);
+                    maxRight = Math.max(maxRight, rect.right);
+                });
+                const menuRect = alignToolbar.getBoundingClientRect();
+                let top = minTop - menuRect.height - 8;
+                let left = minLeft + ((maxRight - minLeft) / 2) - (menuRect.width / 2);
+                if (top < 8) top = maxBottom + 8;
+                if (left < 8) left = 8;
+                if (left + menuRect.width > window.innerWidth - 8) {
+                    left = window.innerWidth - menuRect.width - 8;
+                }
+                alignToolbar.style.top = `${top}px`;
+                alignToolbar.style.left = `${left}px`;
+            }
+
+            contextMenu.addEventListener('click', (e) => {
+                if (selectedNotes.length !== 1) return;
+                const note = selectedNotes[0];
+                const button = e.target.closest('button');
+                if (!button) return;
+                const color = button.dataset.color;
+                const action = button.dataset.action;
+                let stateChanged = false;
+                if (color) {
+                    note.classList.remove(note.dataset.color);
+                    note.classList.add(color);
+                    note.dataset.color = color;
+                    stateChanged = true;
+                }
+                if (action === 'title') {
+                    note.classList.toggle('note-title');
+                    note.classList.toggle('group-container'); 
+                    stateChanged = true;
+                }
+                // [NEW] "移除關聯線" 的邏輯
+                if (action === 'delete-lines') {
+                    removeConnectionsForNote(note);
+                    stateChanged = true;
+                }
+                if (action === 'delete') {
+                    removeConnectionsForNote(note);
+                    note.remove();
+                    removeNoteFromSelection(note);
+                    stateChanged = true;
+                }
+                if (stateChanged) {
+                    saveState();
+                }
+                if (action === 'delete') {
+                    clearSelection();
+                } else {
+                    updateToolbarStates();
+                    if (action === 'title') {
+                         updateToolbarPositions();
+                    }
+                }
+            });
+            
+            // --- 對齊功能 ---
+            function alignLeft() {
+                if (selectedNotes.length < 2) return;
+                const minLeft = Math.min(...selectedNotes.map(n => parseFloat(n.style.left)));
+                selectedNotes.forEach(n => {
+                    n.style.left = `${minLeft}px`;
+                    updateConnectionsForNote(n);
+                });
+                saveState();
+                updateToolbarPositions();
+            }
+            function alignCenterH() {
+                if (selectedNotes.length < 2) return;
+                const minLeft = Math.min(...selectedNotes.map(n => parseFloat(n.style.left)));
+                const maxRight = Math.max(...selectedNotes.map(n => parseFloat(n.style.left) + n.offsetWidth));
+                const center = minLeft + (maxRight - minLeft) / 2;
+                selectedNotes.forEach(n => {
+                    n.style.left = `${center - n.offsetWidth / 2}px`;
+                    updateConnectionsForNote(n);
+                });
+                saveState();
+                updateToolbarPositions();
+            }
+            function alignRight() {
+                if (selectedNotes.length < 2) return;
+                const maxRight = Math.max(...selectedNotes.map(n => parseFloat(n.style.left) + n.offsetWidth));
+                selectedNotes.forEach(n => {
+                    n.style.left = `${maxRight - n.offsetWidth}px`;
+                    updateConnectionsForNote(n);
+                });
+                saveState();
+                updateToolbarPositions();
+            }
+            function alignTop() {
+                if (selectedNotes.length < 2) return;
+                const minTop = Math.min(...selectedNotes.map(n => parseFloat(n.style.top)));
+                selectedNotes.forEach(n => {
+                    n.style.top = `${minTop}px`;
+                    updateConnectionsForNote(n);
+                });
+                saveState();
+                updateToolbarPositions();
+            }
+            function alignMiddleV() {
+                if (selectedNotes.length < 2) return;
+                const minTop = Math.min(...selectedNotes.map(n => parseFloat(n.style.top)));
+                const maxBottom = Math.max(...selectedNotes.map(n => parseFloat(n.style.top) + n.offsetHeight));
+                const middle = minTop + (maxBottom - minTop) / 2;
+                selectedNotes.forEach(n => {
+                    n.style.top = `${middle - n.offsetHeight / 2}px`;
+                    updateConnectionsForNote(n);
+                });
+                saveState();
+                updateToolbarPositions();
+            }
+            function alignBottom() {
+                if (selectedNotes.length < 2) return;
+                const maxBottom = Math.max(...selectedNotes.map(n => parseFloat(n.style.top) + n.offsetHeight));
+                selectedNotes.forEach(n => {
+                    n.style.top = `${maxBottom - n.offsetHeight}px`;
+                    updateConnectionsForNote(n);
+                });
+                saveState();
+                updateToolbarPositions();
+            }
+            function distH() {
+                if (selectedNotes.length < 3) return;
+                const sorted = [...selectedNotes].sort((a, b) => parseFloat(a.style.left) - parseFloat(b.style.left));
+                const minLeft = parseFloat(sorted[0].style.left);
+                const maxRight = parseFloat(sorted[sorted.length - 1].style.left) + sorted[sorted.length - 1].offsetWidth;
+                const totalWidth = sorted.reduce((sum, n) => sum + n.offsetWidth, 0);
+                const totalSpacing = (maxRight - minLeft) - totalWidth;
+                const gap = totalSpacing / (sorted.length - 1);
+                let currentLeft = minLeft;
+                sorted[0].style.left = `${currentLeft}px`; 
+                updateConnectionsForNote(sorted[0]);
+                for (let i = 1; i < sorted.length - 1; i++) {
+                    currentLeft += sorted[i-1].offsetWidth + gap;
+                    sorted[i].style.left = `${currentLeft}px`;
+                    updateConnectionsForNote(sorted[i]);
+                }
+                updateConnectionsForNote(sorted[sorted.length - 1]);
+                saveState();
+                updateToolbarPositions();
+            }
+            function distV() {
+                if (selectedNotes.length < 3) return;
+                const sorted = [...selectedNotes].sort((a, b) => parseFloat(a.style.top) - parseFloat(b.style.top));
+                const minTop = parseFloat(sorted[0].style.top);
+                const maxBottom = parseFloat(sorted[sorted.length - 1].style.top) + sorted[sorted.length - 1].offsetHeight;
+                const totalHeight = sorted.reduce((sum, n) => sum + n.offsetHeight, 0);
+                const totalSpacing = (maxBottom - minTop) - totalHeight;
+                const gap = totalSpacing / (sorted.length - 1);
+                let currentTop = minTop;
+                sorted[0].style.top = `${currentTop}px`; 
+                updateConnectionsForNote(sorted[0]);
+                for (let i = 1; i < sorted.length - 1; i++) {
+                    currentTop += sorted[i-1].offsetHeight + gap;
+                    sorted[i].style.top = `${currentTop}px`;
+                    updateConnectionsForNote(sorted[i]);
+                }
+                updateConnectionsForNote(sorted[sorted.length - 1]);
+                saveState();
+                updateToolbarPositions();
+            }
+            
+            document.getElementById('align-left').addEventListener('click', alignLeft);
+            document.getElementById('align-center-h').addEventListener('click', alignCenterH);
+            document.getElementById('align-right').addEventListener('click', alignRight);
+            document.getElementById('align-top').addEventListener('click', alignTop);
+            document.getElementById('align-middle-v').addEventListener('click', alignMiddleV);
+            document.getElementById('align-bottom').addEventListener('click', alignBottom);
+            distHBtn.addEventListener('click', distH);
+            distVBtn.addEventListener('click', distV);
+
+            // [NEW] 綁定多選刪除功能 (Req 4)
+            deleteSelectedBtn.addEventListener('click', deleteSelectedNotes); // (Req 4)
+
+            // [NEW] 多選刪除功能 (Req 4)
+            function deleteSelectedNotes() { // (Req 4)
+                if (selectedNotes.length === 0) return;
+
+                selectedNotes.forEach(note => {
+                    removeConnectionsForNote(note);
+                    note.remove();
+                });
+                
+                clearSelection();
+                saveState();
+            }
+
+            // --- 關聯線功能 ---
+            function createConnectorNodes(note) {
+                ['top', 'right', 'bottom', 'left'].forEach(side => {
+                    const node = document.createElement('div');
+                    node.className = `connector-node node-${side}`;
+                    node.dataset.side = side;
+                    node.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        isDrawingLine = true;
+                        startNodeInfo = { note, side };
+                        tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        tempLine.setAttribute('id', 'temp-line');
+                        const startPos = getNodePosition(note, side);
+                        tempLine.setAttribute('d', `M${startPos.x} ${startPos.y} C ${startPos.x} ${startPos.y}, ${startPos.x} ${startPos.y}, ${startPos.x} ${startPos.y}`);
+                        boardSvg.appendChild(tempLine);
+                        document.addEventListener('mousemove', onDrawingLine);
+                        document.addEventListener('mouseup', onEndDrawingLine, { once: true });
+                    });
+                    note.appendChild(node);
+                });
+            }
+            function getNearestNode(note, point) {
+                const positions = ['top', 'right', 'bottom', 'left'];
+                let minDistance = Infinity;
+                let nearestSide = 'top';
+                positions.forEach(side => {
+                    const nodePoint = getNodePosition(note, side);
+                    const distance = Math.pow(point.x - nodePoint.x, 2) + Math.pow(point.y - nodePoint.y, 2);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestSide = side;
+                    }
+                });
+                return { side: nearestSide, distance: Math.sqrt(minDistance) };
+            }
+            function onDrawingLine(e) {
+                if (!isDrawingLine || !tempLine) return;
+                const startPos = getNodePosition(startNodeInfo.note, startNodeInfo.side);
+                const { x, y } = getBoardCoordinates(e.clientX, e.clientY);
+                let endPos = { x, y };
+                let targetNote = null;
+                const allNotes = board.querySelectorAll('.sticky-note');
+                for (const note of allNotes) {
+                    if (note === startNodeInfo.note) continue;
+                    const noteX = parseFloat(note.style.left);
+                    const noteY = parseFloat(note.style.top);
+                    const noteWidth = note.offsetWidth;
+                    const noteHeight = note.offsetHeight;
+                    if (x > noteX && x < (noteX + noteWidth) && y > noteY && y < (noteY + noteHeight)) {
+                        targetNote = note;
+                        break;
+                    }
+                }
+                if (currentTargetNote && currentTargetNote !== targetNote) {
+                    currentTargetNote.classList.remove('connection-target');
+                    tempSnapTarget = null;
+                }
+                if (targetNote) {
+                    currentTargetNote = targetNote;
+                    currentTargetNote.classList.add('connection-target');
+                    const nearest = getNearestNode(targetNote, endPos);
+                    endPos = getNodePosition(targetNote, nearest.side);
+                    tempSnapTarget = { note: targetNote, side: nearest.side };
+                } else {
+                    currentTargetNote = null;
+                    tempSnapTarget = null;
+                }
+                const offset = 50;
+                let c1 = { ...startPos };
+                let c2 = { ...endPos };
+                if (startNodeInfo.side === 'top') c1.y -= offset;
+                if (startNodeInfo.side === 'bottom') c1.y += offset;
+                if (startNodeInfo.side === 'left') c1.x -= offset;
+                if (startNodeInfo.side === 'right') c1.x += offset;
+                if (tempSnapTarget) {
+                    if (tempSnapTarget.side === 'top') c2.y -= offset;
+                    if (tempSnapTarget.side === 'bottom') c2.y += offset;
+                    if (tempSnapTarget.side === 'left') c2.x -= offset;
+                    if (tempSnapTarget.side === 'right') c2.x += offset;
+                }
+                tempLine.setAttribute('d', `M${startPos.x} ${startPos.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endPos.x} ${endPos.y}`);
+            }
+            function onEndDrawingLine(e) {
+                document.removeEventListener('mousemove', onDrawingLine);
+                if (!isDrawingLine) return;
+                isDrawingLine = false;
+                if (tempSnapTarget) {
+                    const newConnection = {
+                        id: `conn_${crypto.randomUUID()}`,
+                        fromId: startNodeInfo.note.id,
+                        fromSide: startNodeInfo.side,
+                        toId: tempSnapTarget.note.id,
+                        toSide: tempSnapTarget.side
+                    };
+                    const exists = connections.some(c =>
+                        (c.fromId === newConnection.fromId && c.toId === newConnection.toId && c.fromSide === newConnection.fromSide && c.toSide === newConnection.toSide) ||
+                        (c.fromId === newConnection.toId && c.toId === newConnection.fromId && c.fromSide === newConnection.toSide && c.toSide === newConnection.fromSide)
+                    );
+                    if (!exists) {
+                        connections.push(newConnection);
+                        drawConnections();
+                        saveState();
+                    }
+                }
+                if (tempLine) tempLine.remove();
+                if (currentTargetNote) {
+                    currentTargetNote.classList.remove('connection-target');
+                }
+                tempLine = null;
+                startNodeInfo = null;
+                currentTargetNote = null;
+                tempSnapTarget = null;
+            }
+            function getNodePosition(note, side) {
+                const noteX = parseFloat(note.style.left);
+                const noteY = parseFloat(note.style.top);
+                const noteWidth = note.offsetWidth;
+                const noteHeight = note.offsetHeight;
+                switch (side) {
+                    case 'top': return { x: noteX + noteWidth / 2, y: noteY };
+                    case 'right': return { x: noteX + noteWidth, y: noteY + noteHeight / 2 };
+                    case 'bottom': return { x: noteX + noteWidth / 2, y: noteY + noteHeight };
+                    case 'left': return { x: noteX, y: noteY + noteHeight / 2 };
+                    default: return { x: noteX, y: noteY };
+                }
+            }
+            function drawConnections() {
+                while (boardSvg.children.length > 1) {
+                    if (boardSvg.lastChild.tagName === 'path') {
+                        boardSvg.removeChild(boardSvg.lastChild);
+                    } else {
+                        break;
+                    }
+                }
+                connections.forEach(conn => {
+                    const fromEl = document.getElementById(conn.fromId);
+                    const toEl = document.getElementById(conn.toId);
+                    if (!fromEl || !toEl) return;
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('class', 'connection-line');
+                    path.dataset.connId = conn.id;
+                    const startPos = getNodePosition(fromEl, conn.fromSide);
+                    const endPos = getNodePosition(toEl, conn.toSide);
+                    const offset = 50;
+                    let c1 = { ...startPos };
+                    let c2 = { ...endPos };
+                    if (conn.fromSide === 'top') c1.y -= offset;
+                    if (conn.fromSide === 'bottom') c1.y += offset;
+                    if (conn.fromSide === 'left') c1.x -= offset;
+                    if (conn.fromSide === 'right') c1.x += offset;
+                    if (conn.toSide === 'top') c2.y -= offset;
+                    if (conn.toSide === 'bottom') c2.y += offset;
+                    if (conn.toSide === 'left') c2.x -= offset;
+                    if (conn.toSide === 'right') c2.x += offset;
+                    path.setAttribute('d', `M${startPos.x} ${startPos.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endPos.x} ${endPos.y}`);
+                    boardSvg.appendChild(path);
+                });
+            }
+            function updateConnectionsForNote(note) {
+                connections.forEach(conn => {
+                    if (conn.fromId === note.id || conn.toId === note.id) {
+                        const path = boardSvg.querySelector(`[data-conn-id="${conn.id}"]`);
+                        if (!path) return;
+                        const fromEl = document.getElementById(conn.fromId);
+                        const toEl = document.getElementById(conn.toId);
+                        if (!fromEl || !toEl) return;
+                        const startPos = getNodePosition(fromEl, conn.fromSide);
+                        const endPos = getNodePosition(toEl, conn.toSide);
+                        const offset = 50;
+                        let c1 = { ...startPos };
+                        let c2 = { ...endPos };
+                        if (conn.fromSide === 'top') c1.y -= offset;
+                        if (conn.fromSide === 'bottom') c1.y += offset;
+                        if (conn.fromSide === 'left') c1.x -= offset;
+                        if (conn.fromSide === 'right') c1.x += offset;
+                        if (conn.toSide === 'top') c2.y -= offset;
+                        if (conn.toSide === 'bottom') c2.y += offset;
+                        if (conn.toSide === 'left') c2.x -= offset;
+                        if (conn.toSide === 'right') c2.x += offset;
+                        path.setAttribute('d', `M${startPos.x} ${startPos.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endPos.x} ${endPos.y}`);
+                    }
+                });
+            }
+            function removeConnectionsForNote(note) {
+                const connectionsToRemove = connections.filter(conn => conn.fromId === note.id || conn.toId === note.id);
+                connectionsToRemove.forEach(conn => {
+                    const path = boardSvg.querySelector(`[data-conn-id="${conn.id}"]`);
+                    if (path) path.remove();
+                });
+                connections = connections.filter(conn => conn.fromId !== note.id && conn.toId !== note.id);
+            }
+
+            // --- 座標轉換 ---
+            function getBoardCoordinates(clientX, clientY, raw = false) {
+                const rect = boardContainer.getBoundingClientRect();
+                if (raw) {
+                     return { x: clientX - rect.left, y: clientY - rect.top };
+                }
+                const x = (clientX - rect.left - panX) / scale;
+                const y = (clientY - rect.top - panY) / scale;
+                return { x, y };
+            }
+
+            // --- History (Undo/Redo) ---
+            function saveState() {
+                if (isRestoring) return;
+                const notesState = [];
+                board.querySelectorAll('.sticky-note').forEach(note => {
+                    const editable = note.querySelector('.editable');
+                    notesState.push({
+                        id: note.id,
+                        x: parseFloat(note.style.left),
+                        y: parseFloat(note.style.top),
+                        isTitle: note.classList.contains('note-title'),
+                        color: note.dataset.color,
+                        content: editable ? editable.innerHTML : '',
+                        isGroup: note.classList.contains('group-container'),
+                        width: note.style.width || null,  // [NEW] 儲存 w/h (Req 1)
+                        height: note.style.height || null // [NEW] 儲存 w/h (Req 1)
+                    });
+                });
+                const currentState = {
+                    notes: notesState,
+                    connections: connections
+                };
+                if (historyPointer > -1 && JSON.stringify(history[historyPointer]) === JSON.stringify(currentState)) {
+                    return;
+                }
+                history = history.slice(0, historyPointer + 1);
+                history.push(currentState);
+                historyPointer++;
+            }
+            function restoreState(state) {
+                if (!state) return;
+                isRestoring = true;
+                
+                const nodesToRemove = board.querySelectorAll('.sticky-note');
+                nodesToRemove.forEach(n => n.remove());
+                
+                connections = [];
+                drawConnections();
+                
+                if (state.notes) {
+                    state.notes.forEach(noteState => {
+                        const options = {
+                            id: noteState.id,
+                            x: noteState.x,
+                            y: noteState.y,
+                            isTitle: noteState.isTitle,
+                            color: noteState.color,
+                            content: noteState.content,
+                            isGroup: noteState.isGroup,
+                            width: noteState.width,  // [NEW] 恢復 w/h (Req 1)
+                            height: noteState.height // [NEW] 恢復 w/h (Req 1)
+                        };
+                        createNote(options, true);
+                    });
+                }
+                connections = state.connections || [];
+                drawConnections();
+                isRestoring = false;
+                clearSelection();
+            }
+            function undo() {
+                if (historyPointer <= 0) {
+                     if (historyPointer === 0 && history.length > 0) {
+                         historyPointer = -1;
+                         restoreState({ notes: [], connections: [] });
+                     }
+                    return;
+                }
+                historyPointer--;
+                restoreState(history[historyPointer]);
+            }
+            function redo() {
+                if (historyPointer < history.length - 1) {
+                    historyPointer++;
+                    restoreState(history[historyPointer]);
+                }
+            }
+            
+            // --- 頂部工具列功能 ---
+            
+            addGroupBtn.addEventListener('click', () => {
+                const { x, y } = getBoardCoordinates(window.innerWidth / 2, window.innerHeight / 2);
+                createNote({ 
+                    x: x - 200, 
+                    y: y - 150,
+                    isGroup: true, 
+                    color: 'bg-gray-200' 
+                });
+            });
+
+            clearBtn.addEventListener('click', () => {
+                clearModal.classList.remove('hidden');
+            });
+            cancelClearBtn.addEventListener('click', () => {
+                clearModal.classList.add('hidden');
+            });
+            confirmClearBtn.addEventListener('click', () => {
+                restoreState({ notes: [], connections: [] });
+                history = [];
+                historyPointer = -1;
+                saveState(); 
+                clearModal.classList.add('hidden');
+            });
+
+            exportBtn.addEventListener('click', () => {
+                const state = history[historyPointer];
+                if (!state) state = { notes: [], connections: [] }; 
+                
+                const jsonString = JSON.stringify(state, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'affinity-board-export.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+
+            importBtn.addEventListener('click', () => {
+                importInput.click();
+            });
+            importInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const state = JSON.parse(event.target.result);
+                        if (state && state.notes && state.connections) {
+                            restoreState(state);
+                            history = [state]; 
+                            historyPointer = 0;
+                        } else {
+                            throw new Error('無效的檔案格式');
+                        }
+                    } catch (err) {
+                        console.error('匯入失敗:', err);
+                    }
+                };
+                reader.readAsText(file);
+                importInput.value = ''; 
+            });
+
+            screenshotBtn.addEventListener('click', () => {
+                // [MODIFIED] 隱藏的 UI 列表更新 (Req 3)
+                const uisToHide = [headerToolbar, helpButton, contextMenu, alignToolbar, ...document.querySelectorAll('.connector-node'), ...document.querySelectorAll('.resize-handle'), selectionBox];
+                uisToHide.forEach(el => { if (el) el.style.visibility = 'hidden'; });
+                
+                const selected = [...selectedNotes];
+                clearSelection();
+                
+                html2canvas(boardContainer, {
+                    backgroundColor: '#f1f5f9',
+                    useCORS: true,
+                    logging: false,
+                    x: board.getBoundingClientRect().left,
+                    y: board.getBoundingClientRect().top,
+                    width: board.getBoundingClientRect().width,
+                    height: board.getBoundingClientRect().height
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const a = document.createElement('a');
+                    a.href = imgData;
+                    a.download = 'affinity-board.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    uisToHide.forEach(el => { if (el) el.style.visibility = ''; });
+                    selected.forEach(n => addNoteToSelection(n));
+                    updateToolbarStates();
+                    
+                }).catch(err => {
+                    console.error('截圖失敗:', err);
+                    uisToHide.forEach(el => { if (el) el.style.visibility = ''; });
+                    selected.forEach(n => addNoteToSelection(n));
+                    updateToolbarStates();
+                });
+            });
+            
+            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
+            if (helpButton) {
+                helpButton.addEventListener('click', () => {
+                    helpModal.classList.remove('hidden');
+                });
+            }
+            if (closeModalButton) {
+                closeModalButton.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+            if (helpModalOverlay) {
+                helpModalOverlay.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+
+            saveState(); // 儲存初始的空白狀態
+        });
+    </script>
+</body>
+</html>     });
+            
+            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
+            if (helpButton) {
+                helpButton.addEventListener('click', () => {
+                    helpModal.classList.remove('hidden');
+                });
+            }
+            if (closeModalButton) {
+                closeModalButton.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+            if (helpModalOverlay) {
+                helpModalOverlay.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+
+            saveState(); // 儲存初始的空白狀態
+        });
+    </script>
+</body>
+</html>     });
+            
+            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
+            if (helpButton) {
+                helpButton.addEventListener('click', () => {
+                    helpModal.classList.remove('hidden');
+                });
+            }
+            if (closeModalButton) {
+                closeModalButton.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+            if (helpModalOverlay) {
+                helpModalOverlay.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+
+            saveState(); // 儲存初始的空白狀態
+        });
+    </script>
+</body>
+</html>     });
+            
+            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
+            if (helpButton) {
+                helpButton.addEventListener('click', () => {
+                    helpModal.classList.remove('hidden');
+                });
+            }
+            if (closeModalButton) {
+                closeModalButton.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+            if (helpModalOverlay) {
+                helpModalOverlay.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+
+            saveState(); // 儲存初始的空白狀態
+        });
+    </script>
+</body>
+</html>     });
+            
+            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
+            if (helpButton) {
+                helpButton.addEventListener('click', () => {
+                    helpModal.classList.remove('hidden');
+                });
+            }
+            if (closeModalButton) {
+                closeModalButton.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+            if (helpModalOverlay) {
+                helpModalOverlay.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+
+            saveState(); // 儲存初始的空白狀態
+        });
+    </script>
+</body>
+</html>     });
+            
+            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
+            if (helpButton) {
+                helpButton.addEventListener('click', () => {
+                    helpModal.classList.remove('hidden');
+                });
+            }
+            if (closeModalButton) {
+                closeModalButton.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+            if (helpModalOverlay) {
+                helpModalOverlay.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                });
+            }
+
+            saveState(); // 儲存初始的空白狀態
+        });
+    </script>
+</body>
+</html>
