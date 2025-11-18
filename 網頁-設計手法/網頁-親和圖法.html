@@ -35,7 +35,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 1;
+            z-index: 5;
         }
 
         .connection-line {
@@ -56,7 +56,8 @@
         /* 便利貼 */
         .sticky-note {
             width: 220px;
-            min-height: 100px; /* [MODIFIED] 高度從 120px 縮減為 100px (Req 2) */
+            /* [MODIFIED] 讀取 CSS 變數 */
+            min-height: var(--note-min-height, 100px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             transition: box-shadow 0.2s, transform 0.2s, opacity 0.2s;
             cursor: grab;
@@ -92,7 +93,7 @@
             min-height: 300px;
             background-color: rgba(229, 231, 235, 0.7); /* bg-gray-200/70 */
             border: 1px solid #d1d5db; /* border-gray-300 */
-            z-index: 5 !important; 
+            z-index: 1 !important; 
             backdrop-filter: blur(2px);
             /* [NEW] 讓 resize handle 可以定位 (Req 1) */
             position: absolute; 
@@ -124,7 +125,8 @@
         .editable {
             flex-grow: 1;
             padding: 0.75rem;
-            font-size: 0.875rem; /* text-sm */
+            /* [MODIFIED] 讀取 CSS 變數 */
+            font-size: var(--note-font-size, 0.875rem);
             line-height: 1.4;
             outline: none;
             border-radius: 0 0 0.5rem 0.5rem;
@@ -276,6 +278,67 @@
             color: #fef2f2; /* text-red-50 */
         }
 
+        .top-right-buttons {
+            position: fixed;
+            top: 1.5rem;
+            right: 5.75rem;
+            z-index: 60;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .icon-button {
+            padding: 0.75rem;
+            border-radius: 9999px;
+            background-color: #ffffff;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            color: #2563eb;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .icon-button:hover {
+            background-color: #eff6ff;
+            transform: translateY(-1px);
+        }
+
+        .icon-button svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            display: block;
+        }
+
+        .floating-action-button {
+            position: fixed;
+            padding: 0.75rem;
+            border-radius: 9999px;
+            background-color: #ffffff;
+            color: #2563eb;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            z-index: 60;
+        }
+
+        .floating-action-button:hover {
+            background-color: #eff6ff;
+            transform: translateY(-1px);
+        }
+
+        .floating-action-button svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            display: block;
+        }
+
+        #help-button {
+            top: 1.5rem;
+            right: 1.5rem;
+        }
+
+
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -284,6 +347,77 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            overflow-y: auto;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+            position: relative;
+            z-index: 20;
+        }
+
+        #help-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 10;
+        }
+
+        #help-modal-content {
+            position: relative;
+            width: 100%;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .close-modal-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: #9ca3af;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: color 0.15s ease-in-out;
+        }
+
+        .close-modal-button:hover {
+            color: #4b5563;
+        }
+
+        .close-modal-button svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .top-right-buttons {
+                top: 1rem;
+                right: 1rem;
+            }
+
+            #help-button {
+                top: 1rem;
+                right: 1rem;
+            }
+
         }
         
         /* [NEW] 群組的 resize handle (Req 1) */
@@ -442,52 +576,55 @@
         </button>
     </div>
 
+    <!-- 設定按鈕 (右上角群組) -->
+    <div class="top-right-buttons">
+        <button id="settings-button" class="icon-button" title="設定">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.108 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.11v1.093c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.142.854.108 1.204l.527.738c.32.447.27.96-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.108-.398.165-.71.505-.78.93l-.15.893c-.09.543-.56.94-1.11.94h-1.094c-.55 0-1.019-.397-1.11-.94l-.149-.893c-.07-.425-.383-.765-.78-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-.96.27-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.11v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.764-.383.93-.78.165-.398.142-.854-.108-1.204l-.527-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.108.397-.165.71-.505.78-.93l.15-.893zM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5z" />
+            </svg>
+        </button>
+    </div>
+
     <!-- [MODIFIED] 提示訊息 (Req 3) -->
-    <button id="help-button" class="fixed top-4 right-4 z-50 p-3 bg-white rounded-full shadow-lg text-blue-600 hover:bg-blue-50 transition-colors">
+    <button id="help-button" class="floating-action-button" title="查看使用說明" aria-label="查看使用說明">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
            <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
        </svg>
     </button>
     
-    <!-- [NEW] 說明 Modal (Req 3) -->
-    <div id="help-modal" class="hidden fixed inset-0 z-[1001] overflow-y-auto"> <!-- z-index 必須高於 modal-overlay -->
-        <!-- [MODIFIED] 加上 z-10 (Req 2) -->
-        <div id="help-modal-overlay" class="modal-overlay fixed inset-0 w-full h-full z-10" style="background-color: rgba(0, 0, 0, 0.5);"></div>
-        
-        <!-- [MODIFIED] 加上 relative z-20 (Req 2) -->
-        <div class="flex items-center justify-center min-h-screen p-4 relative z-20">
-            <div class="modal-content relative w-full max-w-3xl bg-white p-6 md:p-8 rounded-lg shadow-xl overflow-y-auto" style="max-height: 80vh;">
-                <!-- 關閉按鈕 -->
-                <button id="close-modal-button" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+    <div id="help-modal" class="modal hidden" aria-hidden="true">
+        <div id="help-modal-overlay"></div>
+        <div class="modal-container">
+            <div id="help-modal-content" class="modal-content w-full max-w-3xl p-6 md:p-8 overflow-y-auto" style="max-height: 85vh;">
+                <button id="help-modal-close-btn" class="close-modal-button" aria-label="關閉說明視窗">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                     </svg>
                 </button>
-                
-                <!-- 彈窗內容 -->
+
                 <div class="space-y-4">
-                    <h2 class="text-2xl font-bold text-gray-800">方法介紹：親和圖法 (Affinity Diagram / KJ 法)</h2>
-                    <div class="prose max-w-none text-gray-700">
-                        <table class="w-full border-collapse border border-gray-200">
+                    <h2 class="text-2xl font-bold text-slate-800">方法介紹：親和圖法 (Affinity Diagram / KJ 法)</h2>
+                    <div class="prose max-w-none text-slate-700">
+                        <table class="w-full border-collapse border border-slate-200">
                             <tbody class="align-baseline">
-                                <tr class="border-b border-gray-200">
-                                    <td class="p-3 bg-gray-50 font-semibold w-1/4">一句話總結</td>
+                                <tr class="border-b border-slate-200">
+                                    <td class="p-3 bg-slate-50 font-semibold w-1/4">一句話總結</td>
                                     <td class="p-3">讓大量的零散資訊「自動歸位」，從混亂中浮現出洞見與結構。</td>
                                 </tr>
-                                <tr class="border-b border-gray-200">
-                                    <td class="p-3 bg-gray-50 font-semibold">核心概念</td>
+                                <tr class="border-b border-slate-200">
+                                    <td class="p-3 bg-slate-50 font-semibold">核心概念</td>
                                     <td class="p-3">這是一種「由下而上 (Bottom-up)」的資料分類法。它不預先設定任何分類框架，而是讓團隊成員透過直覺與合作，將大量的質化資料（如：用戶訪談筆記、點子、觀察）進行分組，最終讓資料本身的關聯性「自然地長出」有意義的主題與架構。</td>
                                 </tr>
-                                <tr class="border-b border-gray-200">
-                                    <td class="p-3 bg-gray-50 font-semibold">解決的核心問題</td>
+                                <tr class="border-b border-slate-200">
+                                    <td class="p-3 bg-slate-50 font-semibold">解決的核心問題</td>
                                     <td class="p-3">當你面對一大堆看似混亂、零散的質化數據（例如：上百張的便利貼、訪談逐字稿、腦力激盪的點子），感到不知所措時。親和圖法能幫助團隊綜觀與收斂、發掘模式，並建立共識。</td>
                                 </tr>
-                                <tr class="border-b border-gray-200">
-                                    <td class="p-3 bg-gray-50 font-semibold">最佳使用時機</td>
+                                <tr class="border-b border-slate-200">
+                                    <td class="p-3 bg-slate-50 font-semibold">最佳使用時機</td>
                                     <td class="p-3">主要用於「探索期」與「發想期」。<br>• 用戶研究後： 用來統整和分析所有質化發現。<br>• 腦力激盪後： 用來分類和組織大量的創意點子。</td>
                                 </tr>
                                 <tr>
-                                    <td class="p-3 bg-gray-50 font-semibold">使用流程說明</td>
+                                    <td class="p-3 bg-slate-50 font-semibold">使用流程說明</td>
                                     <td class="p-3">
                                         <ol class="list-decimal list-inside space-y-1">
                                             <li><strong>準備資料：</strong> 將所有的資料點（如：一句用戶原話）分別寫在「一張」便利貼上。</li>
@@ -501,6 +638,46 @@
                                 </tr>
                             </tbody>
                         </table>
+
+                        <div class="mt-8 space-y-4">
+                            <h3 class="text-xl font-semibold text-slate-800">功能操作指南（操作流程）</h3>
+                            <table class="w-full border-collapse border border-slate-200 text-slate-800">
+                                <tbody class="align-baseline">
+                                    <tr class="border-b border-slate-200">
+                                        <td class="p-3 bg-slate-50 font-semibold w-1/3">操作</td>
+                                        <td class="p-3">操作說明</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-200">
+                                        <td class="p-3 bg-slate-50 font-semibold">新增群組 / 便利貼</td>
+                                        <td class="p-3">使用左上角 <code>#add-group-btn</code> 新增群組，或使用新增貼文按鈕在畫布加入便利貼。</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-200">
+                                        <td class="p-3 bg-slate-50 font-semibold">編輯貼文</td>
+                                        <td class="p-3">點擊貼文內的可編輯區 (editable) 直接輸入；離開後自動儲存。</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-200">
+                                        <td class="p-3 bg-slate-50 font-semibold">拖曳與排列</td>
+                                        <td class="p-3">拖曳便利貼重新排列位置；使用對齊工具列執行靠左/置中/靠右等動作。</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-200">
+                                        <td class="p-3 bg-slate-50 font-semibold">建立/移除關聯線</td>
+                                        <td class="p-3">使用貼文上的連接節點 (connector-node) 拖曳建立連線；工具列可移除關聯線。</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-200">
+                                        <td class="p-3 bg-slate-50 font-semibold">群組大小調整</td>
+                                        <td class="p-3">選取群組後使用 <code>resize-handle</code> 調整群組大小。</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-200">
+                                        <td class="p-3 bg-slate-50 font-semibold">匯入 / 匯出 / 截圖</td>
+                                        <td class="p-3">使用 <code>#import-btn</code> / <code>#export-btn</code> 管理資料，<code>#screenshot-btn</code> 可下載畫布圖片，<code>#clear-btn</code> 可清空（請先備份）。</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 bg-slate-50 font-semibold">浮動工具列</td>
+                                        <td class="p-3">選取便利貼後會出現 <code>#context-menu</code>，可更換顏色、切換標題、刪除或移除關聯線等。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -515,6 +692,45 @@
             <div class="flex justify-end space-x-2">
                 <button id="cancel-clear-btn" class="action-button">取消</button>
                 <button id="confirm-clear-btn" class="action-button warning-button">確認清空</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- [NEW] 設定 Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-[1001] overflow-y-auto">
+        <div id="settings-modal-overlay" class="modal-overlay fixed inset-0 w-full h-full z-10" style="background-color: rgba(0, 0, 0, 0.5);"></div>
+        
+        <div class="flex items-center justify-center min-h-screen p-4 relative z-20">
+            <div class="modal-content relative w-full max-w-md bg-white p-6 md:p-8 rounded-lg shadow-xl">
+                <!-- 關閉按鈕 -->
+                <button id="close-settings-button" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                
+                <!-- 彈窗內容 -->
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-gray-800">顯示設定</h2>
+                    
+                    <!-- 字體大小 -->
+                    <div class="space-y-2">
+                        <label for="font-size-slider" class="flex justify-between items-center text-sm font-medium text-gray-700">
+                            <span>字體大小</span>
+                            <span id="font-size-value" class="text-gray-900 font-semibold">14 px</span>
+                        </label>
+                        <input type="range" id="font-size-slider" min="12" max="24" value="14" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- 卡片高度 -->
+                    <div class="space-y-2">
+                        <label for="card-height-slider" class="flex justify-between items-center text-sm font-medium text-gray-700">
+                            <span>卡片最小高度</span>
+                            <span id="card-height-value" class="text-gray-900 font-semibold">100 px</span>
+                        </label>
+                        <input type="range" id="card-height-slider" min="80" max="200" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -550,8 +766,18 @@
             // [MODIFIED] 取得 help-button (Req 3)
             const helpButton = document.getElementById('help-button');
             const helpModal = document.getElementById('help-modal');
-            const closeModalButton = document.getElementById('close-modal-button');
+            const helpModalCloseBtn = document.getElementById('help-modal-close-btn');
             const helpModalOverlay = document.getElementById('help-modal-overlay');
+
+            // [NEW] 取得設定 Modal 的 DOM
+            const settingsButton = document.getElementById('settings-button');
+            const settingsModal = document.getElementById('settings-modal');
+            const closeSettingsButton = document.getElementById('close-settings-button');
+            const settingsModalOverlay = document.getElementById('settings-modal-overlay');
+            const fontSizeSlider = document.getElementById('font-size-slider');
+            const fontSizeValue = document.getElementById('font-size-value');
+            const cardHeightSlider = document.getElementById('card-height-slider');
+            const cardHeightValue = document.getElementById('card-height-value');
 
             let selectedNotes = [];
             let isDraggingNote = false;
@@ -582,6 +808,10 @@
             // [NEW] 複製貼上剪貼簿 (Req 1)
             let clipboard = [];
             
+            // [NEW] 設定的狀態變數
+            let currentFontSize = 14;
+            let currentMinHeight = 100;
+            
             // [NEW] 智慧對齊線 (Req 2)
             const snapLineV = document.getElementById('snap-line-v');
             const snapLineH = document.getElementById('snap-line-h');
@@ -604,6 +834,23 @@
 
             function updateBoardTransform() {
                 board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            }
+
+            // [NEW] 套用設定到 CSS 變數
+            function applySettings() {
+                // 將 JS 變數寫入 #board 的 style 中
+                board.style.setProperty('--note-font-size', `${currentFontSize}px`);
+                board.style.setProperty('--note-min-height', `${currentMinHeight}px`);
+                
+                // 更新 slider UI (如果 modal 是打開的)
+                if (fontSizeSlider) {
+                    fontSizeSlider.value = currentFontSize;
+                    fontSizeValue.textContent = `${currentFontSize} px`;
+                }
+                if (cardHeightSlider) {
+                    cardHeightSlider.value = currentMinHeight;
+                    cardHeightValue.textContent = `${currentMinHeight} px`;
+                }
             }
 
             // --- 事件監聽 (平移/縮放/框選) ---
@@ -811,7 +1058,8 @@
                 }
 
                 note.addEventListener('dblclick', (e) => {
-                    if ((e.target === note || e.target === editable) && !e.target.closest('.connector-node') && !e.target.closest('.resize-handle')) {
+                    // 寬鬆的判斷：只要點在 note 或 editable 範圍內就允許編輯
+                    if ((e.target === note || e.target === editable || editable.contains(e.target)) && !e.target.closest('.connector-node') && !e.target.closest('.resize-handle')) {
                         editable.contentEditable = true;
                         editable.focus();
                         document.execCommand('selectAll', false, null);
@@ -981,11 +1229,17 @@
                 });
                 
                 dragOffsets.clear();
+                
+                // 【關鍵修復】使用世界座標計算 dragOffsets
+                const { x: mouseWorldX, y: mouseWorldY } = getBoardCoordinates(e.clientX, e.clientY);
+                
                 elementsToDrag.forEach(n => {
-                    const rect = n.getBoundingClientRect();
+                    const noteWorldX = parseFloat(n.style.left);
+                    const noteWorldY = parseFloat(n.style.top);
+                    
                     dragOffsets.set(n, {
-                        offsetX: (e.clientX - rect.left) / scale,
-                        offsetY: (e.clientY - rect.top) / scale
+                        offsetX: mouseWorldX - noteWorldX,
+                        offsetY: mouseWorldY - noteWorldY
                     });
                 });
                 
@@ -1051,23 +1305,23 @@
                         if (!snappedX) {
                             if (Math.abs(primaryRect.left - targetRect.left) < threshold) {
                                 newX = targetRect.left;
-                                showVLine(targetRect.left * scale + panX); // 轉換回螢幕座標
+                                showVLine(targetRect.left);
                                 snappedX = true;
                             } else if (Math.abs(primaryRect.hCenter - targetRect.hCenter) < threshold) {
                                 newX = targetRect.hCenter - primaryRect.width / 2;
-                                showVLine(targetRect.hCenter * scale + panX);
+                                showVLine(targetRect.hCenter);
                                 snappedX = true;
                             } else if (Math.abs(primaryRect.right - targetRect.right) < threshold) {
                                 newX = targetRect.right - primaryRect.width;
-                                showVLine(targetRect.right * scale + panX);
+                                showVLine(targetRect.right);
                                 snappedX = true;
                             } else if (Math.abs(primaryRect.left - targetRect.right) < threshold) { // [FIX] 增加對齊 (左->右)
                                 newX = targetRect.right;
-                                showVLine(targetRect.right * scale + panX);
+                                showVLine(targetRect.right);
                                 snappedX = true;
                             } else if (Math.abs(primaryRect.right - targetRect.left) < threshold) { // [FIX] 增加對齊 (右->左)
                                 newX = targetRect.left - primaryRect.width;
-                                showVLine(targetRect.left * scale + panX);
+                                showVLine(targetRect.left);
                                 snappedX = true;
                             }
                         }
@@ -1076,23 +1330,23 @@
                         if (!snappedY) {
                             if (Math.abs(primaryRect.top - targetRect.top) < threshold) {
                                 newY = targetRect.top;
-                                showHLine(targetRect.top * scale + panY); // 轉換回螢幕座標
+                                showHLine(targetRect.top);
                                 snappedY = true;
                             } else if (Math.abs(primaryRect.vCenter - targetRect.vCenter) < threshold) {
                                 newY = targetRect.vCenter - primaryRect.height / 2;
-                                showHLine(targetRect.vCenter * scale + panY);
+                                showHLine(targetRect.vCenter);
                                 snappedY = true;
                             } else if (Math.abs(primaryRect.bottom - targetRect.bottom) < threshold) {
                                 newY = targetRect.bottom - primaryRect.height;
-                                showHLine(targetRect.bottom * scale + panY);
+                                showHLine(targetRect.bottom);
                                 snappedY = true;
                             } else if (Math.abs(primaryRect.top - targetRect.bottom) < threshold) { // [FIX] 增加對齊 (上->下)
                                 newY = targetRect.bottom;
-                                showHLine(targetRect.bottom * scale + panY);
+                                showHLine(targetRect.bottom);
                                 snappedY = true;
                             } else if (Math.abs(primaryRect.bottom - targetRect.top) < threshold) { // [FIX] 增加對齊 (下->上)
                                 newY = targetRect.top - primaryRect.height;
-                                showHLine(targetRect.top * scale + panY);
+                                showHLine(targetRect.top);
                                 snappedY = true;
                             }
                         }
@@ -1681,9 +1935,14 @@
                         height: note.style.height || null // [NEW] 儲存 w/h (Req 1)
                     });
                 });
+                // [MODIFIED] 將設定值加入 state
                 const currentState = {
                     notes: notesState,
-                    connections: connections
+                    connections: connections,
+                    settings: {
+                        fontSize: currentFontSize,
+                        minHeight: currentMinHeight
+                    }
                 };
                 if (historyPointer > -1 && JSON.stringify(history[historyPointer]) === JSON.stringify(currentState)) {
                     return;
@@ -1701,6 +1960,17 @@
                 
                 connections = [];
                 drawConnections();
+                
+                // [NEW] 恢復設定
+                if (state.settings) {
+                    currentFontSize = state.settings.fontSize || 14;
+                    currentMinHeight = state.settings.minHeight || 100;
+                } else {
+                    // 如果是舊的存檔，使用預設值
+                    currentFontSize = 14;
+                    currentMinHeight = 100;
+                }
+                applySettings(); // 關鍵：在這裡套用設定
                 
                 if (state.notes) {
                     state.notes.forEach(noteState => {
@@ -1846,136 +2116,68 @@
             });
             
             // --- [NEW] 說明 Modal 監聽 (Req 3) ---
-            if (helpButton) {
+            if (helpButton && helpModal) {
                 helpButton.addEventListener('click', () => {
                     helpModal.classList.remove('hidden');
                 });
             }
-            if (closeModalButton) {
-                closeModalButton.addEventListener('click', () => {
+            if (helpModalCloseBtn && helpModal) {
+                helpModalCloseBtn.addEventListener('click', () => {
                     helpModal.classList.add('hidden');
                 });
             }
-            if (helpModalOverlay) {
+            if (helpModalOverlay && helpModal) {
                 helpModalOverlay.addEventListener('click', () => {
                     helpModal.classList.add('hidden');
                 });
             }
 
-            saveState(); // 儲存初始的空白狀態
-        });
-    </script>
-</body>
-</html>     });
-            
-            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
-            if (helpButton) {
-                helpButton.addEventListener('click', () => {
-                    helpModal.classList.remove('hidden');
+
+            // [NEW] 設定 Modal 監聽
+            if (settingsButton) {
+                settingsButton.addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                    // 確保 slider 反映目前狀態
+                    fontSizeSlider.value = currentFontSize;
+                    fontSizeValue.textContent = `${currentFontSize} px`;
+                    cardHeightSlider.value = currentMinHeight;
+                    cardHeightValue.textContent = `${currentMinHeight} px`;
                 });
             }
-            if (closeModalButton) {
-                closeModalButton.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
+            if (closeSettingsButton) {
+                closeSettingsButton.addEventListener('click', () => {
+                    settingsModal.classList.add('hidden');
                 });
             }
-            if (helpModalOverlay) {
-                helpModalOverlay.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
+            if (settingsModalOverlay) {
+                settingsModalOverlay.addEventListener('click', () => {
+                    settingsModal.classList.add('hidden');
                 });
             }
 
-            saveState(); // 儲存初始的空白狀態
-        });
-    </script>
-</body>
-</html>     });
-            
-            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
-            if (helpButton) {
-                helpButton.addEventListener('click', () => {
-                    helpModal.classList.remove('hidden');
-                });
-            }
-            if (closeModalButton) {
-                closeModalButton.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
-                });
-            }
-            if (helpModalOverlay) {
-                helpModalOverlay.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
-                });
-            }
+            // [NEW] 綁定 Slider 事件
+            fontSizeSlider.addEventListener('input', (e) => {
+                currentFontSize = parseInt(e.target.value, 10);
+                fontSizeValue.textContent = `${currentFontSize} px`;
+                applySettings(); // 動態套用
+            });
+            // [MODIFIED] 當 "放開" slider 時才儲存 history
+            fontSizeSlider.addEventListener('change', () => {
+                saveState(); 
+            });
 
-            saveState(); // 儲存初始的空白狀態
-        });
-    </script>
-</body>
-</html>     });
-            
-            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
-            if (helpButton) {
-                helpButton.addEventListener('click', () => {
-                    helpModal.classList.remove('hidden');
-                });
-            }
-            if (closeModalButton) {
-                closeModalButton.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
-                });
-            }
-            if (helpModalOverlay) {
-                helpModalOverlay.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
-                });
-            }
+            cardHeightSlider.addEventListener('input', (e) => {
+                currentMinHeight = parseInt(e.target.value, 10);
+                cardHeightValue.textContent = `${currentMinHeight} px`;
+                applySettings(); // 動態套用
+            });
+            // [MODIFIED] 當 "放開" slider 時才儲存 history
+            cardHeightSlider.addEventListener('change', () => {
+                saveState();
+            });
 
-            saveState(); // 儲存初始的空白狀態
-        });
-    </script>
-</body>
-</html>     });
-            
-            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
-            if (helpButton) {
-                helpButton.addEventListener('click', () => {
-                    helpModal.classList.remove('hidden');
-                });
-            }
-            if (closeModalButton) {
-                closeModalButton.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
-                });
-            }
-            if (helpModalOverlay) {
-                helpModalOverlay.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
-                });
-            }
-
-            saveState(); // 儲存初始的空白狀態
-        });
-    </script>
-</body>
-</html>     });
-            
-            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
-            if (helpButton) {
-                helpButton.addEventListener('click', () => {
-                    helpModal.classList.remove('hidden');
-                });
-            }
-            if (closeModalButton) {
-                closeModalButton.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
-                });
-            }
-            if (helpModalOverlay) {
-                helpModalOverlay.addEventListener('click', () => {
-                    helpModal.classList.add('hidden');
-                });
-            }
+            // --- [NEW] 立即套用一次預設值 ---
+            applySettings();
 
             saveState(); // 儲存初始的空白狀態
         });
