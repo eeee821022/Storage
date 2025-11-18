@@ -70,7 +70,7 @@
         </header>
 
         <!-- 工具卡片網格 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             
             <!-- 曼陀羅思考法 -->
             <a href="./網頁-曼陀羅思考法.html" class="tool-card">
@@ -99,13 +99,48 @@
                 <p>映射使用者在各個接觸點的體驗和情緒變化</p>
             </a>
 
+            <!-- 客戶畫像 (Persona) -->
+            <a href="./網頁-客戶畫像.html" class="tool-card">
+                <svg class="tool-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 14a3 3 0 10-6 0v1a3 3 0 003 3h0a3 3 0 003-3v-1z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 7a3 3 0 100-6 3 3 0 000 6z" />
+                </svg>
+                <h3>客戶畫像 (Persona)</h3>
+                <p>建立代表性用戶模型，視覺化用戶特徵與行為，支持設計決策</p>
+            </a>
+
         </div>
 
         <!-- 頁腳 -->
         <footer class="text-center mt-16 text-gray-500 text-sm">
-            <p>設計思考工具集 | 灰色設計系統</p>
+            <p>設計思考工具集 | by Eason的肝</p>
         </footer>
     </div>
+
+    <!-- 書本說明按鈕（固定右下角） -->
+    <button id="book-help-button" title="功能操作指南" class="fixed right-6 bottom-6 z-50 p-3 bg-white rounded-full shadow-lg text-blue-600 hover:bg-blue-50" aria-label="功能操作指南">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h12a2 2 0 012 2v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h6" />
+        </svg>
+    </button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const bookBtn = document.getElementById('book-help-button');
+            if (!bookBtn) return;
+            bookBtn.addEventListener('click', function () {
+                const help = document.getElementById('help-modal');
+                if (help) {
+                    help.classList.remove('hidden');
+                } else {
+                    // fallback: show a simple alert if no modal exists on this page
+                    alert('目前此頁尚未提供詳細操作說明。');
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
