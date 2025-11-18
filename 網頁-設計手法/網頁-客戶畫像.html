@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persona 權重詞雲分析工具</title>
+    
+    <!-- 外部函式庫 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
+    
+    <style>
+        /* ==================== 基礎設定 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            color: #1f2937; /* text-gray-800 */
+            line-height: 1.6;
+        }
+        
+        /* ==================== 主容器 ==================== */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+            padding-top: 5rem;
+        }
+        
+        /* ==================== 內容區佈局 ==================== */
+        .content-wrapper {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+        
+        .left-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .right-sidebar {
+            width: 360px;
+            flex-shrink: 0;
+        }
+        
+        /* ==================== 標題區 ==================== */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 1.875rem; /* 30px */
+            font-weight: 700;
+            color: #111827; /* gray-900 */
+            margin-bottom: 0.5rem;
+        }
+        
+        .header .subtitle {
+            font-size: 1rem; /* 16px */
+            font-weight: 400;
+            color: #4b5563; /* gray-600 */
+        }
+        
+        /* ==================== 右上角按鈕組 ==================== */
+        .top-right-buttons {
+            position: fixed;
+            top: 1.5rem;
+            right: 5.75rem;
+            z-index: 50;
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .icon-button {
+            background-color: #ffffff;
+            padding: 0.75rem;
+            border-radius: 9999px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            color: #2563eb;
+            transition: background-color 0.15s ease-in-out;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .icon-button:hover {
+            background-color: #eff6ff;
+        }
+        
+        .icon-button svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            display: block;
+        }
+
+        .floating-action-button {
+            position: fixed;
+            padding: 0.75rem;
+            border-radius: 9999px;
+            background-color: #ffffff;
+            color: #2563eb;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            z-index: 60;
+        }
+
+        .floating-action-button:hover {
+            background-color: #eff6ff;
+            transform: translateY(-1px);
+        }
+
+        .floating-action-button svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            display: block;
+        }
+
+        #help-button {
+            top: 1.5rem;
+            right: 1.5rem;
+        }
+
+        #book-help-button {
+            right: 1.5rem;
+            bottom: 1.5rem;
+        }
+        
+        /* 隱藏的檔案輸入 */
+        #file-input {
+            display: none;
+        }
+        
+        /* ==================== 篩選器區域 ==================== */
+        .filters {
+            background-color: #ffffff;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            position: sticky;
+            top: 5rem;
+        }
+        
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .filter-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .filter-section h3 {
+            font-size: 1.125rem; /* 18px */
+            font-weight: 600;
+            color: #1f2937; /* gray-800 */
+            margin-bottom: 0.75rem;
+        }
+        
+        /* 情緒和主題篩選複選框 */
+        .checkboxes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        /* 自定義下拉選單 */
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+        
+        .select-trigger {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            color: #1f2937;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .select-trigger:hover {
+            border-color: #9ca3af;
+            background-color: #ffffff;
+        }
+        
+        .select-trigger svg {
+            width: 1rem;
+            height: 1rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .select-trigger.open svg {
+            transform: rotate(180deg);
+        }
+        
+        .select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 0.25rem;
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 30;
+            display: none;
+        }
+        
+        .select-dropdown.show {
+            display: block;
+        }
+        
+        .select-option {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.15s ease-in-out;
+        }
+        
+        .select-option:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .select-option input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+        }
+        
+        .select-option label {
+            font-size: 0.875rem;
+            color: #374151;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+        }
+        
+        .checkbox-item label {
+            font-size: 0.875rem;
+            color: #374151; /* gray-700 */
+            cursor: pointer;
+        }
+        
+        /* ==================== 詞雲圖區域 ==================== */
+        .wordcloud-container {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
+        }
+        
+        #wordcloud-canvas {
+            width: 100%;
+            max-width: 756px;
+            height: 756px;
+            margin: 0 auto;
+            display: block;
+            border: 1px solid #e5e7eb; /* border-gray-200 */
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+        
+        #wordcloud-canvas.masked {
+            -webkit-mask-size: contain;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            mask-position: center;
+        }
+        
+        /* ==================== 事件顯示區 ==================== */
+        #event-display {
+            background-color: #eff6ff; /* bg-blue-50 */
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #bfdbfe; /* border-blue-200 */
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        
+        #event-display h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        .event-keyword {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            background-color: #ffffff;
+            border-radius: 0.375rem;
+            text-align: center;
+        }
+        
+        .event-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .event-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .event-meta-label {
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 0.875rem;
+        }
+        
+        .event-meta-value {
+            color: #1f2937;
+            font-size: 0.875rem;
+        }
+        
+        #event-text {
+            font-size: 0.875rem;
+            color: #1f2937;
+            line-height: 1.5;
+            background-color: #ffffff;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+        }
+        
+        /* ==================== 提示訊息 ==================== */
+        .info-message {
+            background-color: #eff6ff; /* bg-blue-50 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #bfdbfe;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+        }
+        
+        .info-message svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            color: #2563eb; /* text-blue-600 */
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+        
+        .info-message p {
+            font-size: 0.875rem;
+            color: #1f2937;
+        }
+        
+        /* ==================== 彈窗樣式 ==================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            backdrop-filter: blur(2px);
+        }
+        
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 41;
+            overflow-y: auto;
+        }
+        
+        .modal-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .modal > div:not(.modal-overlay) {
+            position: relative;
+            z-index: 42;
+        }
+        
+        .modal.hidden {
+            display: none;
+        }
+        
+        .modal-content {
+            position: relative;
+            width: 100%;
+            max-width: 42rem; /* 672px */
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-height: 85vh;
+            overflow-y: auto;
+            z-index: 50;
+        }
+        
+        .close-modal-button {
+            position: sticky;
+            top: -1rem;
+            right: -1rem;
+            float: right;
+            color: #9ca3af; /* text-gray-400 */
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: color 0.15s ease-in-out;
+            z-index: 51;
+        }
+        
+        .close-modal-button:hover {
+            color: #4b5563; /* hover:text-gray-600 */
+        }
+        
+        .close-modal-button svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        
+        .modal-content h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-content table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-content table td {
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+        
+        .modal-content table td:first-child {
+            background-color: #f9fafb;
+            font-weight: 600;
+            width: 25%;
+        }
+        
+        .modal-content ol {
+            padding-left: 1.5rem;
+        }
+        
+        .modal-content ol li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* ==================== 設定面板樣式 ==================== */
+        .settings-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .settings-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .slider {
+            flex: 1;
+            height: 0.5rem;
+            border-radius: 0.25rem;
+            background: #e5e7eb;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .slider-value {
+            min-width: 3rem;
+            text-align: center;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .mask-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .mask-option {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: #fff;
+            padding: 0.35rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .mask-option.selected {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+        }
+
+        .mask-option img {
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            background-color: #f9fafb;
+            border-radius: 0.375rem;
+            padding: 0.25rem;
+        }
+
+        .mask-option span {
+            font-size: 0.75rem;
+            color: #374151;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .mask-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .mask-actions button {
+            flex: 1;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+            background: #fff;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: #374151;
+        }
+
+        #reload-mask-btn {
+            border-color: #2563eb;
+            background-color: #2563eb;
+            color: #fff;
+        }
+
+        .mask-list-status {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .mask-loading,
+        .mask-error {
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .mask-loading {
+            background-color: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .mask-error {
+            background-color: #fef2f2;
+            color: #b91c1c;
+        }
+        
+        /* ==================== 錯誤訊息 ==================== */
+        .error-message {
+            background-color: #fef2f2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #fecaca;
+            margin-bottom: 1.5rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* ==================== 響應式設計 ==================== */
+        @media (max-width: 1200px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            
+            .right-sidebar {
+                width: 100%;
+            }
+            
+            .filters {
+                position: static;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                padding-top: 5rem;
+            }
+            
+            #wordcloud-canvas {
+                max-width: 100%;
+                height: auto;
+                aspect-ratio: 1 / 1;
+            }
+            
+            .top-right-buttons {
+                top: 4.5rem;
+                right: 1rem;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            
+            .filter-section h3 {
+                font-size: 1rem;
+            }
+
+            #help-button {
+                top: 1rem;
+                right: 1rem;
+            }
+
+            #book-help-button {
+                right: 1rem;
+                bottom: 1rem;
+            }
+        }
+
+        #persona-image-preview {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border: 2px solid #ccc;
+            display: none;
+            /* 遮罩效果 */
+            -webkit-mask-image: url('剪影/女1.png');
+            mask-image: url('剪影/女1.png');
+            -webkit-mask-mode: alpha;
+            mask-mode: alpha;
+            -webkit-mask-size: 100% 100%;
+            mask-size: 100% 100%;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+        }
+
+        .persona-card {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .persona-card h3 {
+            font-size: 1.125rem; /* 18px */
+            font-weight: 600;
+            color: #1f2937; /* gray-800 */
+            margin-bottom: 1rem;
+        }
+        
+        .persona-card p {
+            font-size: 0.875rem;
+            color: #374151; /* gray-700 */
+            margin-bottom: 0.5rem;
+        }
+        
+        .persona-card .label {
+            font-weight: 600;
+            color: #4b5563; /* gray-600 */
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* ==================== 事件顯示區 ==================== */
+        #event-display {
+            background-color: #eff6ff; /* bg-blue-50 */
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #bfdbfe; /* border-blue-200 */
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        
+        #event-display h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        .event-keyword {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            background-color: #ffffff;
+            border-radius: 0.375rem;
+            text-align: center;
+        }
+        
+        .event-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .event-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .event-meta-label {
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 0.875rem;
+        }
+        
+        .event-meta-value {
+            color: #1f2937;
+            font-size: 0.875rem;
+        }
+        
+        #event-text {
+            font-size: 0.875rem;
+            color: #1f2937;
+            line-height: 1.5;
+            background-color: #ffffff;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+        }
+        
+        /* ==================== 提示訊息 ==================== */
+        .info-message {
+            background-color: #eff6ff; /* bg-blue-50 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #bfdbfe;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+        }
+        
+        .info-message svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            color: #2563eb; /* text-blue-600 */
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+        
+        .info-message p {
+            font-size: 0.875rem;
+            color: #1f2937;
+        }
+        
+        /* ==================== 彈窗樣式 ==================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+        }
+        
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 41;
+            overflow-y: auto;
+        }
+        
+        .modal > div:not(.modal-overlay) {
+            position: relative;
+            z-index: 42;
+        }
+        
+        .modal.hidden {
+            display: none;
+        }
+        
+        .modal-content {
+            position: relative;
+            width: 100%;
+            max-width: 42rem; /* 672px */
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-height: 80vh;
+            overflow-y: auto;
+            margin: 2rem auto;
+            z-index: 50;
+        }
+        
+        .close-modal-button {
+            position: sticky;
+            top: -1rem;
+            right: -1rem;
+            float: right;
+            color: #9ca3af; /* text-gray-400 */
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: color 0.15s ease-in-out;
+            z-index: 51;
+        }
+        
+        .close-modal-button:hover {
+            color: #4b5563; /* hover:text-gray-600 */
+        }
+        
+        .close-modal-button svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        
+        .modal-content h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-content table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-content table td {
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+        
+        .modal-content table td:first-child {
+            background-color: #f9fafb;
+            font-weight: 600;
+            width: 25%;
+        }
+        
+        .modal-content ol {
+            padding-left: 1.5rem;
+        }
+        
+        .modal-content ol li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* ==================== 設定面板樣式 ==================== */
+        .settings-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .settings-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .slider {
+            flex: 1;
+            height: 0.5rem;
+            border-radius: 0.25rem;
+            background: #e5e7eb;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .slider-value {
+            min-width: 3rem;
+            text-align: center;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        /* ==================== 錯誤訊息 ==================== */
+        .error-message {
+            background-color: #fef2f2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #fecaca;
+            margin-bottom: 1.5rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* ==================== 響應式設計 ==================== */
+        @media (max-width: 1200px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            
+            .right-sidebar {
+                width: 100%;
+            }
+            
+            .filters {
+                position: static;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                padding-top: 5rem;
+            }
+            
+            #wordcloud-canvas {
+                max-width: 100%;
+                height: auto;
+                aspect-ratio: 1 / 1;
+            }
+            
+            .top-right-buttons {
+                top: 1rem;
+                right: 1rem;
+            }
+            
+            .filter-section h3 {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 右上角按鈕組 -->
+    <div class="top-right-buttons">
+        <button id="upload-button" class="icon-button" title="上傳 CSV 檔案">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+            </svg>
+        </button>
+        
+        <button id="settings-button" class="icon-button" title="設定">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            </svg>
+        </button>
+        <!-- mask/shape controls moved to bottom-right panel -->
+    </div>
+
+    <button id="help-button" class="floating-action-button" title="查看使用說明" aria-label="查看使用說明">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+        </svg>
+    </button>
+
+    <input type="file" id="file-input" accept=".csv" />
+
+    <!-- 說明彈窗 -->
+    <div id="help-modal" class="modal hidden">
+        <div id="help-modal-overlay" class="modal-overlay"></div>
+        <div class="modal-container">
+            <div id="help-modal-content" class="modal-content">
+                <button id="help-modal-close-btn" class="close-modal-button" data-modal="help-modal" aria-label="關閉說明視窗">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                
+                <h2>方法介紹：顧客畫像 (Persona)</h2>
+                
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>方法名稱</td>
+                            <td>顧客畫像 (Persona)</td>
+                        </tr>
+                        <tr>
+                            <td>一句話總結</td>
+                            <td>🎯 跨越產品視角，用真實用戶的眼睛和情緒來設計。</td>
+                        </tr>
+                        <tr>
+                            <td>核心概念</td>
+                            <td>顧客畫像是一種研究型的虛擬人物模型，透過彙整真實用戶的行為、痛點、動機、目標和人口統計資料等深度資訊，創造出一個具體且具代表性的「理想用戶」。它讓設計團隊能夠脫離個人偏見，將設計決策聚焦於滿足目標用戶的特定需求。</td>
+                        </tr>
+                        <tr>
+                            <td>解決的核心問題</td>
+                            <td>
+                                <ul style="padding-left: 1.5rem; margin: 0;">
+                                    <li>模糊的用戶目標：將抽象的「用戶」具體化，幫助團隊明確「我們在為誰設計？」</li>
+                                    <li>設計決策的衝突：提供一個共同的參考點，減少團隊成員間因用戶認知差異而產生的爭議。</li>
+                                    <li>功能蔓延 (Feature Creep)：幫助團隊聚焦，確保開發的功能與目標用戶的核心需求保持一致。</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>最佳使用時機</td>
+                            <td>專案的問題探索期、概念發想期及需求定義期。在進行用戶研究（訪談、問卷、數據分析）之後，正式開始設計或開發之前。</td>
+                        </tr>
+                        <tr>
+                            <td>使用流程說明</td>
+                            <td>
+                                <ol style="margin: 0;">
+                                    <li><strong>數據收集與分析：</strong>執行用戶訪談、問卷調查、網站數據分析等，收集真實用戶的行為模式和動機。</li>
+                                    <li><strong>找出共同模式 (Clustering)：</strong>將收集到的數據進行分組，識別出幾種主要的、具有代表性的用戶行為、目標和痛點的集群。</li>
+                                    <li><strong>建立虛擬人物：</strong>為每個關鍵集群創造一個虛擬人物。為其命名、設定背景故事、年齡職業、技能水平，以及最重要的——目標 (Goals) 與痛點 (Frustrations)。</li>
+                                    <li><strong>情境化 (Scenario Mapping)：</strong>為 Persona 撰寫一個或多個使用情境，描述他/她在特定任務中，如何與產品或服務互動，以及在此過程中的感受。</li>
+                                    <li><strong>團隊溝通與運用：</strong>將 Persona 文件化並視覺化（通常是海報或卡片），在團隊內部分享，並在往後的設計審查和功能排序會議中，將 Persona 作為決策的依據。</li>
+                                </ol>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600;">工具使用說明</h3>
+                <ol>
+                    <li><strong>上傳 CSV 檔案：</strong>點擊右上角的上傳按鈕，選擇您的 Result1.csv 檔案。</li>
+                    <li><strong>篩選資料：</strong>使用「情緒篩選」和「主題篩選」複選框來過濾詞雲內容。</li>
+                    <li><strong>查看詳細資訊：</strong>點擊詞雲中的任何關鍵字，下方會顯示該關鍵字對應的原始事件描述。</li>
+                    <li><strong>調整顯示：</strong>點擊設定按鈕可調整詞雲字體大小。</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能操作指南彈窗 -->
+    <div id="operation-modal" class="modal hidden">
+        <div id="operation-modal-overlay" class="modal-overlay"></div>
+        <div class="modal-container">
+            <div id="operation-modal-content" class="modal-content">
+                <button id="operation-modal-close-btn" class="close-modal-button" data-modal="operation-modal" aria-label="關閉操作指南視窗">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <h2 style="font-size:1.25rem;margin-bottom:1rem;font-weight:700;">功能操作指南（Persona / 客戶畫像）</h2>
+                <table>
+                    <tbody>
+                        <tr>
+                            <td style="width:34%;">操作</td>
+                            <td>操作說明</td>
+                        </tr>
+                        <tr>
+                            <td>上傳 CSV</td>
+                            <td>按 <code>#upload-button</code> 選擇 CSV 檔（例如 Result1.csv），系統會用 PapaParse 解析並產生詞雲。</td>
+                        </tr>
+                        <tr>
+                            <td>篩選主題 / 情緒</td>
+                            <td>使用右側 <code>#theme-trigger</code> 或 <code>#emotion-trigger</code> 選取要包含的項目。</td>
+                        </tr>
+                        <tr>
+                            <td>查看明細</td>
+                            <td>點擊詞雲關鍵字會在 <code>#event-display</code> 顯示該詞的原始事件與屬性。</td>
+                        </tr>
+                        <tr>
+                            <td>字體大小</td>
+                            <td>在 <code>#settings-button</code> 的設定中調整 <code>#font-size-slider</code> 來改變最大字體尺寸。</td>
+                        </tr>
+                        <tr>
+                            <td>搜尋</td>
+                            <td>在右側輸入關鍵字，按 <code>#search-keyword-button</code> 或 Enter 可定位並顯示該詞。</td>
+                        </tr>
+                        <tr>
+                            <td>匯出 / 截圖</td>
+                            <td>可使用瀏覽器列印或新增 html2canvas 按鈕擷取詞雲畫面（如需，我可協助加入）。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定彈窗 -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem;">
+            <div class="modal-content" style="max-width: 28rem;">
+                <button class="close-modal-button" data-modal="settings-modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                
+                <h2>詞雲顯示設定</h2>
+                
+                <div class="settings-group">
+                    <label for="font-size-slider">字體大小</label>
+                    <div class="slider-container">
+                        <input type="range" id="font-size-slider" class="slider" min="50" max="150" value="100" step="5">
+                        <span class="slider-value" id="font-size-value">100%</span>
+                    </div>
+                    <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">
+                        調整詞雲中關鍵字的相對大小。
+                    </p>
+                </div>
+
+                <!-- Shape Selection -->
+                <div class="settings-group">
+                    <label for="shape-select">形狀</label>
+                    <select id="shape-select" style="width:100%;padding:0.5rem;border-radius:0.375rem;border:1px solid #d1d5db;background-color: #f9fafb;font-size:0.9rem;">
+                        <option value="circle">Circle (圓形)</option>
+                        <option value="cardioid">Cardioid (心形)</option>
+                        <option value="diamond">Diamond (菱形)</option>
+                        <option value="square">Square (方形)</option>
+                        <option value="triangle">Triangle (三角形)</option>
+                        <option value="star">Star (星形)</option>
+                    </select>
+                </div>
+
+                <!-- Mask Upload -->
+                <div class="settings-group">
+                    <label>遮罩剪影</label>
+                    <p style="font-size:0.75rem;color:#6b7280;margin-bottom:0.5rem;">
+                        從「剪影」資料夾的 PNG 圖片中挑選遮罩。新增檔案後可按「重新載入」更新清單。
+                    </p>
+                    <div id="mask-gallery" class="mask-gallery"></div>
+                    <div class="mask-actions">
+                        <button id="reload-mask-btn">重新載入</button>
+                        <button id="clear-mask-btn">清除</button>
+                    </div>
+                    <div id="mask-list-status" class="mask-list-status"></div>
+                    
+                    <!-- Preview and Info -->
+                    <div id="mask-preview-container" style="display:none;margin-top:0.5rem;padding:0.5rem;background:#f9fafb;border-radius:0.375rem;border:1px solid #e5e7eb;">
+                        <div style="display:flex;gap:0.75rem;align-items:center;">
+                            <img id="mask-preview" alt="預覽" style="width:56px;height:56px;object-fit:contain;border-radius:0.25rem;background:#fff;padding:4px;" />
+                            <div id="mask-info" style="font-size:0.75rem;color:#6b7280;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 標題 -->
+        <div class="header">
+            <h1>Persona 權重詞雲分析工具</h1>
+            <p class="subtitle">視覺化顧客畫像關鍵特徵與權重分布</p>
+        </div>
+
+        <!-- 提示訊息 -->
+        <div id="info-box" class="info-message">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+            </svg>
+            <p>請點擊右上角的「上傳」按鈕來上傳您的 Result1.csv 檔案，開始分析。</p>
+        </div>
+
+        <!-- 錯誤訊息 -->
+        <div id="error-box" class="error-message hidden"></div>
+
+        <!-- 內容區 -->
+        <div class="content-wrapper">
+            <!-- 左側：詞雲圖 -->
+            <div class="left-content">
+                <!-- 詞雲圖 -->
+                <div id="wordcloud-container" class="wordcloud-container hidden">
+                    <canvas id="wordcloud-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- 右側：關鍵字資訊 + 篩選器 -->
+            <div class="right-sidebar">
+                <!-- 事件顯示 -->
+                <div id="event-display">
+                    <h3>📌 關鍵字詳細資訊</h3>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <input 
+                            type="text" 
+                            id="event-keyword-input" 
+                            placeholder="輸入關鍵字搜尋..."
+                            style="flex: 1; padding: 0.5rem; font-size: 0.875rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
+                        />
+                        <button 
+                            id="search-keyword-button"
+                            style="padding: 0.5rem 1rem; background-color: #2563eb; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; font-weight: 500;"
+                        >
+                            搜尋
+                        </button>
+                    </div>
+                    <div id="event-result" style="display: none;">
+                        <div class="event-keyword" id="event-keyword"></div>
+                        <div class="event-meta">
+                            <div class="event-meta-item">
+                                <span class="event-meta-label">主題：</span>
+                                <span class="event-meta-value" id="event-theme"></span>
+                            </div>
+                            <div class="event-meta-item">
+                                <span class="event-meta-label">情緒：</span>
+                                <span class="event-meta-value" id="event-emotions"></span>
+                            </div>
+                        </div>
+                        <div class="event-meta-item" style="margin-bottom: 0.5rem;">
+                            <span class="event-meta-label">原始事件：</span>
+                        </div>
+                        <div id="event-text"></div>
+                    </div>
+                    <div id="event-not-found" style="display: none; padding: 1rem; background-color: #fef2f2; border-radius: 0.375rem; color: #991b1b; font-size: 0.875rem; text-align: center;">
+                        找不到該關鍵字，請確認輸入正確
+                    </div>
+                </div>
+                
+                <div id="filters-container" class="filters hidden">
+                    <div class="filter-section">
+                        <h3>主題篩選</h3>
+                        <div class="custom-select">
+                            <div class="select-trigger" id="theme-trigger">
+                                <span id="theme-selected-text">已選擇: 全部主題</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </div>
+                            <div class="select-dropdown" id="theme-dropdown">
+                                <!-- 動態生成 -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-section">
+                        <h3>情緒篩選</h3>
+                        <div class="custom-select">
+                            <div class="select-trigger" id="emotion-trigger">
+                                <span id="emotion-selected-text">已選擇: 全部情緒</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </div>
+                            <div class="select-dropdown" id="emotion-dropdown">
+                                <!-- 動態生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cleaned script block: reduces complexity, fixes syntax errors and preserves mask & upload UX
+        // 若部署至 GitHub Pages，可在外部 script 中覆寫以下兩個變數以對應不同路徑
+        window.MASK_ASSET_BASE = window.MASK_ASSET_BASE || '剪影/';
+        window.MASK_LIST_FILENAME = window.MASK_LIST_FILENAME || 'mask-list.json';
+        window.addEventListener('load', function () {
+            let masterData = [];
+            let globalMaxWeight = 0;
+            const uniqueThemes = new Set();
+            const uniqueEmotions = new Set();
+
+            const BASE_FONT_SIZE = 80;
+            let fontSizePercentage = 100;
+            let maskScale = 100;
+
+            const fileInput = document.getElementById('file-input');
+            const uploadButton = document.getElementById('upload-button');
+            const settingsButton = document.getElementById('settings-button');
+            const helpButton = document.getElementById('help-button');
+            const helpModal = document.getElementById('help-modal');
+            const helpModalOverlay = document.getElementById('help-modal-overlay');
+            const helpModalCloseBtn = document.getElementById('help-modal-close-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const operationButton = document.getElementById('book-help-button');
+            const operationModal = document.getElementById('operation-modal');
+            const operationModalOverlay = document.getElementById('operation-modal-overlay');
+            const operationModalCloseBtn = document.getElementById('operation-modal-close-btn');
+            const infoBox = document.getElementById('info-box');
+            const errorBox = document.getElementById('error-box');
+            const filtersContainer = document.getElementById('filters-container');
+            const wordcloudContainer = document.getElementById('wordcloud-container');
+            const emotionTrigger = document.getElementById('emotion-trigger');
+            const emotionDropdown = document.getElementById('emotion-dropdown');
+            const emotionSelectedText = document.getElementById('emotion-selected-text');
+            const themeTrigger = document.getElementById('theme-trigger');
+            const themeDropdown = document.getElementById('theme-dropdown');
+            const themeSelectedText = document.getElementById('theme-selected-text');
+            const canvas = document.getElementById('wordcloud-canvas');
+            const eventDisplay = document.getElementById('event-display');
+            const eventKeywordInput = document.getElementById('event-keyword-input');
+            const searchKeywordButton = document.getElementById('search-keyword-button');
+            const eventResult = document.getElementById('event-result');
+            const eventNotFound = document.getElementById('event-not-found');
+            const eventKeyword = document.getElementById('event-keyword');
+            const eventText = document.getElementById('event-text');
+            const eventTheme = document.getElementById('event-theme');
+            const eventEmotions = document.getElementById('event-emotions');
+            const fontSizeSlider = document.getElementById('font-size-slider');
+            const fontSizeValue = document.getElementById('font-size-value');
+
+            const shapeSelect = document.getElementById('shape-select');
+            const maskGallery = document.getElementById('mask-gallery');
+            const reloadMaskBtn = document.getElementById('reload-mask-btn');
+            const clearMaskBtn = document.getElementById('clear-mask-btn');
+            const maskListStatus = document.getElementById('mask-list-status');
+            let maskOptions = [];
+            let currentMaskSelection = null;
+            
+            window.wordcloudMaskImage = null;
+            window.selectedCloudShape = (shapeSelect && shapeSelect.value) || 'circle';
+
+            function showError(message) { if (errorBox) { errorBox.textContent = '❌ ' + message; errorBox.classList.remove('hidden'); } }
+            function hideError() { if (errorBox) errorBox.classList.add('hidden'); if (infoBox) infoBox.classList.remove('hidden'); }
+
+            function setupCanvas() {
+                if (!canvas) return;
+                const targetSize = 756;
+                const targetDPI = 144;
+                const baseDPI = 96;
+                const scale = targetDPI / baseDPI;
+                canvas.width = targetSize * scale;
+                canvas.height = targetSize * scale;
+                canvas.style.width = targetSize + 'px';
+                canvas.style.height = targetSize + 'px';
+                const ctx = canvas.getContext('2d');
+                ctx.setTransform(1,0,0,1,0,0);
+                ctx.scale(scale, scale);
+            }
+
+            function updateMaskPreview(img) {
+                const preview = document.getElementById('mask-preview');
+                const container = document.getElementById('mask-preview-container');
+                if (!preview || !img) return;
+                const size = 56;
+                const pc = document.createElement('canvas'); pc.width = size; pc.height = size;
+                const pctx = pc.getContext('2d');
+                const sc = Math.min(size / (img.naturalWidth || img.width), size / (img.naturalHeight || img.height));
+                const sw = (img.naturalWidth || img.width) * sc; const sh = (img.naturalHeight || img.height) * sc;
+                const sx = (size - sw) / 2, sy = (size - sh) / 2;
+                pctx.clearRect(0,0,size,size); pctx.drawImage(img, sx, sy, sw, sh);
+                preview.src = pc.toDataURL(); preview.style.display = 'block'; if (container) container.style.display = 'block';
+            }
+
+            function clearMaskPreview() { 
+                const preview=document.getElementById('mask-preview'); 
+                const container=document.getElementById('mask-preview-container'); 
+                const info=document.getElementById('mask-info'); 
+                if(preview){preview.src='';preview.style.display='none';} 
+                if(container)container.style.display='none'; 
+                if(info)info.textContent=''; 
+            }
+
+            function showMaskInfo(info) { 
+                const el=document.getElementById('mask-info'); 
+                if(!el) return; 
+                const transText = info.hasTransparency ? '✓ 有透明' : '✗ 無透明'; 
+                const noteText = info.note ? ' · '+info.note : ''; 
+                el.textContent = (info.width||'') + '×' + (info.height||'') + ' ' + transText + noteText; 
+                el.style.color = info.hasTransparency ? '#059669' : '#dc2626'; 
+            }
+
+            function checkImageTransparency(img){ return new Promise((resolve,reject)=>{ try{ const c=document.createElement('canvas'); c.width=img.naturalWidth||img.width; c.height=img.naturalHeight||img.height; const cx=c.getContext('2d'); cx.clearRect(0,0,c.width,c.height); cx.drawImage(img,0,0,c.width,c.height); const d=cx.getImageData(0,0,c.width,c.height).data; let has=false; const step=Math.max(1,Math.floor((c.width*c.height)/1000)); for(let i=3;i<d.length;i+=4*step){ if(d[i]<255){has=true;break;} } resolve({hasTransparency:has,width:c.width,height:c.height}); }catch(e){reject(e);} }); }
+
+            function generateMaskFromImage(sourceImg, threshold=180){ const c=document.createElement('canvas'); const sw=sourceImg.naturalWidth||sourceImg.width; const sh=sourceImg.naturalHeight||sourceImg.height; c.width=sw; c.height=sh; const cx=c.getContext('2d'); cx.clearRect(0,0,sw,sh); cx.drawImage(sourceImg,0,0,sw,sh); const id=cx.getImageData(0,0,sw,sh); const d=id.data; for(let i=0;i<d.length;i+=4){ const r=d[i],g=d[i+1],b=d[i+2]; const l=Math.round((r+g+b)/3); if(l<threshold){ d[i]=0; d[i+1]=0; d[i+2]=0; d[i+3]=255; } else { d[i+3]=0; } } cx.putImageData(id,0,0); const img=new Image(); img.crossOrigin='anonymous'; img.src=c.toDataURL('image/png'); img.naturalWidth=sw; img.naturalHeight=sh; return img; }
+
+            if (shapeSelect) shapeSelect.addEventListener('change', function(){ window.selectedCloudShape=this.value||'circle'; if (masterData.length) renderWordCloud(); });
+
+            async function loadMaskOptions(){
+                if(!maskGallery) return;
+                maskGallery.innerHTML = '<div class="mask-loading">正在載入剪影...</div>';
+                try {
+                    const listUrl = window.MASK_ASSET_BASE + window.MASK_LIST_FILENAME + '?ts=' + Date.now();
+                    const response = await fetch(listUrl);
+                    if(!response.ok) throw new Error('HTTP ' + response.status);
+                    const data = await response.json();
+                    const list = Array.isArray(data) ? data : data.masks;
+                    if(!Array.isArray(list) || list.length === 0){
+                        maskGallery.innerHTML = '<div class="mask-error">找不到任何 PNG 剪影</div>';
+                        return;
+                    }
+                    maskOptions = list.filter(item => item && typeof item.file === 'string' && item.file.toLowerCase().endsWith('.png'));
+                    renderMaskOptions();
+                    if(maskListStatus) maskListStatus.textContent = '已載入 ' + maskOptions.length + ' 個剪影';
+                } catch(err) {
+                    console.error(err);
+                    maskGallery.innerHTML = '<div class="mask-error">無法載入剪影清單。請確認已使用 HTTP 伺服器開啟頁面。</div>';
+                    if(maskListStatus) maskListStatus.textContent = '載入失敗：' + err.message;
+                }
+            }
+
+            function renderMaskOptions(){
+                if(!maskGallery){ return; }
+                maskGallery.innerHTML = '';
+                maskOptions.forEach(option => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'mask-option';
+                    const label = option.label || option.file;
+                    const imgSrc = window.MASK_ASSET_BASE + option.file;
+                    btn.innerHTML = '<img src="' + imgSrc + '" alt="' + label + '" loading="lazy" /><span>' + label + '</span>';
+                    btn.addEventListener('click', () => selectMaskOption(option, btn));
+                    if(currentMaskSelection === option.file){ btn.classList.add('selected'); }
+                    maskGallery.appendChild(btn);
+                });
+                if(maskOptions.length === 0){ maskGallery.innerHTML = '<div class="mask-error">沒有可用剪影</div>'; }
+            }
+
+            function selectMaskOption(option, buttonEl){
+                if(!option) return;
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = function(){
+                    window.wordcloudMaskImage = img;
+                    currentMaskSelection = option.file;
+                    maskGallery?.querySelectorAll('.mask-option').forEach(btn => btn.classList.remove('selected'));
+                    if(buttonEl) buttonEl.classList.add('selected');
+                    updateMaskPreview(img);
+                    checkImageTransparency(img)
+                        .then(info => showMaskInfo({ hasTransparency: info.hasTransparency, width: info.width, height: info.height, note: option.label || option.file }))
+                        .catch(() => showMaskInfo({ hasTransparency: false, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height, note: option.label || option.file }));
+                    setupCanvas();
+                    if(masterData.length) renderWordCloud();
+                };
+                img.onerror = function(){
+                    if(maskListStatus) maskListStatus.textContent = '載入剪影失敗：' + (option.label || option.file);
+                    buttonEl?.classList.remove('selected');
+                };
+                img.src = window.MASK_ASSET_BASE + option.file + '?v=' + Date.now();
+            }
+
+            if (reloadMaskBtn) reloadMaskBtn.addEventListener('click', loadMaskOptions);
+
+            if (clearMaskBtn) clearMaskBtn.addEventListener('click', function(){
+                window.wordcloudMaskImage=null;
+                currentMaskSelection = null;
+                maskGallery?.querySelectorAll('.mask-option').forEach(btn => btn.classList.remove('selected'));
+                clearMaskPreview();
+                setupCanvas();
+                if(masterData.length) renderWordCloud();
+            });
+            loadMaskOptions();
+
+            // Theme colors & translations
+            const themeColorMap = new Map([['工作與職業','#2E8B57'],['時間與效率','#FF4500'],['家庭與親密關係','#8A2BE2'],['消費與習慣','#F0E68C'],['金融與投資','#B22222'],['健康與管理','#00FFFF'],['學習與知識','#5F9EA0'],['通勤與出行','#DDA0DD'],['嗜好與休閒','#FFD700'],['科技與電子產品','#4682B4'],['其他/背景特徵','#C0C0C0']]);
+            const themeMap = new Map([['Learning & Knowledge','學習與知識'],['Consumption & Habits','消費與習慣'],['Finance & Investment','金融與投資'],['Work & Career','工作與職業'],['Family & Intimacy','家庭與親密關係'],['Time & Efficiency','時間與效率'],['Technology & Gadgets','科技與電子產品'],['Health & Management','健康與管理'],['Hobbies & Leisure','嗜好與休閒'],['Other/Background Trait','其他/背景特徵'],['Commute & Mobility','通勤與出行']]);
+            const emotionMap = new Map([['Desire','渴望'],['Satisfaction','滿足'],['Habitual','習慣'],['Neutral','平常'],['Tension/Stress','緊張'],['Achievement','成就'],['Empathy','共情'],['Joy','喜悅'],['Forced/Obligated','被迫'],['Disappointment','失望'],['Suppression','壓抑'],['Helplessness','無奈'],['Other','其他'],['Other/Undefined','其他/無法定義']]);
+
+            function populateFilters(){
+                if (!emotionDropdown || !themeDropdown) return;
+                emotionDropdown.innerHTML = ''; themeDropdown.innerHTML = '';
+                const allEmotionsOpt = document.createElement('div'); allEmotionsOpt.className = 'select-option'; allEmotionsOpt.innerHTML = '<input type="checkbox" id="emotion-all" value="all" checked> <label for="emotion-all">全部情緒</label>'; emotionDropdown.appendChild(allEmotionsOpt);
+                Array.from(uniqueEmotions).sort().forEach(emotion=>{ const opt = document.createElement('div'); opt.className = 'select-option'; const id = 'emotion-' + emotion.replace(/\s+/g,'-').replace(/\//g,'-'); opt.innerHTML = '<input type="checkbox" id="' + id + '" value="' + emotion + '" checked> <label for="' + id + '">' + emotion + '</label>'; emotionDropdown.appendChild(opt); });
+                const allThemesOpt = document.createElement('div'); allThemesOpt.className = 'select-option'; allThemesOpt.innerHTML = '<input type="checkbox" id="theme-all" value="all" checked> <label for="theme-all">全部主題</label>'; themeDropdown.appendChild(allThemesOpt);
+                Array.from(uniqueThemes).sort().forEach(theme=>{ const opt = document.createElement('div'); opt.className = 'select-option'; const id = 'theme-' + theme.replace(/\s+/g,'-').replace(/\//g,'-'); opt.innerHTML = '<input type="checkbox" id="' + id + '" value="' + theme + '" checked> <label for="' + id + '">' + theme + '</label>'; themeDropdown.appendChild(opt); });
+                setupDropdownInteractions(); setupCheckboxEvents();
+            }
+
+            function setupDropdownInteractions(){
+                if(emotionTrigger) emotionTrigger.addEventListener('click', function(e){ e.stopPropagation(); emotionDropdown.classList.toggle('show'); emotionTrigger.classList.toggle('open'); themeDropdown.classList.remove('show'); themeTrigger.classList.remove('open'); });
+                if(themeTrigger) themeTrigger.addEventListener('click', function(e){ e.stopPropagation(); themeDropdown.classList.toggle('show'); themeTrigger.classList.toggle('open'); emotionDropdown.classList.remove('show'); emotionTrigger.classList.remove('open'); });
+                document.addEventListener('click', function(){ emotionDropdown.classList.remove('show'); emotionTrigger.classList.remove('open'); themeDropdown.classList.remove('show'); themeTrigger.classList.remove('open'); });
+                emotionDropdown.addEventListener('click', function(e){ e.stopPropagation(); }); themeDropdown.addEventListener('click', function(e){ e.stopPropagation(); });
+            }
+
+            function setupCheckboxEvents(){
+                const emotionAll = document.getElementById('emotion-all');
+                if(emotionAll) emotionAll.addEventListener('change', function(){ emotionDropdown.querySelectorAll('input[type="checkbox"]:not(#emotion-all)').forEach(cb=>cb.checked=this.checked); updateEmotionSelectedText(); renderWordCloud(); });
+                emotionDropdown.querySelectorAll('input[type="checkbox"]:not(#emotion-all)').forEach(cb=>cb.addEventListener('change', function(){ updateEmotionSelectedText(); renderWordCloud(); }));
+                const themeAll = document.getElementById('theme-all');
+                if(themeAll) themeAll.addEventListener('change', function(){ themeDropdown.querySelectorAll('input[type="checkbox"]:not(#theme-all)').forEach(cb=>cb.checked=this.checked); updateThemeSelectedText(); renderWordCloud(); });
+                themeDropdown.querySelectorAll('input[type="checkbox"]:not(#theme-all)').forEach(cb=>cb.addEventListener('change', function(){ updateThemeSelectedText(); renderWordCloud(); }));
+            }
+
+            function updateEmotionSelectedText(){
+                const checked = Array.from(emotionDropdown.querySelectorAll('input[type="checkbox"]:checked'));
+                const allCb = document.getElementById('emotion-all');
+                if(allCb.checked || checked.length === uniqueEmotions.size + 1) emotionSelectedText.textContent = '已選擇: 全部情緒';
+                else if(checked.length === 0) emotionSelectedText.textContent = '請選擇情緒';
+                else { const names = checked.filter(cb=>cb.id!=='emotion-all').map(cb=>cb.nextElementSibling.textContent); emotionSelectedText.textContent = names.length <= 3 ? '已選擇: ' + names.join(', ') : '已選擇: ' + names.length + ' 個情緒'; }
+            }
+
+            function updateThemeSelectedText(){
+                const checked = Array.from(themeDropdown.querySelectorAll('input[type="checkbox"]:checked'));
+                const allCb = document.getElementById('theme-all');
+                if(allCb.checked || checked.length === uniqueThemes.size + 1) themeSelectedText.textContent = '已選擇: 全部主題';
+                else if(checked.length === 0) themeSelectedText.textContent = '請選擇主題';
+                else { const names = checked.filter(cb=>cb.id!=='theme-all').map(cb=>cb.nextElementSibling.textContent); themeSelectedText.textContent = names.length <= 2 ? '已選擇: ' + names.join(', ') : '已選擇: ' + names.length + ' 個主題'; }
+            }
+
+            function renderWordCloud(){
+                if(!canvas) return;
+                const selectedEmotions = Array.from(emotionDropdown.querySelectorAll('input[type="checkbox"]:checked')).map(cb=>cb.value);
+                const selectedThemes = Array.from(themeDropdown.querySelectorAll('input[type="checkbox"]:checked')).map(cb=>cb.value);
+                const filteredData = masterData.filter(item=>{ const themeMatch = selectedThemes.includes('all') || selectedThemes.includes(item.theme); const emotionMatch = selectedEmotions.includes('all') || item.emotions.some(e=>selectedEmotions.includes(e)); return themeMatch && emotionMatch; });
+                const keywordDataMap = {}; filteredData.forEach(item=>{ keywordDataMap[item.keyword] = item; });
+                const maxFontSize = BASE_FONT_SIZE * (fontSizePercentage / 100);
+                const wordCloudList = filteredData.map(item=>{ const ratio = item.weight / globalMaxWeight; const adjustedWeight = Math.pow(ratio,2) * globalMaxWeight; return [item.keyword, adjustedWeight]; });
+                const weightFactor = globalMaxWeight > 0 ? maxFontSize / globalMaxWeight : 1;
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (wordCloudList.length === 0) { ctx.fillStyle='#9ca3af'; ctx.font='16px Inter, sans-serif'; ctx.textAlign='center'; ctx.fillText('沒有符合條件的資料',canvas.width/2,canvas.height/2); return; }
+                
+                let shape = window.selectedCloudShape || 'circle';
+                let backgroundColor = '#ffffff';
+                
+                // 如果有遮罩圖片，使用 CSS mask 而不是 shape 函數
+                if (window.wordcloudMaskImage) {
+                    const maskUrl = window.wordcloudMaskImage.src;
+                    canvas.style.webkitMaskImage = 'url(' + maskUrl + ')';
+                    canvas.style.maskImage = 'url(' + maskUrl + ')';
+                    canvas.classList.add('masked');
+                    backgroundColor = '#ffffff';
+                    shape = 'circle'; // 用圓形填滿整個 canvas，CSS mask 會裁切
+                } else {
+                    canvas.style.webkitMaskImage = '';
+                    canvas.style.maskImage = '';
+                    canvas.classList.remove('masked');
+                }
+                
+                WordCloud(canvas, {
+                    list: wordCloudList, 
+                    weightFactor: weightFactor, 
+                    fontFamily: 'Inter, Noto Sans TC, sans-serif',
+                    color: function(word){ const data = keywordDataMap[word]; return data ? (themeColorMap.get(data.theme) || '#374151') : '#374151'; },
+                    rotateRatio: 0, 
+                    backgroundColor: backgroundColor, 
+                    minSize: 10, 
+                    gridSize: 8, 
+                    drawOutOfBound: false, 
+                    shrinkToFit: true,
+                    origin: [canvas.width/(2*(canvas.width/(parseFloat(canvas.style.width)||canvas.width))), canvas.height/(2*(canvas.height/(parseFloat(canvas.style.height)||canvas.height)))],
+                    shape: shape, 
+                    ellipticity: 1, 
+                    wait: 0,
+                    click: function(item){ if(item&&item[0]){ const keyword=item[0]; const data=keywordDataMap[keyword]; if(data){ eventKeywordInput.value=keyword; eventKeyword.textContent=keyword; eventTheme.textContent=data.theme; eventEmotions.textContent=data.emotions.join(', '); eventText.textContent=data.event; eventResult.style.display='block'; eventNotFound.style.display='none'; eventDisplay.style.display='block'; } } },
+                    hover: function(item){ canvas.title = item&&item[0] ? (keywordDataMap[item[0]]||{keyword:item[0]}).keyword : ''; }
+                });
+            }
+
+            if (uploadButton && fileInput) uploadButton.addEventListener('click', ()=> fileInput.click());
+            if (fileInput) fileInput.addEventListener('change', handleFileUpload);
+            if (settingsButton && settingsModal) settingsButton.addEventListener('click', ()=> settingsModal.classList.remove('hidden'));
+            if (helpButton && helpModal) helpButton.addEventListener('click', ()=> helpModal.classList.remove('hidden'));
+            if (helpModalOverlay && helpModal) helpModalOverlay.addEventListener('click', ()=> helpModal.classList.add('hidden'));
+            if (helpModalCloseBtn && helpModal) helpModalCloseBtn.addEventListener('click', ()=> helpModal.classList.add('hidden'));
+            if (operationButton && operationModal) operationButton.addEventListener('click', ()=> operationModal.classList.remove('hidden'));
+            if (operationModalOverlay && operationModal) operationModalOverlay.addEventListener('click', ()=> operationModal.classList.add('hidden'));
+            if (operationModalCloseBtn && operationModal) operationModalCloseBtn.addEventListener('click', ()=> operationModal.classList.add('hidden'));
+
+            document.querySelectorAll('.close-modal-button').forEach(btn=>btn.addEventListener('click', function(){ const mid=this.getAttribute('data-modal'); const m=document.getElementById(mid); if(m) m.classList.add('hidden'); }));
+            document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click', function(){ const m=this.closest('.modal'); if(m) m.classList.add('hidden'); }));
+
+            if (fontSizeSlider) fontSizeSlider.addEventListener('input', function(){ fontSizePercentage = parseInt(this.value,10); if (fontSizeValue) fontSizeValue.textContent = fontSizePercentage + '%'; if (masterData.length) renderWordCloud(); });
+            
+            function searchKeyword() {
+                const kw = eventKeywordInput.value.trim();
+                if (!kw) return;
+                const data = masterData.find(d => d.keyword === kw);
+                if (data) {
+                    eventKeyword.textContent = data.keyword;
+                    eventTheme.textContent = data.theme;
+                    eventEmotions.textContent = data.emotions.join(', ');
+                    eventText.textContent = data.event;
+                    eventResult.style.display = 'block';
+                    eventNotFound.style.display = 'none';
+                    eventDisplay.style.display = 'block';
+                } else {
+                    eventResult.style.display = 'none';
+                    eventNotFound.style.display = 'block';
+                }
+            }
+
+            if (searchKeywordButton) searchKeywordButton.addEventListener('click', searchKeyword);
+            if (eventKeywordInput) eventKeywordInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    searchKeyword();
+                }
+            });
+
+            // CSV parsing & full data processing
+            function handleFileUpload(e){ const file = e.target.files[0]; if(!file) return; hideError(); Papa.parse(file,{ header:true, skipEmptyLines:true, complete: function(results){ try{ if(!results.data || results.data.length===0){ showError('CSV 檔案為空'); return; } masterData = []; globalMaxWeight = 0; uniqueThemes.clear(); uniqueEmotions.clear();
+                results.data.forEach(row=>{ if(!row['關鍵字1'] && !row['關鍵字2']) return;
+                    const themeEn = row['主題/情境']||''; const themeCn = themeMap.get(themeEn) || themeEn;
+                    const emotionsEnRaw = row['情緒/態度']||''; const emotionsEnList = emotionsEnRaw.split(',').map(e=>e.trim()); const emotionsCnList = emotionsEnList.map(e=>emotionMap.get(e)||e);
+                    const event = row['事件']||''; const weightStr = row['權重']||'0%'; const weight = Math.max(0.01, parseFloat(weightStr.toString().replace('%',''))/100 || 0.01);
+                    uniqueThemes.add(themeCn); emotionsCnList.forEach(e=>uniqueEmotions.add(e));
+                    if(weight > globalMaxWeight) globalMaxWeight = weight;
+                    if(row['關鍵字1']) masterData.push({keyword: row['關鍵字1'].trim(), weight: weight, theme: themeCn, emotions: emotionsCnList, event: event});
+                    if(row['關鍵字2']) masterData.push({keyword: row['關鍵字2'].trim(), weight: weight, theme: themeCn, emotions: emotionsCnList, event: event});
+                });
+                if(masterData.length === 0){ showError('無有效的關鍵字資料'); return; }
+                if(infoBox) infoBox.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:1.5rem;height:1.5rem;display:inline;margin-right:0.5rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg><p style="display:inline;">成功載入 '+ masterData.length + ' 個關鍵字！</p>';
+                if(filtersContainer) filtersContainer.classList.remove('hidden');
+                if(wordcloudContainer) wordcloudContainer.classList.remove('hidden');
+                if(eventDisplay) eventDisplay.style.display='block';
+                populateFilters(); setupCanvas(); renderWordCloud();
+
+                // New code to handle persona image as mask
+                const personaImageFile = document.getElementById('persona-image-upload')?.files[0];
+                if (personaImageFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const generatedMask = generateMaskFromImage(img, 180);
+                            generatedMask.onload = function() {
+                                window.wordcloudMaskImage = generatedMask;
+                                updateMaskPreview(generatedMask);
+                                showMaskInfo({ hasTransparency: true, width: generatedMask.naturalWidth, height: generatedMask.naturalHeight, note: '來自客戶畫像' });
+                                renderWordCloud();
+                            };
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(personaImageFile);
+                }
+
+            }catch(err){ console.error(err); showError('處理資料時發生錯誤：' + (err.message||err)); } }, error: function(err){ showError('CSV 解析失敗：'+(err.message||err)); } }); }
+
+            window.addEventListener('resize', function(){ if (masterData.length) { setupCanvas(); renderWordCloud(); } });
+        });
+    </script>
+    <!-- 遮罩 / 形狀控制面板（固定右下角，位於書本按鈕上方） -->
+        <!-- 遮罩 / 形狀控制面板（固定右下角，位於書本按鈕上方） -->
+    
+    <!-- 書本說明按鈕（固定右下角） -->
+    <button id="book-help-button" title="功能操作指南" class="floating-action-button" aria-label="功能操作指南">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h12a2 2 0 012 2v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h6" />
+        </svg>
+    </button>
+
+
+    <script>
+        // 範例 SVG 產生與遮罩載入（男女老少）
+        (function(){
+            function svgToImage(svgStr, callback) {
+                const svg64 = btoa(unescape(encodeURIComponent(svgStr)));
+                const dataUrl = 'data:image/svg+xml;base64,' + svg64;
+                const img = new Image();
+                img.onload = function() { callback(null, img); };
+                img.onerror = function(e) { callback(e); };
+                img.crossOrigin = 'anonymous';
+                img.src = dataUrl;
+            }
+
+            function makeSampleSVG(kind) {
+                // All SVGs: transparent background, black filled silhouette
+                if (kind === 'female') {
+                    return `<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <path fill="#000" d="M600 140c80 0 150 60 150 140 0 40-20 76-40 112-14 26-28 50-34 72-6 24 8 60 24 88 16 28 36 52 64 68 44 26 96 40 96 92v60H240v-60c0-52 52-66 96-92 28-16 48-40 64-68 16-28 30-64 24-88-6-22-20-46-34-72-20-36-40-72-40-112 0-80 70-140 150-140z"/>
+</svg>`;
+                }
+                if (kind === 'male') {
+                    return `<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <path fill="#000" d="M580 160c90-20 240-20 320 40 70 50 70 150 10 230-36 50-72 80-88 148-14 58 12 120 36 168 24 48 56 90 100 118 60 40 132 58 132 142v64H120v-64c0-84 72-102 132-142 44-28 76-70 100-118 24-48 50-110 36-168-16-68-52-98-88-148-60-80-170-80-260-60z"/>
+</svg>`;
+                }
+                if (kind === 'child') {
+                    return `<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1400" viewBox="0 0 1000 1400">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <path fill="#000" d="M500 120c60 0 110 40 110 90 0 28-12 54-28 80-10 16-20 32-24 46-5 18 6 42 18 62 12 20 26 36 46 48 34 22 74 34 74 78v44H280v-44c0-44 40-56 74-78 20-12 34-28 46-48 12-20 23-44 18-62-4-14-14-30-24-46-16-26-28-52-28-80 0-50 50-90 110-90z"/>
+</svg>`;
+                }
+                // elderly
+                return `<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <path fill="#000" d="M520 140c100 0 180 80 180 180 0 60-30 110-60 160-22 36-44 70-52 100-10 42 6 96 30 140 24 44 56 82 96 110 68 50 150 72 150 166v72H160v-72c0-94 82-116 150-166 40-28 72-66 96-110 24-44 40-98 30-140-8-30-30-64-52-100-30-50-60-100-60-160 0-100 80-180 180-180z"/>
+</svg>`;
+            }
+
+            document.addEventListener('DOMContentLoaded', function(){
+                const sampleSelect = document.getElementById('sample-mask-select');
+                const loadBtn = document.getElementById('load-sample-mask');
+                const clearBtn = document.getElementById('clear-mask-btn');
+                if (!sampleSelect || !loadBtn) return;
+
+                loadBtn.addEventListener('click', function(){
+                    const kind = sampleSelect.value;
+                    if (!kind) { alert('請選擇範例遮罩類型 (男女兒長者)'); return; }
+                    const svg = makeSampleSVG(kind);
+                    svgToImage(svg, function(err, img){
+                        if (err) { alert('建立範例遮罩失敗'); return; }
+                        window.wordcloudMaskImage = img;
+                        updateMaskPreview(img);
+                        showMaskInfo({ hasTransparency: true, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height, note: '範例遮罩' });
+                        try { setupCanvas(); } catch(e) {}
+                        if (typeof renderWordCloud === 'function') renderWordCloud();
+                    });
+                });
+
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', function(){
+                        window.wordcloudMaskImage = null;
+                        clearMaskPreview();
+                        try { setupCanvas(); } catch(e) {}
+                        if (typeof renderWordCloud === 'function') renderWordCloud();
+                    });
+                }
+
+                // 自動產生遮罩按鈕綁定
+                const autoBtn = document.getElementById('auto-mask-btn');
+                const thresh = document.getElementById('auto-threshold');
+                if (autoBtn && thresh) {
+                    autoBtn.addEventListener('click', function(){
+                        if (!window.wordcloudMaskImage) { alert('請先上傳或載入範例影像作為來源影像'); return; }
+                        const t = parseInt(thresh.value, 10) || 180;
+                        const src = window.wordcloudMaskImage;
+                        const generated = generateMaskFromImage(src, t);
+                        generated.onload = function() {
+                            window.wordcloudMaskImage = generated;
+                            updateMaskPreview(generated);
+                            showMaskInfo({ hasTransparency: true, width: generated.naturalWidth || generated.width, height: generated.naturalHeight || generated.height, note: '自動產生' });
+                            try { setupCanvas(); } catch(e) {}
+                            if (typeof renderWordCloud === 'function') renderWordCloud();
+                        };
+                    });
+                }
+            });
+        })();
+    </script>
+
+</body>
+</html>
