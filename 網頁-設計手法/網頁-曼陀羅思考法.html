@@ -145,63 +145,91 @@
         <div class="p-2 px-4 hover:bg-slate-100 cursor-pointer" data-color="none">清除標記</div>
     </div>
 
-    <!-- 說明彈出視窗 (更新：符合 slate 色系) -->
+    <!-- 操作說明（功能指南） -->
     <div id="help-modal" class="hidden fixed inset-0 z-40 overflow-y-auto">
-        <div id="modal-overlay" class="modal-overlay fixed inset-0 w-full h-full"></div>
+        <!-- 遮罩背景 (點擊可關閉) -->
+        <div id="help-modal-overlay" class="fixed inset-0 w-full h-full bg-black/50 backdrop-blur-sm"></div>
+        
+        <!-- 內容容器 -->
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="modal-content relative w-full max-w-2xl bg-white p-6 md:p-8 rounded-lg shadow-xl overflow-y-auto">
-                <!-- 更新：關閉按鈕顏色 -->
-                <button id="close-modal-button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            <div id="help-modal-content" class="relative w-full max-w-3xl bg-white p-6 md:p-8 rounded-lg shadow-xl overflow-y-auto" style="max-height: 85vh;">
+                
+                <!-- 關閉按鈕 (右上角) -->
+                <button id="help-modal-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
-                <div class="space-y-4">
-                    <!-- 更新：標題顏色 -->
-                    <h2 class="text-2xl font-bold text-slate-800">方法介紹：曼陀羅思考法</h2>
-                    
-                    <!-- 更新：內文顏色 -->
-                    <div class="prose max-w-none text-slate-800">
-                        <table class="w-full border-collapse border border-slate-200">
-                            <tbody class="align-baseline">
-                                <tr class="border-b border-slate-200">
-                                    <!-- 更新：表格背景色 -->
-                                    <td class="p-3 bg-slate-50 font-semibold w-1/4">方法名稱</td>
-                                    <td class="p-3">曼陀羅思考法 (Mandala Chart)</td>
-                                </tr>
-                                <tr class="border-b border-slate-200">
-                                    <td class="p-3 bg-slate-50 font-semibold">一句話總結</td>
-                                    <td class="p-3">從一個核心主題出發，向八個面向強制擴展的結構化發想工具。</td>
-                                </tr>
-                                <tr class="border-b border-slate-200">
-                                    <td class="p-3 bg-slate-50 font-semibold">核心概念</td>
-                                    <td class="p-3">此方法運用一個 3x3 的九宮格（稱為「曼陀羅圖」）來進行思考。將核心主題（或問題）放置於中央格，然後圍繞它在周圍的八格中填入相關的子主題、想法或解決方案。這個過程可以像蓮花般層層展開，每一格的子主題都能再成為新的中心，發展出更細緻的下一層九宮格，從而實現系統性且深入的思考。</td>
-                                </tr>
-                                <tr class="border-b border-slate-200">
-                                    <td class="p-3 bg-slate-50 font-semibold">解決的核心問題</td>
-                                    <td class="p-3">主要解決「思考卡住」或「想法過於單一、發散」的問題。它提供一個視覺化的框架，強迫思考者從多元角度（至少八個）切入，避免遺漏關鍵面向，並能有條理地將抽象概念具體化。</td>
-                                </tr>
-                                <tr class="border-b border-slate-200">
-                                    <td class="p-3 bg-slate-50 font-semibold">最佳使用時機</td>
-                                    <td class="p-3"><strong>專案的「探索期」與「發想期」。</strong><br>特別適用於：需要為一個中心主題（如：產品新功能、行銷策略、文章大綱）發想大量且多元的點子時；或是需要將一個複雜問題拆解成更小的可管理組件時。</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-3 bg-slate-50 font-semibold">使用流程說明</td>
-                                    <td class="p-3">
-                                        <ol class="list-decimal list-inside space-y-1">
-                                            <li><strong>準備九宮格：</strong> 繪製一個 3x3 的表格。</li>
-                                            <li><strong>確立核心主題：</strong> 在最中央的格子填入您要思考的主題或問題。</li>
-                                            <li><strong>填寫周圍八格：</strong> 圍繞中心主題，在周圍八格中填入直接相關的子主題、想法、關鍵字或執行方法。</li>
-                                            <li><strong>（選填）深入展開：</strong> 選擇周圍八格中的任一格（或全部八格），將其作為新的「核心主題」，複製到一個新的九宮格中央。</li>
-                                            <li><strong>重複發想：</strong> 針對這個新的核心主題，再次填滿其周圍的八格，進行更深入、更細緻的思考。</li>
-                                            <li><strong>檢視與收斂：</strong> 完成所有發想後，檢視整張曼陀羅圖，找出模式、關聯性，並收斂出最具潛力的方案。</li>
-                                        </ol>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">設計方法說明：曼陀羅思考法</h2>
+                <table class="w-full border-collapse border border-slate-200 text-slate-800">
+                    <tbody class="align-baseline">
+                        <tr class="border-b border-slate-200">
+                            <td class="p-3 bg-slate-50 font-semibold w-1/4">方法名稱</td>
+                            <td class="p-3">曼陀羅思考法 (Mandala Chart)</td>
+                        </tr>
+                        <tr class="border-b border-slate-200">
+                            <td class="p-3 bg-slate-50 font-semibold">一句話總結</td>
+                            <td class="p-3">從中心主題出發，透過九宮格放射性地聯想，有系統地擴展思路，激發深層創意。</td>
+                        </tr>
+                        <tr class="border-b border-slate-200">
+                            <td class="p-3 bg-slate-50 font-semibold">適用情境</td>
+                            <td class="p-3">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>需要快速、大量、有結構地發想點子時。</li>
+                                    <li>個人腦力激盪或團隊創意發想初期。</li>
+                                    <li>設定目標、規劃專案、或進行問題分析。</li>
+                                    <li>想要打破思維定勢，從不同角度看問題。</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-slate-200">
+                            <td class="p-3 bg-slate-50 font-semibold">優點</td>
+                            <td class="p-3">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li><strong>結構化：</strong>強迫思考的廣度與深度，避免天馬行空而失焦。</li>
+                                    <li><strong>視覺化：</strong>將思緒圖像化，一目了然，易於溝通。</li>
+                                    <li><strong>效率高：</strong>在短時間內就能產生 8x8=64 個以上的想法。</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 bg-slate-50 font-semibold">缺點</td>
+                            <td class="p-3">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>可能會限制過於跳躍性的聯想。</li>
+                                    <li>對於非常複雜或抽象的問題，可能需要搭配其他方法。</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2 class="text-2xl font-bold text-slate-800 mt-6 mb-4">功能操作指南</h2>
+                <table class="w-full border-collapse border border-slate-200 text-slate-800">
+                    <tbody class="align-baseline">
+                        <tr class="border-b border-slate-200">
+                            <td class="p-3 bg-slate-50 font-semibold w-1/4">核心操作</td>
+                            <td class="p-3">從中央九宮格的「核心主題」開始填寫，周圍八格的「子主題」內容會自動同步到外圍八個九宮格的中心。</td>
+                        </tr>
+                        <tr class="border-b border-slate-200">
+                            <td class="p-3 bg-slate-50 font-semibold">標記顏色</td>
+                            <td class="p-3">在外圍的「詳細格」上按右鍵，可以呼叫選單進行黃、綠、紅三色標記或清除標記，用於分類或標示重點。</td>
+                        </tr>
+                        <tr class="border-b border-slate-200">
+                            <td class="p-3 bg-slate-50 font-semibold">匯入/匯出</td>
+                            <td class="p-3">使用 <code>匯入 JSON</code> 和 <code>匯出 JSON</code> 按鈕來載入或儲存你的思考內容，方便備份與分享。</td>
+                        </tr>
+                        <tr class="border-b border-slate-200">
+                            <td class="p-3 bg-slate-50 font-semibold">截圖</td>
+                            <td class="p-3">點擊 <code>截圖</code> 按鈕，可以將整個曼陀羅圖表區域儲存為一張 PNG 圖片。</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 bg-slate-50 font-semibold">清空</td>
+                            <td class="p-3">點擊 <code>清空</code> 按鈕可以清除所有格子的內容，操作前請先確認。</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -221,11 +249,11 @@
             const screenshotButton = document.getElementById('screenshot-button');
             const jsonUpload = document.getElementById('json-upload');
             
-            // 說明彈窗
+            // 說明彈窗 (更新)
             const helpButton = document.getElementById('help-button');
             const helpModal = document.getElementById('help-modal');
-            const closeModalButton = document.getElementById('close-modal-button');
-            const modalOverlay = document.getElementById('modal-overlay');
+            const helpModalOverlay = document.getElementById('help-modal-overlay');
+            const helpModalCloseBtn = document.getElementById('help-modal-close-btn');
 
             // --- 定義連動規則 ---
             // g11-c00 (中心九宮格的左上) -> g00-c11 (左上九宮格的中心)
@@ -342,7 +370,7 @@
 
             // --- 按鈕事件綁定 (集中管理) ---
 
-            // 1. 說明彈窗
+            // 1. 說明彈窗 (更新)
             helpButton.addEventListener('click', () => {
                 helpModal.classList.remove('hidden');
             });
@@ -350,8 +378,8 @@
             const closeModal = () => {
                 helpModal.classList.add('hidden');
             };
-            closeModalButton.addEventListener('click', closeModal);
-            modalOverlay.addEventListener('click', closeModal); // 點擊背景關閉
+            helpModalOverlay.addEventListener('click', closeModal);
+            helpModalCloseBtn.addEventListener('click', closeModal);
 
             // 2. 清空
             clearButton.addEventListener('click', () => {
