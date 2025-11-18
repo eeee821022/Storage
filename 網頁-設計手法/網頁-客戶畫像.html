@@ -1345,8 +1345,13 @@
     <script>
         // Cleaned script block: reduces complexity, fixes syntax errors and preserves mask & upload UX
         // 若部署至 GitHub Pages，可在外部 script 中覆寫以下兩個變數以對應不同路徑
-        window.MASK_ASSET_BASE = window.MASK_ASSET_BASE || '剪影/';
-        window.MASK_LIST_FILENAME = window.MASK_LIST_FILENAME || 'mask-list.json';
+        (function(){
+            const LOCAL_MASK_BASE = '剪影/';
+            const GITHUB_MASK_BASE = '/Storage/網頁-設計手法/剪影/';
+            const maskBase = window.MASK_ASSET_BASE || (location.hostname.endsWith('github.io') ? GITHUB_MASK_BASE : LOCAL_MASK_BASE);
+            window.MASK_ASSET_BASE = maskBase;
+            window.MASK_LIST_FILENAME = window.MASK_LIST_FILENAME || 'mask-list.json';
+        })();
         window.addEventListener('load', function () {
             let masterData = [];
             let globalMaxWeight = 0;
