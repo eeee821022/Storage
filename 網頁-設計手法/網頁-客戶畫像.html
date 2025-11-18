@@ -77,6 +77,11 @@
             display: flex;
             gap: 0.75rem;
         }
+
+        #upload-button {
+            margin-left: 0rem;
+            margin-right: 0.5rem;
+        }
         
         .icon-button {
             background-color: #ffffff;
@@ -128,10 +133,6 @@
             right: 1.5rem;
         }
 
-        #book-help-button {
-            right: 1.5rem;
-            bottom: 1.5rem;
-        }
         
         /* 隱藏的檔案輸入 */
         #file-input {
@@ -431,6 +432,38 @@
             overflow-y: auto;
             z-index: 50;
         }
+
+        .side-modal .modal-container {
+            display: contents;
+        }
+
+        .side-modal .modal-overlay {
+            background-color: transparent;
+        }
+
+        .side-modal .modal-content {
+            position: fixed;
+            top: 5rem;
+            right: 1.5rem;
+            width: 22rem;
+            max-width: 22rem;
+            height: auto;
+            max-height: calc(100vh - 6rem);
+            border-radius: 0.75rem;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .side-modal .modal-content {
+                position: fixed;
+                top: 4rem;
+                right: 0;
+                left: 0;
+                margin: 0 auto;
+                width: calc(100% - 2rem);
+                max-width: none;
+            }
+        }
         
         .close-modal-button {
             position: sticky;
@@ -592,6 +625,7 @@
             display: flex;
             gap: 0.5rem;
             margin-top: 0.75rem;
+            flex-wrap: wrap;
         }
 
         .mask-actions button {
@@ -838,6 +872,7 @@
             inset: 0;
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 40;
+            backdrop-filter: blur(2px);
         }
         
         .modal {
@@ -1123,22 +1158,8 @@
                     <li><strong>查看詳細資訊：</strong>點擊詞雲中的任何關鍵字，下方會顯示該關鍵字對應的原始事件描述。</li>
                     <li><strong>調整顯示：</strong>點擊設定按鈕可調整詞雲字體大小。</li>
                 </ol>
-            </div>
-        </div>
-    </div>
 
-    <!-- 功能操作指南彈窗 -->
-    <div id="operation-modal" class="modal hidden">
-        <div id="operation-modal-overlay" class="modal-overlay"></div>
-        <div class="modal-container">
-            <div id="operation-modal-content" class="modal-content">
-                <button id="operation-modal-close-btn" class="close-modal-button" data-modal="operation-modal" aria-label="關閉操作指南視窗">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
-                </button>
-
-                <h2 style="font-size:1.25rem;margin-bottom:1rem;font-weight:700;">功能操作指南（Persona / 客戶畫像）</h2>
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600;">功能操作指南</h3>
                 <table>
                     <tbody>
                         <tr>
@@ -1176,10 +1197,10 @@
     </div>
 
     <!-- 設定彈窗 -->
-    <div id="settings-modal" class="modal hidden">
+    <div id="settings-modal" class="modal hidden side-modal">
         <div class="modal-overlay"></div>
-        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem;">
-            <div class="modal-content" style="max-width: 28rem;">
+        <div class="modal-container">
+            <div class="modal-content">
                 <button class="close-modal-button" data-modal="settings-modal">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -1220,6 +1241,7 @@
                     </p>
                     <div id="mask-gallery" class="mask-gallery"></div>
                     <div class="mask-actions">
+                        <button id="open-silhouette-btn">剪影選單</button>
                         <button id="reload-mask-btn">重新載入</button>
                         <button id="clear-mask-btn">清除</button>
                     </div>
@@ -1342,17 +1364,38 @@
         </div>
     </div>
 
+    <!-- 剪影遠端選單彈窗 -->
+    <div id="silhouette-modal" class="modal hidden">
+        <div id="silhouette-modal-overlay" class="modal-overlay"></div>
+        <div class="modal-container">
+            <div class="modal-content" style="max-width: 42rem;">
+                <button class="close-modal-button" data-modal="silhouette-modal" aria-label="關閉剪影選單">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <h2 style="margin-bottom: 0.5rem;">GitHub 剪影選單</h2>
+                <p style="font-size:0.85rem;color:#4b5563;margin-bottom:0.75rem;">
+                    從 GitHub 資料夾 <code>網頁-設計手法/剪影</code> 載入 PNG 剪影，直接套用為詞雲遮罩。
+                </p>
+                <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;">
+                    <button id="reload-silhouette-btn" style="padding:0.5rem 0.75rem;border-radius:0.375rem;border:1px solid #2563eb;background:#2563eb;color:#fff;font-size:0.85rem;cursor:pointer;flex:0 0 auto;">重新載入剪影</button>
+                    <span id="silhouette-list-status" class="mask-list-status" style="flex:1 1 auto;margin:0;"></span>
+                </div>
+                <div id="silhouette-grid" class="mask-gallery" style="max-height:440px;overflow:auto;"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Cleaned script block: reduces complexity, fixes syntax errors and preserves mask & upload UX
-        // 若部署至 GitHub Pages，可在外部 script 中覆寫以下兩個變數以對應不同路徑
-        (function(){
-            const LOCAL_MASK_BASE = '剪影/';
-            const GITHUB_MASK_BASE = '/Storage/網頁-設計手法/剪影/';
-            const maskBase = window.MASK_ASSET_BASE || (location.hostname.endsWith('github.io') ? GITHUB_MASK_BASE : LOCAL_MASK_BASE);
-            window.MASK_ASSET_BASE = maskBase;
-            window.MASK_LIST_FILENAME = window.MASK_LIST_FILENAME || 'mask-list.json';
-        })();
-        window.addEventListener('load', function () {
+            // [修改] 強制指定 GitHub Raw 檔案的絕對路徑
+            (function(){
+                const GITHUB_RAW_PATH = 'https://raw.githubusercontent.com/eeee821022/Storage/main/網頁-設計手法/剪影/';
+                window.MASK_ASSET_BASE = GITHUB_RAW_PATH;
+                window.MASK_LIST_FILENAME = window.MASK_LIST_FILENAME || 'mask-list.json';
+            })();
+            window.addEventListener('load', function () {
             let masterData = [];
             let globalMaxWeight = 0;
             const uniqueThemes = new Set();
@@ -1370,10 +1413,6 @@
             const helpModalOverlay = document.getElementById('help-modal-overlay');
             const helpModalCloseBtn = document.getElementById('help-modal-close-btn');
             const settingsModal = document.getElementById('settings-modal');
-            const operationButton = document.getElementById('book-help-button');
-            const operationModal = document.getElementById('operation-modal');
-            const operationModalOverlay = document.getElementById('operation-modal-overlay');
-            const operationModalCloseBtn = document.getElementById('operation-modal-close-btn');
             const infoBox = document.getElementById('info-box');
             const errorBox = document.getElementById('error-box');
             const filtersContainer = document.getElementById('filters-container');
@@ -1402,8 +1441,31 @@
             const reloadMaskBtn = document.getElementById('reload-mask-btn');
             const clearMaskBtn = document.getElementById('clear-mask-btn');
             const maskListStatus = document.getElementById('mask-list-status');
+            const openSilhouetteBtn = document.getElementById('open-silhouette-btn');
+            const silhouetteModal = document.getElementById('silhouette-modal');
+            const silhouetteOverlay = document.getElementById('silhouette-modal-overlay');
+            const reloadSilhouetteBtn = document.getElementById('reload-silhouette-btn');
+            const silhouetteGrid = document.getElementById('silhouette-grid');
+            const silhouetteStatus = document.getElementById('silhouette-list-status');
             let maskOptions = [];
             let currentMaskSelection = null;
+            let silhouetteLoaded = false;
+
+            const GITHUB_OWNER = 'eeee821022';
+            const GITHUB_REPO = 'Storage';
+            const GITHUB_SILHOUETTE_PATH = '網頁-設計手法/剪影';
+
+            async function fetchGitHubSilhouettes(){
+                const encodedPath = GITHUB_SILHOUETTE_PATH.split('/').map(encodeURIComponent).join('/');
+                const apiUrl = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + encodedPath + '?ts=' + Date.now();
+                const response = await fetch(apiUrl);
+                if(!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                const files = Array.isArray(data) ? data : [];
+                return files
+                    .filter(item => item.type === 'file' && /\.png$/i.test(item.name))
+                    .map(file => ({ name: file.name, url: file.download_url || (window.MASK_ASSET_BASE + file.name) }));
+            }
             
             window.wordcloudMaskImage = null;
             window.selectedCloudShape = (shapeSelect && shapeSelect.value) || 'circle';
@@ -1424,6 +1486,31 @@
                 const ctx = canvas.getContext('2d');
                 ctx.setTransform(1,0,0,1,0,0);
                 ctx.scale(scale, scale);
+            }
+
+            function applyMaskImage(img, note){
+                window.wordcloudMaskImage = img;
+                currentMaskSelection = note || null;
+                updateMaskPreview(img);
+                checkImageTransparency(img)
+                    .then(info => showMaskInfo({ hasTransparency: info.hasTransparency, width: info.width, height: info.height, note: note }))
+                    .catch(() => showMaskInfo({ hasTransparency: false, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height, note: note }));
+                setupCanvas();
+                if(masterData.length) renderWordCloud();
+            }
+
+            function loadMaskImage(imageUrl, label){
+                return new Promise((resolve, reject) => {
+                    const finalUrl = imageUrl + (imageUrl.includes('?') ? '&' : '?') + 'ts=' + Date.now();
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = function(){
+                        applyMaskImage(img, label);
+                        resolve(img);
+                    };
+                    img.onerror = function(){ reject(new Error('無法載入圖片')); };
+                    img.src = finalUrl;
+                });
             }
 
             function updateMaskPreview(img) {
@@ -1467,17 +1554,19 @@
             async function loadMaskOptions(){
                 if(!maskGallery) return;
                 maskGallery.innerHTML = '<div class="mask-loading">正在載入剪影...</div>';
+                if(maskListStatus) maskListStatus.textContent = '載入中...';
                 try {
-                    const listUrl = window.MASK_ASSET_BASE + window.MASK_LIST_FILENAME + '?ts=' + Date.now();
-                    const response = await fetch(listUrl);
-                    if(!response.ok) throw new Error('HTTP ' + response.status);
-                    const data = await response.json();
-                    const list = Array.isArray(data) ? data : data.masks;
-                    if(!Array.isArray(list) || list.length === 0){
+                    const silhouettes = await fetchGitHubSilhouettes();
+                    if(!Array.isArray(silhouettes) || silhouettes.length === 0){
                         maskGallery.innerHTML = '<div class="mask-error">找不到任何 PNG 剪影</div>';
+                        if(maskListStatus) maskListStatus.textContent = '無可用剪影';
                         return;
                     }
-                    maskOptions = list.filter(item => item && typeof item.file === 'string' && item.file.toLowerCase().endsWith('.png'));
+                    maskOptions = silhouettes.map(item => ({
+                        file: item.name,
+                        label: item.name,
+                        url: item.url
+                    }));
                     renderMaskOptions();
                     if(maskListStatus) maskListStatus.textContent = '已載入 ' + maskOptions.length + ' 個剪影';
                 } catch(err) {
@@ -1495,8 +1584,8 @@
                     btn.type = 'button';
                     btn.className = 'mask-option';
                     const label = option.label || option.file;
-                    const imgSrc = window.MASK_ASSET_BASE + option.file;
-                    btn.innerHTML = '<img src="' + imgSrc + '" alt="' + label + '" loading="lazy" /><span>' + label + '</span>';
+                    const imgSrc = option.url || (window.MASK_ASSET_BASE + option.file);
+                    btn.innerHTML = '<img src="' + imgSrc + '?preview=1" alt="' + label + '" loading="lazy" /><span>' + label + '</span>';
                     btn.addEventListener('click', () => selectMaskOption(option, btn));
                     if(currentMaskSelection === option.file){ btn.classList.add('selected'); }
                     maskGallery.appendChild(btn);
@@ -1506,25 +1595,18 @@
 
             function selectMaskOption(option, buttonEl){
                 if(!option) return;
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = function(){
-                    window.wordcloudMaskImage = img;
-                    currentMaskSelection = option.file;
-                    maskGallery?.querySelectorAll('.mask-option').forEach(btn => btn.classList.remove('selected'));
-                    if(buttonEl) buttonEl.classList.add('selected');
-                    updateMaskPreview(img);
-                    checkImageTransparency(img)
-                        .then(info => showMaskInfo({ hasTransparency: info.hasTransparency, width: info.width, height: info.height, note: option.label || option.file }))
-                        .catch(() => showMaskInfo({ hasTransparency: false, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height, note: option.label || option.file }));
-                    setupCanvas();
-                    if(masterData.length) renderWordCloud();
-                };
-                img.onerror = function(){
-                    if(maskListStatus) maskListStatus.textContent = '載入剪影失敗：' + (option.label || option.file);
-                    buttonEl?.classList.remove('selected');
-                };
-                img.src = window.MASK_ASSET_BASE + option.file + '?v=' + Date.now();
+                maskGallery?.querySelectorAll('.mask-option').forEach(btn => btn.classList.remove('selected'));
+                if(buttonEl) buttonEl.classList.add('selected');
+                silhouetteGrid?.querySelectorAll('.mask-option').forEach(btn => btn.classList.remove('selected'));
+                const label = option.label || option.file;
+                const url = option.url || (window.MASK_ASSET_BASE + option.file);
+                loadMaskImage(url, label)
+                    .then(() => { if(maskListStatus) maskListStatus.textContent = '已套用：' + label; })
+                    .catch(err => {
+                        if(maskListStatus) maskListStatus.textContent = '載入剪影失敗：' + label;
+                        buttonEl?.classList.remove('selected');
+                        console.error(err);
+                    });
             }
 
             if (reloadMaskBtn) reloadMaskBtn.addEventListener('click', loadMaskOptions);
@@ -1533,11 +1615,75 @@
                 window.wordcloudMaskImage=null;
                 currentMaskSelection = null;
                 maskGallery?.querySelectorAll('.mask-option').forEach(btn => btn.classList.remove('selected'));
+                silhouetteGrid?.querySelectorAll('.mask-option').forEach(btn => btn.classList.remove('selected'));
                 clearMaskPreview();
                 setupCanvas();
                 if(masterData.length) renderWordCloud();
             });
             loadMaskOptions();
+
+
+            async function loadSilhouetteOptions(forceReload){
+                if(!silhouetteGrid) return;
+                if(silhouetteLoaded && !forceReload) return;
+                silhouetteGrid.innerHTML = '<div class="mask-loading">正在載入 GitHub 剪影...</div>';
+                if(silhouetteStatus) silhouetteStatus.textContent = '載入中...';
+                try {
+                    const silhouettes = await fetchGitHubSilhouettes();
+                    if(silhouettes.length === 0){
+                        silhouetteGrid.innerHTML = '<div class="mask-error">此資料夾中找不到 PNG 檔案</div>';
+                        if(silhouetteStatus) silhouetteStatus.textContent = '無可用剪影';
+                        silhouetteLoaded = true;
+                        return;
+                    }
+                    silhouetteGrid.innerHTML = '';
+                    silhouettes.forEach(file => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'mask-option';
+                        const rawUrl = file.url;
+                        btn.innerHTML = '<img src="' + rawUrl + '?preview=1" alt="' + file.name + '" loading="lazy" /><span>' + file.name + '</span>';
+                        btn.addEventListener('click', () => {
+                            silhouetteGrid.querySelectorAll('.mask-option').forEach(el => el.classList.remove('selected'));
+                            maskGallery?.querySelectorAll('.mask-option').forEach(el => el.classList.remove('selected'));
+                            btn.classList.add('selected');
+                            loadMaskImage(rawUrl, file.name)
+                                .then(() => { if(silhouetteStatus) silhouetteStatus.textContent = '已套用：' + file.name; })
+                                .catch(err => {
+                                    btn.classList.remove('selected');
+                                    if(silhouetteStatus) silhouetteStatus.textContent = '載入遮罩失敗：' + err.message;
+                                    console.error(err);
+                                });
+                        });
+                        silhouetteGrid.appendChild(btn);
+                    });
+                    if(silhouetteStatus) silhouetteStatus.textContent = '已載入 ' + silhouettes.length + ' 個剪影';
+                    silhouetteLoaded = true;
+                } catch(err) {
+                    console.error(err);
+                    silhouetteGrid.innerHTML = '<div class="mask-error">無法讀取 GitHub 剪影：' + err.message + '</div>';
+                    if(silhouetteStatus) silhouetteStatus.textContent = '載入失敗：' + err.message;
+                    silhouetteLoaded = false;
+                }
+            }
+
+            if(openSilhouetteBtn && silhouetteModal){
+                openSilhouetteBtn.addEventListener('click', () => {
+                    silhouetteModal.classList.remove('hidden');
+                    loadSilhouetteOptions();
+                });
+            }
+
+            if(reloadSilhouetteBtn){
+                reloadSilhouetteBtn.addEventListener('click', () => {
+                    silhouetteLoaded = false;
+                    loadSilhouetteOptions(true);
+                });
+            }
+
+            if(silhouetteOverlay && silhouetteModal){
+                silhouetteOverlay.addEventListener('click', () => silhouetteModal.classList.add('hidden'));
+            }
 
             // Theme colors & translations
             const themeColorMap = new Map([['工作與職業','#2E8B57'],['時間與效率','#FF4500'],['家庭與親密關係','#8A2BE2'],['消費與習慣','#F0E68C'],['金融與投資','#B22222'],['健康與管理','#00FFFF'],['學習與知識','#5F9EA0'],['通勤與出行','#DDA0DD'],['嗜好與休閒','#FFD700'],['科技與電子產品','#4682B4'],['其他/背景特徵','#C0C0C0']]);
@@ -1642,9 +1788,6 @@
             if (helpButton && helpModal) helpButton.addEventListener('click', ()=> helpModal.classList.remove('hidden'));
             if (helpModalOverlay && helpModal) helpModalOverlay.addEventListener('click', ()=> helpModal.classList.add('hidden'));
             if (helpModalCloseBtn && helpModal) helpModalCloseBtn.addEventListener('click', ()=> helpModal.classList.add('hidden'));
-            if (operationButton && operationModal) operationButton.addEventListener('click', ()=> operationModal.classList.remove('hidden'));
-            if (operationModalOverlay && operationModal) operationModalOverlay.addEventListener('click', ()=> operationModal.classList.add('hidden'));
-            if (operationModalCloseBtn && operationModal) operationModalCloseBtn.addEventListener('click', ()=> operationModal.classList.add('hidden'));
 
             document.querySelectorAll('.close-modal-button').forEach(btn=>btn.addEventListener('click', function(){ const mid=this.getAttribute('data-modal'); const m=document.getElementById(mid); if(m) m.classList.add('hidden'); }));
             document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click', function(){ const m=this.closest('.modal'); if(m) m.classList.add('hidden'); }));
@@ -1722,16 +1865,6 @@
     <!-- 遮罩 / 形狀控制面板（固定右下角，位於書本按鈕上方） -->
         <!-- 遮罩 / 形狀控制面板（固定右下角，位於書本按鈕上方） -->
     
-    <!-- 書本說明按鈕（固定右下角） -->
-    <button id="book-help-button" title="功能操作指南" class="floating-action-button" aria-label="功能操作指南">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h12a2 2 0 012 2v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h6" />
-        </svg>
-    </button>
-
-
     <script>
         // 範例 SVG 產生與遮罩載入（男女老少）
         (function(){
@@ -1758,14 +1891,14 @@
                     return `<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
   <rect width="100%" height="100%" fill="transparent"/>
-  <path fill="#000" d="M580 160c90-20 240-20 320 40 70 50 70 150 10 230-36 50-72 80-88 148-14 58 12 120 36 168 24 48 56 90 100 118 60 40 132 58 132 142v64H120v-64c0-84 72-102 132-142 44-28 76-70 100-118 24-48 50-110 36-168-16-68-52-98-88-148-60-80-170-80-260-60z"/>
+  <path fill="#000" d="M580 160c90-20 240-20 320 40 70 50 70 150 10 230-36 50-72 80-88 148-14 58 12 120 36 168 24 48 56 90 100 118 60 40 132 58 132 142v64H120v-64c0-84 72-102 132-142 44-28 76-70 100-118 24-44 40-98 30-140-16-68-52-98-88-148-60-80-170-80-260-60z"/>
 </svg>`;
                 }
                 if (kind === 'child') {
                     return `<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1400" viewBox="0 0 1000 1400">
   <rect width="100%" height="100%" fill="transparent"/>
-  <path fill="#000" d="M500 120c60 0 110 40 110 90 0 28-12 54-28 80-10 16-20 32-24 46-5 18 6 42 18 62 12 20 26 36 46 48 34 22 74 34 74 78v44H280v-44c0-44 40-56 74-78 20-12 34-28 46-48 12-20 23-44 18-62-4-14-14-30-24-46-16-26-28-52-28-80 0-50 50-90 110-90z"/>
+  <path fill="#000" d="M500 120c60 0 110 40 110 90 0 28-12 54-28 80-10 16-20 32-24 46-5 18 6 42 18 62 12 20 26 36 46 48 34 22 74 34 74 78v44H280v-44c0-44 40-56 74-78 20-12 34-28 46-48 12-20 23-44 18-62-4-14-14-30-24-46-16-28-28-52-28-80 0-50 50-90 110-90z"/>
 </svg>`;
                 }
                 // elderly
