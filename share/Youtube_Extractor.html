@@ -1,3 +1,4 @@
+<!-- Revision 4 - Codex adjustments -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -189,6 +190,22 @@
             <div class="space-y-2" id="progressList">
                 <!-- JS 動態生成項目 -->
             </div>
+            <div id="failedLinksBox" class="mt-6 p-4 bg-red-900/20 border border-red-700/50 rounded-lg space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h4 class="text-red-200 font-semibold text-sm flex items-center gap-2">
+                        <span>失敗的連結</span>
+                        <span class="text-red-400 text-xs">（可複製重試）</span>
+                    </h4>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span id="failedLinksCount" class="text-red-300"></span>
+                        <button id="copyFailedLinksBtn" class="px-3 py-1 rounded bg-red-500/20 border border-red-400/60 text-red-200 hover:bg-red-500/40 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                            複製清單
+                        </button>
+                    </div>
+                </div>
+                <p id="failedLinksEmpty" class="text-xs text-red-200/70">目前沒有失敗的連結。</p>
+                <ul id="failedLinksList" class="space-y-2 text-sm"></ul>
+            </div>
         </div>
         
         <!-- 6. 全新：逐字稿專屬結果區塊 -->
@@ -217,6 +234,11 @@
         const messageText = document.getElementById('messageText');
         const progressTracker = document.getElementById('progressTracker');
         const progressList = document.getElementById('progressList');
+        let failedLinksBox = document.getElementById('failedLinksBox');
+        let failedLinksList = document.getElementById('failedLinksList');
+        let failedLinksCount = document.getElementById('failedLinksCount');
+        let failedLinksEmpty = document.getElementById('failedLinksEmpty');
+        let copyFailedLinksBtn = document.getElementById('copyFailedLinksBtn');
         const mp3Uploader = document.getElementById('mp3Uploader');
         const uploadTranscribeBtn = document.getElementById('uploadTranscribeBtn');
         const transcriptionResultBox = document.getElementById('transcriptionResultBox');
@@ -293,6 +315,11 @@
             progressList.innerHTML = '';
             progressTracker.classList.add('hidden');
             transcriptionResultBox.classList.add('hidden');
+            ensureFailedLinksSection();
+            if (failedLinksList) failedLinksList.innerHTML = '';
+            if (failedLinksCount) failedLinksCount.textContent = '共 0 筆';
+            if (failedLinksEmpty) failedLinksEmpty.classList.remove('hidden');
+            if (copyFailedLinksBtn) copyFailedLinksBtn.disabled = true;
         }
 
         function getUrlList() {
@@ -314,6 +341,11 @@
         function renderInitialProgress(taskData, requestedTasks) {
             progressList.innerHTML = '';
             progressTracker.classList.remove('hidden');
+            ensureFailedLinksSection();
+            failedLinksEmpty.classList.remove('hidden');
+            failedLinksList.innerHTML = '';
+            failedLinksCount.textContent = '共 0 筆';
+            copyFailedLinksBtn.disabled = true;
 
             // Task name mapping
             const taskNames = {
@@ -356,6 +388,130 @@
             }
         }
 
+        let latestFailedEntries = [];
+
+        function renderFailedLinks(failedEntries = []) {
+            ensureFailedLinksSection();
+            if (!Array.isArray(failedEntries)) {
+                latestFailedEntries = [];
+            } else {
+                latestFailedEntries = [...failedEntries];
+            }
+
+            failedLinksList.innerHTML = '';
+            failedLinksCount.textContent = `共 ${latestFailedEntries.length} 筆`;
+
+            if (latestFailedEntries.length === 0) {
+                failedLinksEmpty.classList.remove('hidden');
+                copyFailedLinksBtn.disabled = true;
+                return;
+            }
+
+            failedLinksEmpty.classList.add('hidden');
+            copyFailedLinksBtn.disabled = false;
+
+            latestFailedEntries.forEach(entry => {
+                const item = document.createElement('li');
+                item.className = 'p-3 bg-gray-900/40 border border-gray-700 rounded text-sm space-y-1';
+
+                const titleEl = document.createElement('div');
+                titleEl.className = 'text-white font-semibold truncate';
+                titleEl.textContent = entry.title || entry.link || '未知連結';
+                item.appendChild(titleEl);
+
+                const linkEl = document.createElement('a');
+                linkEl.className = 'text-red-300 break-all underline';
+                if (entry.link) {
+                    linkEl.href = entry.link;
+                    linkEl.target = '_blank';
+                    linkEl.rel = 'noopener noreferrer';
+                    linkEl.textContent = entry.link;
+                } else {
+                    linkEl.textContent = '無法取得連結';
+                }
+                item.appendChild(linkEl);
+
+                if (entry.error) {
+                    const errorEl = document.createElement('p');
+                    errorEl.className = 'text-xs text-red-400 break-words';
+                    errorEl.textContent = entry.error;
+                    item.appendChild(errorEl);
+                }
+
+                failedLinksList.appendChild(item);
+            });
+        }
+        
+        function buildFallbackFailures(tasksData = {}) {
+            const fallback = [];
+            for (const [url, taskData] of Object.entries(tasksData)) {
+                const hasFailedStep = Object.values(taskData.steps || {}).some(step => step.status === 'failed');
+                if (!hasFailedStep) continue;
+                fallback.push({
+                    title: taskData.title || url,
+                    link: taskData.link || url,
+                    error: taskData.error || '未知原因造成失敗'
+                });
+            }
+            return fallback;
+        }
+        
+        function ensureFailedLinksSection() {
+            if (failedLinksBox && failedLinksList && failedLinksCount && failedLinksEmpty && copyFailedLinksBtn) {
+                return;
+            }
+            if (!progressTracker) return;
+            if (!document.getElementById('failedLinksBox')) {
+                const container = document.createElement('div');
+                container.innerHTML = `
+                    <div id="failedLinksBox" class="hidden mt-6 p-4 bg-red-900/20 border border-red-700/50 rounded-lg space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <h4 class="text-red-200 font-semibold text-sm flex items-center gap-2">
+                                <span>失敗的連結</span>
+                                <span class="text-red-400 text-xs">（可複製重試）</span>
+                            </h4>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span id="failedLinksCount" class="text-red-300"></span>
+                                <button id="copyFailedLinksBtn" class="px-3 py-1 rounded bg-red-500/20 border border-red-400/60 text-red-200 hover:bg-red-500/40 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                                    複製連結
+                                </button>
+                            </div>
+                        </div>
+                        <p id="failedLinksEmpty" class="text-xs text-red-200/70">目前沒有失敗的連結。</p>
+                        <ul id="failedLinksList" class="space-y-2 text-sm"></ul>
+                    </div>
+                `;
+                progressTracker.appendChild(container.firstElementChild);
+            }
+            failedLinksBox = document.getElementById('failedLinksBox');
+            failedLinksList = document.getElementById('failedLinksList');
+            failedLinksCount = document.getElementById('failedLinksCount');
+            failedLinksEmpty = document.getElementById('failedLinksEmpty');
+            copyFailedLinksBtn = document.getElementById('copyFailedLinksBtn');
+            bindFailedLinksCopyButton();
+        }
+
+        function bindFailedLinksCopyButton() {
+            if (!copyFailedLinksBtn || copyFailedLinksBtn.dataset.copyBound === 'true') return;
+            copyFailedLinksBtn.addEventListener('click', copyFailedLinksToClipboard);
+            copyFailedLinksBtn.dataset.copyBound = 'true';
+        }
+
+        async function copyFailedLinksToClipboard() {
+            if (!latestFailedEntries.length) return;
+            const text = latestFailedEntries
+                .map(entry => entry.link || entry.title || '（無法取得連結）')
+                .join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+                showMessage('已複製失敗連結，貼上即可重新處理。', 'green');
+            } catch (err) {
+                showMessage('複製失敗，請手動選取文字區塊。', 'red');
+            }
+        }
+
+        bindFailedLinksCopyButton();
+
         async function pollStatus() {
             try {
                 const response = await fetch(API_BASE_URL + '/get_batch_status');
@@ -376,14 +532,38 @@
                         };
 
                         const s = statusDisplay[stepInfo.status] || statusDisplay['pending'];
+                        
+                        // Check if status just changed to completed
+                        const wasCompleted = statusElement.getAttribute('data-completed') === 'true';
+                        if (stepInfo.status === 'completed' && !wasCompleted) {
+                            statusElement.setAttribute('data-completed', 'true');
+                            
+                            // Auto-download completed files
+                            if (stepInfo.file) {
+                                setTimeout(() => {
+                                    const downloadUrl = `${API_BASE_URL}/download/${encodeURIComponent(stepInfo.file)}`;
+                                    const a = document.createElement('a');
+                                    a.href = downloadUrl;
+                                    a.download = stepInfo.file;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                }, 100);
+                            }
+                        }
+                        
                         statusElement.textContent = s.text;
                         statusElement.className = `text-center ${s.color}`;
                     }
                 }
 
+                const backendFailed = status.failed_urls || [];
+                const derivedFailed = (backendFailed && backendFailed.length) ? backendFailed : buildFallbackFailures(status.tasks);
+                renderFailedLinks(derivedFailed);
+
                 if (status.is_complete) {
                     stopPolling();
-                    showMessage('所有任務已完成！', 'green');
+                    showMessage('所有任務已完成！檔案已自動下載到您的下載資料夾。', 'green');
                     updateButtonStates('completed');
                 }
 
