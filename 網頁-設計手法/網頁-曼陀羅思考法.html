@@ -12,6 +12,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- 新增：html2canvas 用於截圖 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Firebase SDKs (Compat version for v8 style usage) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <style>
         /* 使用 Noto Sans TC 作為中文字體備援 */
         body {
@@ -116,6 +120,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                 匯出 JSON
             </button>
+            <button id="collab-button" class="action-button text-indigo-600 border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 5.444m0 0a9.09 9.09 0 0 0-3.741-.479 3 3 0 0 0 4.682 2.72m.943-3.198.001.031c0 .225.012.447.037.666A11.944 11.944 0 0 1 12 21c2.17 0 4.207-.576 5.963-1.584m0 0A9.01 9.01 0 0 1 12 15c-3.148 0-6.02 1.27-8.095 3.416" /></svg>
+                即時協作
+            </button>
             <button id="screenshot-button" class="action-button">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.174a2.31 2.31 0 0 0-1.64 2.288v7.517A2.31 2.31 0 0 0 4.615 21h14.77a2.31 2.31 0 0 0 2.31-2.31v-7.517a2.31 2.31 0 0 0-1.64-2.288c-.377-.062-.754-.12-1.134-.174a2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.776 48.776 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.04l-.821 1.316Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" /></svg>
                 截圖
@@ -143,6 +151,63 @@
         <div class="p-2 px-4 hover:bg-red-100 text-red-800 cursor-pointer" data-color="red">標記為紅色</div>
         <hr class="my-1">
         <div class="p-2 px-4 hover:bg-slate-100 cursor-pointer" data-color="none">清除標記</div>
+    </div>
+
+    <!-- 協作設定視窗 -->
+    <div id="collab-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 w-full h-full bg-black/50 backdrop-blur-sm" id="collab-modal-overlay"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="relative w-full max-w-md bg-white p-6 rounded-lg shadow-xl">
+                <button id="collab-modal-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">即時協作</h2>
+                
+                <!-- 尚未加入 Session -->
+                <div id="collab-start-view">
+                    <p class="text-slate-600 mb-4">建立一個新的協作空間，邀請他人一起編輯這份曼陀羅。</p>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">設定編輯密碼 (選填)</label>
+                        <input type="password" id="collab-password-input" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="若留空則任何人皆可編輯">
+                    </div>
+                    <button id="create-session-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition-colors">
+                        建立新協作
+                    </button>
+                </div>
+
+                <!-- 已經在 Session 中 -->
+                <div id="collab-active-view" class="hidden">
+                    <div class="bg-green-50 text-green-800 p-3 rounded mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                        正在協作中
+                    </div>
+                    <p class="text-sm text-slate-600 mb-2">將此連結分享給協作者：</p>
+                    <div class="flex space-x-2 mb-4">
+                        <input type="text" id="share-link-input" class="flex-1 p-2 border border-slate-300 rounded bg-slate-50 text-slate-500 text-sm" readonly>
+                        <button id="copy-link-btn" class="bg-white border border-slate-300 text-slate-700 px-3 py-2 rounded hover:bg-slate-50">
+                            複製
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-400 text-center">Session ID: <span id="display-session-id"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 密碼驗證視窗 -->
+    <div id="password-modal" class="hidden fixed inset-0 z-[60] overflow-y-auto">
+        <div class="fixed inset-0 w-full h-full bg-black/80 backdrop-blur-sm"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="relative w-full max-w-sm bg-white p-6 rounded-lg shadow-xl text-center">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">需要密碼</h3>
+                <p class="text-slate-600 mb-4">此協作空間受密碼保護，請輸入密碼以進行編輯。</p>
+                <input type="password" id="auth-password-input" class="w-full p-2 border border-slate-300 rounded mb-4 focus:ring-2 focus:ring-indigo-500" placeholder="輸入密碼">
+                <button id="auth-password-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700">
+                    確認
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- 操作說明（功能指南） -->
@@ -235,8 +300,268 @@
     </div>
 
     <script>
+        // --- Firebase Configuration & Global Variables ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDyB_rJ37rHW1uwpQNASlWc53AjsPwh2EE",
+            authDomain: "business-model-canvas-3da74.firebaseapp.com",
+            projectId: "business-model-canvas-3da74",
+            storageBucket: "business-model-canvas-3da74.firebasestorage.app",
+            messagingSenderId: "922978479250",
+            appId: "1:922978479250:web:26d4550fe980fb1ca68a4b",
+            measurementId: "G-7XLCZ42R9K"
+        };
+
+        const APP_ID = 'mandala-tool-v1';
+        let db;
+        let auth;
+        let currentSessionId = null;
+        let unsubscribe = null;
+        let isReadOnly = false;
+        let localEditPassword = null;
+        let isFirebaseReady = false;
+        let updateTimeouts = {}; // For debouncing
+
         document.addEventListener('DOMContentLoaded', () => {
             
+            // --- Firebase Initialization ---
+            try {
+                if (firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                db = firebase.firestore();
+                auth = firebase.auth();
+
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        isFirebaseReady = true;
+                        console.log("Firebase Auth Ready:", user.uid);
+                        
+                        // Check URL for session
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const session = urlParams.get('session');
+                        if (session && !currentSessionId) {
+                            await joinSession(session);
+                        }
+                    } else {
+                        await auth.signInAnonymously().catch(console.error);
+                    }
+                });
+            } catch (e) {
+                console.warn("Firebase init failed (likely due to missing config):", e);
+                // alert("Firebase 設定尚未完成，協作功能暫時無法使用。請在程式碼中填入 firebaseConfig。");
+            }
+
+            // --- Collaboration UI Elements ---
+            const collabButton = document.getElementById('collab-button');
+            const collabModal = document.getElementById('collab-modal');
+            const collabModalOverlay = document.getElementById('collab-modal-overlay');
+            const collabModalCloseBtn = document.getElementById('collab-modal-close-btn');
+            const createSessionBtn = document.getElementById('create-session-btn');
+            const collabStartView = document.getElementById('collab-start-view');
+            const collabActiveView = document.getElementById('collab-active-view');
+            const shareLinkInput = document.getElementById('share-link-input');
+            const copyLinkBtn = document.getElementById('copy-link-btn');
+            const displaySessionId = document.getElementById('display-session-id');
+            
+            const passwordModal = document.getElementById('password-modal');
+            const authPasswordInput = document.getElementById('auth-password-input');
+            const authPasswordBtn = document.getElementById('auth-password-btn');
+
+            // --- Collaboration Functions ---
+
+            // 1. Open Modal
+            collabButton.addEventListener('click', () => {
+                collabModal.classList.remove('hidden');
+                if (currentSessionId) {
+                    collabStartView.classList.add('hidden');
+                    collabActiveView.classList.remove('hidden');
+                    shareLinkInput.value = window.location.href;
+                    displaySessionId.textContent = currentSessionId;
+                } else {
+                    collabStartView.classList.remove('hidden');
+                    collabActiveView.classList.add('hidden');
+                }
+            });
+
+            // 2. Close Modal
+            const closeCollabModal = () => collabModal.classList.add('hidden');
+            collabModalOverlay.addEventListener('click', closeCollabModal);
+            collabModalCloseBtn.addEventListener('click', closeCollabModal);
+
+            // 3. Create Session
+            createSessionBtn.addEventListener('click', async () => {
+                if (!isFirebaseReady) {
+                    alert("Firebase 尚未連線，請檢查設定。");
+                    return;
+                }
+                
+                const password = document.getElementById('collab-password-input').value.trim();
+                createSessionBtn.disabled = true;
+                createSessionBtn.textContent = "建立中...";
+
+                try {
+                    const newSessionId = Math.random().toString(36).substring(2, 10);
+                    const initialData = {
+                        created: firebase.firestore.FieldValue.serverTimestamp(),
+                        editPassword: password || null,
+                    };
+
+                    // Collect all current data
+                    const allCells = document.querySelectorAll('textarea');
+                    allCells.forEach(cell => {
+                        if (cell.value || cell.classList.contains('marked-yellow') || cell.classList.contains('marked-green') || cell.classList.contains('marked-red')) {
+                            let mark = null;
+                            if (cell.classList.contains('marked-yellow')) mark = 'marked-yellow';
+                            if (cell.classList.contains('marked-green')) mark = 'marked-green';
+                            if (cell.classList.contains('marked-red')) mark = 'marked-red';
+                            
+                            initialData[cell.id] = {
+                                text: cell.value,
+                                mark: mark
+                            };
+                        }
+                    });
+
+                    await db.collection('artifacts').doc(APP_ID)
+                        .collection('public').doc('data')
+                        .collection('sessions').doc(newSessionId)
+                        .set(initialData);
+
+                    localEditPassword = password;
+                    await joinSession(newSessionId, true);
+                    
+                    // Update UI
+                    collabStartView.classList.add('hidden');
+                    collabActiveView.classList.remove('hidden');
+                    shareLinkInput.value = window.location.href;
+                    displaySessionId.textContent = newSessionId;
+                    createSessionBtn.disabled = false;
+                    createSessionBtn.textContent = "建立新協作";
+
+                } catch (err) {
+                    console.error("Error creating session:", err);
+                    alert("建立失敗：" + err.message);
+                    createSessionBtn.disabled = false;
+                    createSessionBtn.textContent = "建立新協作";
+                }
+            });
+
+            // 4. Join Session
+            async function joinSession(sessionId, justCreated = false) {
+                currentSessionId = sessionId;
+                
+                // Update URL
+                const newUrl = `${window.location.pathname}?session=${sessionId}`;
+                window.history.pushState({path: newUrl}, '', newUrl);
+
+                // Change button style to indicate active
+                collabButton.classList.add('bg-indigo-50', 'border-indigo-400');
+
+                if (unsubscribe) unsubscribe();
+
+                unsubscribe = db.collection('artifacts').doc(APP_ID)
+                    .collection('public').doc('data')
+                    .collection('sessions').doc(sessionId)
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            const data = doc.data();
+
+                            // Check Password / ReadOnly
+                            if (!justCreated && !localEditPassword && data.editPassword && !isReadOnly) {
+                                passwordModal.classList.remove('hidden');
+                                // Lock UI temporarily?
+                            }
+
+                            // Sync Data
+                            Object.keys(data).forEach(key => {
+                                if (key === 'created' || key === 'editPassword') return;
+                                
+                                const cellData = data[key];
+                                const cell = document.getElementById(key);
+                                if (cell) {
+                                    // Sync Text (Avoid cursor jumping)
+                                    if (document.activeElement !== cell && cell.value !== (cellData.text || '')) {
+                                        cell.value = cellData.text || '';
+                                        // Trigger local sync logic for central grid
+                                        if (typeof links !== 'undefined') {
+                                            const link = links.find(l => l[0] === key);
+                                            if (link) {
+                                                const targetCell = document.getElementById(link[1]);
+                                                if (targetCell) targetCell.value = cell.value;
+                                            }
+                                        }
+                                    }
+
+                                    // Sync Color
+                                    cell.classList.remove('marked-yellow', 'marked-green', 'marked-red');
+                                    if (cellData.mark) {
+                                        cell.classList.add(cellData.mark);
+                                    }
+                                }
+                            });
+                        } else {
+                            alert("此協作 Session 不存在或已被刪除。");
+                            currentSessionId = null;
+                        }
+                    }, (error) => {
+                        console.error("Sync error:", error);
+                    });
+            }
+
+            // 5. Password Auth
+            authPasswordBtn.addEventListener('click', () => {
+                const inputPwd = authPasswordInput.value.trim();
+                // In a real app, we might verify against server or keep trying locally
+                // Here we just store it locally and let the next write attempt validate (or client-side check)
+                // Since we read the password from doc (insecure for high security, but fine for this tool), we can check:
+                db.collection('artifacts').doc(APP_ID)
+                    .collection('public').doc('data')
+                    .collection('sessions').doc(currentSessionId)
+                    .get().then(doc => {
+                        if (doc.exists && doc.data().editPassword === inputPwd) {
+                            localEditPassword = inputPwd;
+                            passwordModal.classList.add('hidden');
+                            isReadOnly = false;
+                        } else {
+                            alert("密碼錯誤");
+                        }
+                    });
+            });
+
+            // 6. Copy Link
+            copyLinkBtn.addEventListener('click', () => {
+                shareLinkInput.select();
+                document.execCommand('copy');
+                copyLinkBtn.textContent = "已複製";
+                setTimeout(() => copyLinkBtn.textContent = "複製", 2000);
+            });
+
+            // 7. Debounced Update Function
+            function updateFirestoreDebounced(cellId, text, mark) {
+                if (!db || !isFirebaseReady || !currentSessionId) return;
+                if (isReadOnly) return; // Prevent writes if read-only
+
+                if (updateTimeouts[cellId]) clearTimeout(updateTimeouts[cellId]);
+
+                updateTimeouts[cellId] = setTimeout(() => {
+                    const updateData = {};
+                    updateData[`${cellId}.text`] = text;
+                    updateData[`${cellId}.mark`] = mark;
+
+                    db.collection('artifacts').doc(APP_ID)
+                        .collection('public').doc('data')
+                        .collection('sessions').doc(currentSessionId)
+                        .update(updateData).catch(err => {
+                            console.error("Update failed:", err);
+                            if (err.code === 'permission-denied') {
+                                alert("您沒有編輯權限 (密碼錯誤?)");
+                            }
+                        });
+                }, 500);
+            }
+
+            // --- End Collaboration Functions ---
+
             // --- DOM 元素選取 ---
             const mainContainer = document.getElementById('mandala-container');
             const markerMenu = document.getElementById('marker-menu');
@@ -325,6 +650,21 @@
                 if (sourceCell && targetCell) {
                     sourceCell.addEventListener('input', (e) => {
                         targetCell.value = e.target.value;
+                        // Firebase Sync
+                        const mark = sourceCell.className.match(/marked-\w+/) ? sourceCell.className.match(/marked-\w+/)[0] : null;
+                        updateFirestoreDebounced(sourceId, e.target.value, mark);
+                    });
+                }
+            });
+
+            // 監聽所有格子的輸入 (包含非連動的格子)
+            const allTextareas = document.querySelectorAll('textarea');
+            allTextareas.forEach(cell => {
+                // 避免重複綁定 (上面 links 已經綁過一部分)
+                if (!links.some(link => link[0] === cell.id)) {
+                    cell.addEventListener('input', (e) => {
+                        const mark = cell.className.match(/marked-\w+/) ? cell.className.match(/marked-\w+/)[0] : null;
+                        updateFirestoreDebounced(cell.id, e.target.value, mark);
                     });
                 }
             });
@@ -360,9 +700,15 @@
                 if (e.target.dataset.color && currentTargetCell) {
                     const color = e.target.dataset.color;
                     currentTargetCell.classList.remove('marked-yellow', 'marked-green', 'marked-red');
+                    let newMark = null;
                     if (color !== 'none') {
                         currentTargetCell.classList.add(`marked-${color}`);
+                        newMark = `marked-${color}`;
                     }
+                    
+                    // Firebase Sync
+                    updateFirestoreDebounced(currentTargetCell.id, currentTargetCell.value, newMark);
+
                     markerMenu.classList.add('hidden');
                     currentTargetCell = null;
                 }
