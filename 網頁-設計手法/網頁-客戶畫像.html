@@ -770,7 +770,7 @@
             }
         }
         
-        /* AI Context Input Style */
+        /* AI Context Input Style (Updated for List) */
         .context-input-section {
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -779,49 +779,90 @@
             margin-bottom: 1.5rem;
         }
         
-        .context-input-section label {
-            display: block;
+        .context-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .context-header label {
             font-weight: 600;
             color: #374151;
-            margin-bottom: 0.5rem;
             font-size: 0.9rem;
-        }
-        
-        .context-input-section textarea {
-            width: 100%;
-            min-height: 80px;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            font-size: 0.9rem;
-            resize: vertical;
-            background-color: #ffffff;
-            font-family: inherit;
-            color: #1f2937;
-        }
-        
-        .context-input-section textarea:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
         }
         
         #ai-generate-btn {
-            display: block;
-            width: 100%;
-            margin-top: 0.75rem;
-            padding: 0.75rem;
+            padding: 0.5rem 1rem;
             background-color: #2563eb;
             color: white;
             border: none;
             border-radius: 0.375rem;
             font-weight: 600;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: background-color 0.2s;
         }
         
         #ai-generate-btn:hover {
             background-color: #1d4ed8;
+        }
+
+        .context-list-item {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .context-list-item input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+            background-color: #ffffff;
+            color: #1f2937;
+        }
+        
+        .context-list-item input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        .remove-row-btn {
+            padding: 0.5rem;
+            background-color: transparent;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .remove-row-btn:hover {
+            color: #ef4444;
+            border-color: #fca5a5;
+            background-color: #fef2f2;
+        }
+        
+        #add-context-btn {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #ffffff;
+            border: 1px dashed #cbd5e1;
+            border-radius: 0.375rem;
+            color: #64748b;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.25rem;
+        }
+
+        #add-context-btn:hover {
+            border-color: #94a3b8;
+            color: #475569;
+            background-color: #f1f5f9;
         }
     </style>
 </head>
@@ -967,11 +1008,18 @@
                     以下報告由 Gemini 模型根據當前詞雲數據（權重前 50 名關鍵字）自動生成。
                 </div>
                 
-                <!-- 新增：背景資料輸入區塊 -->
+                <!-- 新增：條列式背景資料輸入區塊 -->
                 <div class="context-input-section">
-                    <label for="ai-context-input">設定背景脈絡 (選填)：</label>
-                    <textarea id="ai-context-input" placeholder="例如：男性, 35歲, 居住在台北市, 金融業, 喜歡戶外運動... (若留空則由 AI 自由發揮)"></textarea>
-                    <button id="ai-generate-btn">開始分析</button>
+                    <div class="context-header">
+                        <label>設定背景條件 (條列式)：</label>
+                        <button id="ai-generate-btn">開始分析</button>
+                    </div>
+                    
+                    <!-- 動態清單容器 -->
+                    <div id="ai-context-list">
+                        <!-- 預設會由 JS 插入一個空行 -->
+                    </div>
+                    <button id="add-context-btn" type="button">+ 新增條件</button>
                 </div>
 
                 <div id="ai-loading" class="hidden" style="text-align: center; padding: 3rem;">
@@ -1244,7 +1292,8 @@
             const aiResult = document.getElementById('ai-result');
             const aiError = document.getElementById('ai-error');
             const aiGenerateBtn = document.getElementById('ai-generate-btn'); // 新增生成按鈕
-            const aiContextInput = document.getElementById('ai-context-input'); // 新增背景輸入框
+            const aiContextList = document.getElementById('ai-context-list'); // 條列式清單容器
+            const addContextBtn = document.getElementById('add-context-btn'); // 新增條件按鈕
             
             const infoBox = document.getElementById('info-box');
             const errorBox = document.getElementById('error-box');
@@ -1309,19 +1358,23 @@
             function showError(message) { if (errorBox) { errorBox.textContent = '❌ ' + message; errorBox.classList.remove('hidden'); } }
             function hideError() { if (errorBox) errorBox.classList.add('hidden'); if (infoBox) infoBox.classList.remove('hidden'); }
 
+            // [修正] 簡化 Canvas 設定，確保與 wordcloud2.js 座標系統一致，解決點擊錯位問題
             function setupCanvas() {
                 if (!canvas) return;
-                const targetSize = 756;
-                const targetDPI = 144;
-                const baseDPI = 96;
-                const scale = targetDPI / baseDPI;
-                canvas.width = targetSize * scale;
-                canvas.height = targetSize * scale;
+                const container = document.getElementById('wordcloud-container');
+                // 直接獲取容器寬度，並限制最大寬度
+                const targetSize = Math.min(container.clientWidth - 64, 756); // -64 padding
+                
+                // 關鍵修正：強制 Canvas 的內部解析度 (width/height) 與 CSS 顯示大小 (style.width/height) 一致
+                // 這樣 wordcloud2.js 的 hit detection 就不會因為縮放而錯位
+                canvas.width = targetSize;
+                canvas.height = targetSize;
                 canvas.style.width = targetSize + 'px';
                 canvas.style.height = targetSize + 'px';
+                
+                // 重置 transform，避免之前的 scale 殘留
                 const ctx = canvas.getContext('2d');
-                ctx.setTransform(1,0,0,1,0,0);
-                ctx.scale(scale, scale);
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
             }
 
             function applyMaskImage(img, note){
@@ -1616,7 +1669,8 @@
                     gridSize: 8, 
                     drawOutOfBound: false, 
                     shrinkToFit: true,
-                    origin: [canvas.width/(2*(canvas.width/(parseFloat(canvas.style.width)||canvas.width))), canvas.height/(2*(canvas.height/(parseFloat(canvas.style.height)||canvas.height)))],
+                    // [修正] 移除複雜的 origin 計算，使用預設中心，以避免點擊錯位
+                    origin: null,
                     shape: shape, 
                     ellipticity: 1, 
                     wait: 0,
@@ -1672,6 +1726,27 @@
                 apiKeyInput.addEventListener('input', function() {
                     localStorage.setItem('gemini_api_key', this.value.trim());
                 });
+            }
+            
+            // [新增] 動態條列式輸入框邏輯
+            function addContextRow(value = '') {
+                const div = document.createElement('div');
+                div.className = 'context-list-item';
+                div.innerHTML = `
+                    <input type="text" value="${value}" placeholder="輸入背景條件 (如：居住在台北)">
+                    <button class="remove-row-btn" title="刪除" onclick="this.parentElement.remove()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:1rem;height:1rem;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
+                aiContextList.appendChild(div);
+            }
+
+            if (addContextBtn) {
+                addContextBtn.addEventListener('click', () => addContextRow());
+                // 預設新增一列
+                addContextRow(); 
             }
             
             function searchKeyword() {
@@ -1816,11 +1891,16 @@
                         .map(item => `[${item.theme}] ${item.keyword} (權重: ${(item.weight*100).toFixed(0)}%, 情緒: ${item.emotions.join(',')})`)
                         .join('\n');
 
-                    // 2. 獲取使用者輸入的背景條件
-                    const contextText = aiContextInput.value.trim();
+                    // 2. [修正] 獲取條列式背景資料
+                    const contextInputs = document.querySelectorAll('#ai-context-list input');
+                    const contextLines = Array.from(contextInputs)
+                        .map(input => input.value.trim())
+                        .filter(val => val !== '');
+
                     let contextInstruction = "";
-                    if (contextText) {
-                        contextInstruction = `\n\n【指定背景條件】：\n請務必嚴格基於以下設定進行分析，不可與此衝突：\n${contextText}\n`;
+                    if (contextLines.length > 0) {
+                        const formattedContext = contextLines.map(line => `- ${line}`).join('\n');
+                        contextInstruction = `\n\n【指定背景條件】：\n請務必嚴格基於以下設定進行分析，不可與此衝突：\n${formattedContext}\n`;
                     } else {
                         contextInstruction = `\n\n【背景條件】：\n請自行根據關鍵字推論最合適的使用者畫像背景。\n`;
                     }
