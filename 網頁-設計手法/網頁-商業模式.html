@@ -25,21 +25,20 @@
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
             background-color: #f8fafc;
             color: #334155;
-            overflow-y: scroll; /* 保持垂直捲軸 */
-            overflow-x: hidden; /* 隱藏水平捲軸 */
+            overflow-y: scroll;
+            overflow-x: hidden;
         }
 
         /* BMC Grid Layout */
         .bmc-grid {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
-            /* 核心修正：使用 minmax，允許內容撐開高度 */
             grid-template-rows: repeat(3, minmax(180px, auto));
             gap: 0.5rem;
             background-color: #cbd5e1;
             border: 0.5rem solid #cbd5e1;
             border-radius: 0.5rem;
-            align-items: stretch; /* 讓格子高度跟隨 Row 的高度 */
+            align-items: stretch;
         }
 
         @media (max-width: 1024px) {
@@ -59,7 +58,6 @@
             flex-direction: column;
             position: relative;
             transition: background-color 0.2s;
-            /* 核心修正：移除 height: 100%，改用 min-height，讓格子可以被撐大 */
             min-height: 100%; 
             height: auto;
         }
@@ -75,7 +73,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            flex-shrink: 0; /* 防止標題被壓縮 */
+            flex-shrink: 0;
         }
         
         .bmc-icon {
@@ -84,20 +82,18 @@
             opacity: 0.7;
         }
 
-        /* 核心修正：Textarea 設定 */
         .bmc-textarea {
             width: 100%;
-            flex-grow: 1;     /* 填滿剩餘空間 */
-            resize: none;     /* 禁止手動拉 */
+            flex-grow: 1;
+            resize: none;
             border: none;
             outline: none;
-            overflow: hidden; /* 隱藏卷軸，由 autoResize 控制 */
+            overflow: hidden;
             background: transparent;
             min-height: 100px;
             display: block;
             line-height: 1.6;
             font-size: 0.95rem;
-            /* 避免 flex 容器導致的高度計算問題 */
             box-sizing: border-box;
         }
 
@@ -209,15 +205,14 @@
             transform: translateX(100%);
         }
 
-        /* 核心修正：畫面推移效果 */
+        /* Main Container Shift */
         #main-container {
             transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             width: 100%;
             box-sizing: border-box;
         }
-        /* 使用 padding-right 而非 margin，避免 width: auto 在 flex/block 下的跳動 */
         #main-container.shifted {
-            padding-right: 26rem; /* 24rem (sidebar) + 2rem (buffer) */
+            padding-right: 26rem;
         }
     </style>
 </head>
@@ -275,7 +270,7 @@
 
         <!-- Toolbar -->
         <div class="flex flex-wrap justify-center gap-3 mb-6">
-            <!-- AI Analysis (Always works if API Key is present) -->
+            <!-- AI Analysis -->
             <button onclick="toggleModal('ai-modal')" class="action-button primary-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09 3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
@@ -283,7 +278,7 @@
                 AI 智能分析
             </button>
             
-            <!-- Collaboration (Depends on Firebase) -->
+            <!-- Collaboration -->
             <button id="collab-setup-btn" onclick="checkAndToggleCollab()" class="action-button">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
@@ -312,7 +307,6 @@
         <!-- Canvas -->
         <div id="canvas-area" class="bmc-grid shadow-xl">
             <!-- 9 Blocks (kp, ka, kr, vp, cr, ch, cs, cost, revenue) -->
-            <!-- 每個 textarea 都添加了 oninput="autoResize(this)" -->
             <div class="bmc-cell area-kp" id="cell-kp">
                 <h3><svg class="bmc-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>關鍵合作夥伴 (KP)</h3>
                 <textarea class="bmc-textarea" placeholder="供應商、合作夥伴..." oninput="autoResize(this)"></textarea>
@@ -398,37 +392,73 @@
 
     <!-- Collaboration Modal -->
     <div id="collab-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md m-4 flex flex-col">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-slate-800">多人協作設定</h3>
-                <button onclick="toggleModal('collab-modal')" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md m-4 flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    多人協作設定
+                </h3>
+                <button onclick="toggleModal('collab-modal')" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
+            
             <div class="p-6">
+                <!-- Setup View -->
                 <div id="collab-setup-view">
-                    <p class="text-sm text-slate-600 mb-4">開啟協作模式後，您可以邀請他人即時共同編輯這份畫布。</p>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">設定編輯密碼 (選填)</label>
-                        <input type="text" id="collab-password-input" class="w-full p-2 border border-slate-300 rounded-md text-sm" placeholder="留空則所有人皆可編輯">
-                        <p class="text-xs text-slate-500 mt-1">若設定密碼，訪客需輸入密碼才能取得編輯權限，否則僅能檢視。</p>
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+                        <h4 class="font-bold text-blue-800 mb-1 text-sm">✨ 即時同步模式</h4>
+                        <p class="text-xs text-blue-600">建立一個專屬連結，邀請團隊成員加入。所有變更將即時同步。</p>
                     </div>
-                    <button onclick="startCollaboration()" class="w-full py-2 bg-green-600 text-white hover:bg-green-700 rounded-md font-medium">建立新協作畫布</button>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">權限設定</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                </div>
+                                <input type="text" id="collab-password-input" class="pl-9 w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="設定編輯密碼 (選填)">
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1.5 ml-1">
+                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 mr-1"></span>留空：所有人皆可編輯
+                                <br>
+                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 mr-1"></span>設定密碼：訪客需輸入密碼才可編輯 (否則唯讀)
+                            </p>
+                        </div>
+
+                        <button onclick="startCollaboration()" id="start-collab-btn" class="w-full py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                            <span>開始協作</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                        </button>
+                    </div>
                 </div>
-                <div id="collab-active-view" class="hidden">
-                    <div class="bg-green-50 border border-green-200 rounded-md p-3 mb-4 flex items-start gap-3">
-                        <svg class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <div><p class="text-sm font-bold text-green-800">協作已啟用</p><p class="text-xs text-green-700">您的畫布已上線。</p></div>
+
+                <!-- Active View (Waiting State) -->
+                <div id="collab-active-view" class="hidden text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">分享連結 (Session Link)</label>
+                    <h4 class="text-lg font-bold text-slate-800 mb-1">協作已啟用！</h4>
+                    <p class="text-sm text-slate-500 mb-6">您的畫布現在已上線，請將連結傳送給夥伴。</p>
+                    
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-left mb-6">
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">分享連結</label>
                         <div class="flex gap-2">
-                            <input type="text" id="share-link" readonly class="flex-1 p-2 bg-slate-100 border border-slate-300 rounded-md text-xs text-slate-600">
-                            <button onclick="copyLink()" class="px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-600 hover:bg-slate-50 text-sm">複製</button>
+                            <input type="text" id="share-link" readonly class="flex-1 p-2 bg-white border border-slate-300 rounded text-xs text-slate-600 select-all">
+                            <button onclick="copyLink()" class="px-3 py-2 bg-white border border-slate-300 rounded text-slate-700 hover:bg-slate-50 text-xs font-medium transition-colors">複製</button>
                         </div>
                     </div>
-                    <div id="password-display-area" class="mb-4 hidden">
-                         <label class="block text-sm font-medium text-slate-700 mb-1">編輯密碼</label>
-                         <code id="display-password" class="block p-2 bg-slate-100 rounded text-sm font-mono"></code>
+
+                    <div id="password-display-area" class="hidden bg-yellow-50 p-3 rounded-lg border border-yellow-100 text-left flex justify-between items-center">
+                         <div>
+                             <span class="block text-xs text-yellow-800 font-medium">編輯密碼</span>
+                             <code id="display-password" class="text-sm font-bold text-yellow-900 font-mono"></code>
+                         </div>
+                         <span class="text-xs text-yellow-600 px-2 py-1 bg-yellow-100 rounded">Admin</span>
                     </div>
+                    
+                    <button onclick="toggleModal('collab-modal')" class="mt-6 text-sm text-slate-500 hover:text-slate-700 underline">關閉視窗</button>
                 </div>
             </div>
         </div>
@@ -668,6 +698,12 @@
 
         async function startCollaboration() {
             if (!isFirebaseReady) return;
+            
+            const btn = document.getElementById('start-collab-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="spinner border-white/30 border-l-white w-4 h-4 mr-2"></div> 建立中...';
+            btn.disabled = true;
+
             const password = document.getElementById('collab-password-input').value.trim();
             const newSessionId = Math.random().toString(36).substring(2, 10);
             
@@ -692,6 +728,8 @@
                 await joinSession(newSessionId, true);
             } catch (err) {
                 alert("建立協作失敗: " + err.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 
