@@ -690,345 +690,6 @@
                 aspect-ratio: 1 / 1;
             }
             
-            /* 響應式：按鈕組轉為直向排列 */
-            .top-right-buttons {
-                top: 1rem;
-                right: 1rem;
-                flex-direction: column; /* 關鍵修改 */
-                gap: 0.5rem;
-            }
-            
-            .filter-section h3 {
-                font-size: 1rem;
-            }
-        }
-
-        #persona-image-preview {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-            border: 2px solid #ccc;
-            display: none;
-            /* 遮罩效果 */
-            -webkit-mask-image: url('剪影/女1.png');
-            mask-image: url('剪影/女1.png');
-            -webkit-mask-mode: alpha;
-            mask-mode: alpha;
-            -webkit-mask-size: 100% 100%;
-            mask-size: 100% 100%;
-            -webkit-mask-repeat: no-repeat;
-            mask-repeat: no-repeat;
-        }
-
-        .persona-card {
-            background-color: #ffffff;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .persona-card h3 {
-            font-size: 1.125rem; /* 18px */
-            font-weight: 600;
-            color: #1f2937; /* gray-800 */
-            margin-bottom: 1rem;
-        }
-        
-        .persona-card p {
-            font-size: 0.875rem;
-            color: #374151; /* gray-700 */
-            margin-bottom: 0.5rem;
-        }
-        
-        .persona-card .label {
-            font-weight: 600;
-            color: #4b5563; /* gray-600 */
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.25rem;
-        }
-        
-        /* ==================== 事件顯示區 ==================== */
-        #event-display {
-            background-color: #eff6ff; /* bg-blue-50 */
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            border: 1px solid #bfdbfe; /* border-blue-200 */
-            margin-bottom: 1.5rem;
-            display: none;
-        }
-        
-        #event-display h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 1rem;
-        }
-        
-        .event-keyword {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 0.75rem;
-            padding: 0.5rem;
-            background-color: #ffffff;
-            border-radius: 0.375rem;
-            text-align: center;
-        }
-        
-        .event-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-bottom: 0.75rem;
-            font-size: 0.875rem;
-        }
-        
-        .event-meta-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-        
-        .event-meta-label {
-            font-weight: 600;
-            color: #4b5563;
-            font-size: 0.875rem;
-        }
-        
-        .event-meta-value {
-            color: #1f2937;
-            font-size: 0.875rem;
-        }
-        
-        #event-text {
-            font-size: 0.875rem;
-            color: #1f2937;
-            line-height: 1.5;
-            background-color: #ffffff;
-            padding: 0.75rem;
-            border-radius: 0.375rem;
-        }
-        
-        /* ==================== 提示訊息 ==================== */
-        .info-message {
-            background-color: #eff6ff; /* bg-blue-50 */
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #bfdbfe;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: start;
-            gap: 0.75rem;
-        }
-        
-        .info-message svg {
-            width: 1.25rem;
-            height: 1.25rem;
-            color: #2563eb; /* text-blue-600 */
-            flex-shrink: 0;
-            margin-top: 0.125rem;
-        }
-        
-        .info-message p {
-            font-size: 0.875rem;
-            color: #1f2937;
-        }
-        
-        /* ==================== 彈窗樣式 ==================== */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 40;
-            backdrop-filter: blur(2px);
-        }
-        
-        .modal {
-            position: fixed;
-            inset: 0;
-            z-index: 41;
-            overflow-y: auto;
-        }
-        
-        .modal > div:not(.modal-overlay) {
-            position: relative;
-            z-index: 42;
-        }
-        
-        .modal.hidden {
-            display: none;
-        }
-        
-        .modal-content {
-            position: relative;
-            width: 100%;
-            max-width: 42rem; /* 672px */
-            background-color: #ffffff;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            max-height: 85vh;
-            overflow-y: auto;
-            margin: 2rem auto;
-            z-index: 50;
-        }
-        
-        .close-modal-button {
-            position: sticky;
-            top: -1rem;
-            right: -1rem;
-            float: right;
-            color: #9ca3af; /* text-gray-400 */
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.25rem;
-            transition: color 0.15s ease-in-out;
-            z-index: 51;
-        }
-        
-        .close-modal-button:hover {
-            color: #4b5563; /* hover:text-gray-600 */
-        }
-        
-        .close-modal-button svg {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
-        
-        .modal-content h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 1.5rem;
-        }
-        
-        .modal-content table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #e5e7eb;
-            margin-bottom: 1rem;
-        }
-        
-        .modal-content table td {
-            padding: 0.75rem;
-            border: 1px solid #e5e7eb;
-            vertical-align: top;
-        }
-        
-        .modal-content table td:first-child {
-            background-color: #f9fafb;
-            font-weight: 600;
-            width: 25%;
-        }
-        
-        .modal-content ol {
-            padding-left: 1.5rem;
-        }
-        
-        .modal-content ol li {
-            margin-bottom: 0.5rem;
-        }
-        
-        /* ==================== 設定面板樣式 ==================== */
-        .settings-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .settings-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 0.5rem;
-        }
-        
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .slider {
-            flex: 1;
-            height: 0.5rem;
-            border-radius: 0.25rem;
-            background: #e5e7eb;
-            outline: none;
-            appearance: none;
-            -webkit-appearance: none;
-        }
-        
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 1.25rem;
-            height: 1.25rem;
-            border-radius: 50%;
-            background: #2563eb;
-            cursor: pointer;
-        }
-        
-        .slider::-moz-range-thumb {
-            width: 1.25rem;
-            height: 1.25rem;
-            border-radius: 50%;
-            background: #2563eb;
-            cursor: pointer;
-            border: none;
-        }
-        
-        .slider-value {
-            min-width: 3rem;
-            text-align: center;
-            font-weight: 600;
-            color: #1f2937;
-        }
-        
-        /* ==================== 錯誤訊息 ==================== */
-        .error-message {
-            background-color: #fef2f2;
-            color: #991b1b;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #fecaca;
-            margin-bottom: 1.5rem;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        /* ==================== 響應式設計 ==================== */
-        @media (max-width: 1200px) {
-            .content-wrapper {
-                flex-direction: column;
-            }
-            
-            .right-sidebar {
-                width: 100%;
-            }
-            
-            .filters {
-                position: static;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-                padding-top: 5rem;
-            }
-            
-            #wordcloud-canvas {
-                max-width: 100%;
-                height: auto;
-                aspect-ratio: 1 / 1;
-            }
-            
             .top-right-buttons {
                 top: 1rem;
                 right: 1rem;
@@ -1182,6 +843,18 @@
                     </div>
                     <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">
                         調整詞雲中關鍵字的相對大小。
+                    </p>
+                </div>
+
+                <!-- 新增權重差異滑桿 -->
+                <div class="settings-group">
+                    <label for="weight-contrast-slider">權重差異 (對比度)</label>
+                    <div class="slider-container">
+                        <input type="range" id="weight-contrast-slider" class="slider" min="0.5" max="5.0" value="2.0" step="0.1">
+                        <span class="slider-value" id="weight-contrast-value">2.0</span>
+                    </div>
+                    <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">
+                        調整關鍵字大小的差異程度。數值越大，權重高的詞越大，權重低的詞越小。
                     </p>
                 </div>
 
@@ -1373,6 +1046,7 @@
 
             const BASE_FONT_SIZE = 80;
             let fontSizePercentage = 100;
+            let weightContrast = 2.0; // 新增權重差異變數，預設值 2.0
             let maskScale = 100;
 
             const fileInput = document.getElementById('file-input');
@@ -1405,6 +1079,8 @@
             const eventEmotions = document.getElementById('event-emotions');
             const fontSizeSlider = document.getElementById('font-size-slider');
             const fontSizeValue = document.getElementById('font-size-value');
+            const weightContrastSlider = document.getElementById('weight-contrast-slider'); // 新增滑桿
+            const weightContrastValue = document.getElementById('weight-contrast-value'); // 新增數值顯示
 
             const shapeSelect = document.getElementById('shape-select');
             const maskGallery = document.getElementById('mask-gallery');
@@ -1709,7 +1385,14 @@
                 const filteredData = masterData.filter(item=>{ const themeMatch = selectedThemes.includes('all') || selectedThemes.includes(item.theme); const emotionMatch = selectedEmotions.includes('all') || item.emotions.some(e=>selectedEmotions.includes(e)); return themeMatch && emotionMatch; });
                 const keywordDataMap = {}; filteredData.forEach(item=>{ keywordDataMap[item.keyword] = item; });
                 const maxFontSize = BASE_FONT_SIZE * (fontSizePercentage / 100);
-                const wordCloudList = filteredData.map(item=>{ const ratio = item.weight / globalMaxWeight; const adjustedWeight = Math.pow(ratio,2) * globalMaxWeight; return [item.keyword, adjustedWeight]; });
+                
+                // [修正] 引入 weightContrast 變數取代固定的平方 (2)
+                const wordCloudList = filteredData.map(item=>{ 
+                    const ratio = item.weight / globalMaxWeight; 
+                    const adjustedWeight = Math.pow(ratio, weightContrast) * globalMaxWeight; // 使用變數
+                    return [item.keyword, adjustedWeight]; 
+                });
+                
                 const weightFactor = globalMaxWeight > 0 ? maxFontSize / globalMaxWeight : 1;
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1763,6 +1446,15 @@
             document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click', function(){ const m=this.closest('.modal'); if(m) m.classList.add('hidden'); }));
 
             if (fontSizeSlider) fontSizeSlider.addEventListener('input', function(){ fontSizePercentage = parseInt(this.value,10); if (fontSizeValue) fontSizeValue.textContent = fontSizePercentage + '%'; if (masterData.length) renderWordCloud(); });
+            
+            // [新增] 權重差異滑桿事件監聽
+            if (weightContrastSlider) {
+                weightContrastSlider.addEventListener('input', function() {
+                    weightContrast = parseFloat(this.value);
+                    if (weightContrastValue) weightContrastValue.textContent = weightContrast.toFixed(1);
+                    if (masterData.length) renderWordCloud();
+                });
+            }
             
             function searchKeyword() {
                 const kw = eventKeywordInput.value.trim();
