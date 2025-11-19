@@ -8,6 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 載入 html2canvas (用於截圖) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Firebase SDKs (Compat version for v8 style usage) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <!-- 載入 Inter 字體 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -465,6 +469,18 @@
         #snap-line-v { width: 1px; height: 100%; top: 0; }
         #snap-line-h { height: 1px; width: 100%; left: 0; }
 
+        /* Status Indicator */
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        .status-connecting { background-color: #f59e0b; } /* Orange */
+        .status-connected { background-color: #22c55e; } /* Green */
+        .status-disconnected { background-color: #9ca3af; } /* Gray */
+
     </style>
 </head>
 <body class="bg-gray-100 overflow-hidden"> 
@@ -483,25 +499,30 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
             </svg>
-            匯入 JSON
+            匯入
         </button>
         <button id="export-btn" class="action-button">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
-            匯出 JSON
+            匯出
+        </button>
+        <button id="collab-btn" class="action-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+            </svg>
+            多人協作
+            <span class="status-indicator status-disconnected"></span>
         </button>
         <button id="screenshot-btn" class="action-button">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.5v8.25a2.31 2.31 0 0 1-1.641 2.175l-1.31.393M6.827 6.175L20.31 2.188a2.31 2.31 0 0 1 2.175 1.641l.393 1.31a2.31 2.31 0 0 1-1.641 2.175L6.827 9.175m0-3L6.827 9.175m13.483-3l-1.31.393a2.31 2.31 0 0 1-2.175 1.641l-1.31.393M6.827 6.175l.393 1.31a2.31 2.31 0 0 1-1.641 2.175L2.5 9.875m4.327-3.7l.393 1.31a2.31 2.31 0 0 1-1.641 2.175L2.5 9.875m17.813-1.641l.393 1.31a2.31 2.31 0 0 1-1.641 2.175l-1.31.393m0 0L20.31 2.188m0 0l-1.31.393m1.31-.393l.393 1.31m-1.31-.393l-1.31.393m0 0l-1.31.393m0 0l-1.31.393m12.12 10.875l-1.31.393a2.31 2.31 0 0 1-2.175 1.641l-1.31.393m0 0l-1.31.393a2.31 2.31 0 0 1-2.175 1.641l-1.31.393m0 0l-1.31.393a2.31 2.31 0 0 1-2.175 1.641l-1.31.393M6.827 21.175L20.31 17.188a2.31 2.31 0 0 1 2.175-1.641l.393-1.31a2.31 2.31 0 0 1-1.641-2.175L6.827 15.175m0 6l-1.31.393a2.31 2.31 0 0 1-2.175-1.641l-.393-1.31a2.31 2.31 0 0 1 1.641-2.175l1.31-.393m0 6l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m-12.12 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393M6.827 15.175l.393-1.31a2.31 2.31 0 0 1 1.641-2.175l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m-17.813 0l.393-1.31a2.31 2.31 0 0 1 1.641-2.175l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393m0 0l1.31-.393a2.31 2.31 0 0 1 2.175-1.641l1.31-.393" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.174a2.31 2.31 0 0 0-1.64 2.288v7.517A2.31 2.31 0 0 0 4.615 21h14.77a2.31 2.31 0 0 0 2.31-2.31v-7.517a2.31 2.31 0 0 0-1.64-2.288c-.377-.062-.754-.12-1.134-.174a2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.776 48.776 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.04l-.821 1.316Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" /></svg>
             截圖
         </button>
         <button id="clear-btn" class="action-button warning-button">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12.503 0l-.165.51a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0l-3.477-.397m-12.503 0l3.477.397m6.51 0l-3.477-.397M4.772 5.79L4.5 5.25m0 0l-.346-1.023a1.125 1.125 0 0 1 1.123-1.404h10.004a1.125 1.125 0 0 1 1.123 1.404l-.346 1.023m-1.715 0a48.108 48.108 0 0 0-3.478-.397m-4.788 0a48.108 48.108 0 0 1-3.478-.397" />
             </svg>
-            清空畫布
+            清空
         </button>
     </header>
 
@@ -741,8 +762,352 @@
     </div>
 
 
+    <!-- 協作設定視窗 -->
+    <div id="collab-modal" class="hidden fixed inset-0 z-[2000] overflow-y-auto">
+        <div class="fixed inset-0 w-full h-full bg-black/50 backdrop-blur-sm" id="collab-modal-overlay"></div>
+        <div class="flex items-center justify-center min-h-screen p-4 relative pointer-events-none">
+            <div class="relative w-full max-w-md bg-white p-6 rounded-lg shadow-xl pointer-events-auto">
+                <button id="collab-modal-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">即時協作</h2>
+                
+                <!-- 尚未加入 Session -->
+                <div id="collab-start-view">
+                    <p class="text-slate-600 mb-4">建立一個新的協作空間，邀請他人一起編輯。</p>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">設定編輯密碼 (選填)</label>
+                        <input type="password" id="collab-password-input" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="若留空則任何人皆可編輯">
+                    </div>
+                    <button id="create-session-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition-colors">
+                        建立新協作
+                    </button>
+                </div>
+
+                <!-- 已經在 Session 中 -->
+                <div id="collab-active-view" class="hidden">
+                    <div class="bg-green-50 text-green-800 p-3 rounded mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                        正在協作中
+                    </div>
+                    <p class="text-sm text-slate-600 mb-2">將此連結分享給協作者：</p>
+                    <div class="flex space-x-2 mb-4">
+                        <input type="text" id="share-link-input" class="flex-1 p-2 border border-slate-300 rounded bg-slate-50 text-slate-500 text-sm" readonly>
+                        <button id="copy-link-btn" class="bg-white border border-slate-300 text-slate-700 px-3 py-2 rounded hover:bg-slate-50">
+                            複製
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-400 text-center">Session ID: <span id="display-session-id"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 密碼驗證視窗 -->
+    <div id="password-modal" class="hidden fixed inset-0 z-[2010] overflow-y-auto">
+        <div class="fixed inset-0 w-full h-full bg-black/80 backdrop-blur-sm"></div>
+        <div class="flex items-center justify-center min-h-screen p-4 relative pointer-events-none">
+            <div class="relative w-full max-w-sm bg-white p-6 rounded-lg shadow-xl text-center pointer-events-auto">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">需要密碼</h3>
+                <p class="text-slate-600 mb-4">此協作空間受密碼保護，請輸入密碼以進行編輯。</p>
+                <input type="password" id="auth-password-input" class="w-full p-2 border border-slate-300 rounded mb-4 focus:ring-2 focus:ring-indigo-500" placeholder="輸入密碼">
+                <button id="auth-password-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700">
+                    確認
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Firebase Configuration & Global Variables ---
+            const firebaseConfig = {
+                apiKey: "AIzaSyDyB_rJ37rHW1uwpQNASlWc53AjsPwh2EE",
+                authDomain: "business-model-canvas-3da74.firebaseapp.com",
+                projectId: "business-model-canvas-3da74",
+                storageBucket: "business-model-canvas-3da74.firebasestorage.app",
+                messagingSenderId: "922978479250",
+                appId: "1:922978479250:web:22a62879f85a552da68a4b",
+                measurementId: "G-GTVB77BGRM"
+            };
+
+            const APP_ID = 'stk-tool-v1';
+            let db;
+            let auth;
+            let currentSessionId = null;
+            let unsubscribe = null;
+            let isReadOnly = false;
+            let localEditPassword = null;
+            let isFirebaseReady = false;
+            let updateTimeout = null; // For debouncing
+
+            // --- Firebase Initialization ---
+            try {
+                if (firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                db = firebase.firestore();
+                auth = firebase.auth();
+
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        isFirebaseReady = true;
+                        console.log("Firebase Auth Ready:", user.uid);
+                        
+                        // Check URL for session
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const session = urlParams.get('session');
+                        if (session && !currentSessionId) {
+                            await joinSession(session);
+                        }
+                    } else {
+                        await auth.signInAnonymously().catch(console.error);
+                    }
+                });
+            } catch (e) {
+                console.warn("Firebase init failed:", e);
+            }
+
+            // --- Collaboration UI Elements ---
+            const collabButton = document.getElementById('collab-btn');
+            // [NEW] 取得狀態燈號
+            const collabStatusIndicator = collabButton ? collabButton.querySelector('.status-indicator') : null;
+            
+            const collabModal = document.getElementById('collab-modal');
+            const collabModalOverlay = document.getElementById('collab-modal-overlay');
+            const collabModalCloseBtn = document.getElementById('collab-modal-close-btn');
+            const createSessionBtn = document.getElementById('create-session-btn');
+            const collabStartView = document.getElementById('collab-start-view');
+            const collabActiveView = document.getElementById('collab-active-view');
+            const shareLinkInput = document.getElementById('share-link-input');
+            const copyLinkBtn = document.getElementById('copy-link-btn');
+            const displaySessionId = document.getElementById('display-session-id');
+            
+            const passwordModal = document.getElementById('password-modal');
+            const authPasswordInput = document.getElementById('auth-password-input');
+            const authPasswordBtn = document.getElementById('auth-password-btn');
+
+            // [NEW] 更新連線狀態燈號
+            function updateCollabStatus(status) {
+                if (!collabStatusIndicator) return;
+                collabStatusIndicator.classList.remove('status-connecting', 'status-connected', 'status-disconnected');
+                collabStatusIndicator.classList.add(`status-${status}`);
+            }
+
+            // --- Collaboration Functions ---
+
+            // 1. Open Modal
+            if (collabButton) {
+                collabButton.addEventListener('click', () => {
+                    collabModal.classList.remove('hidden');
+                    if (currentSessionId) {
+                        collabStartView.classList.add('hidden');
+                        collabActiveView.classList.remove('hidden');
+                        shareLinkInput.value = window.location.href;
+                        displaySessionId.textContent = currentSessionId;
+                    } else {
+                        collabStartView.classList.remove('hidden');
+                        collabActiveView.classList.add('hidden');
+                    }
+                });
+            }
+
+            // 2. Close Modal
+            const closeCollabModal = () => collabModal.classList.add('hidden');
+            if (collabModalOverlay) collabModalOverlay.addEventListener('click', closeCollabModal);
+            if (collabModalCloseBtn) collabModalCloseBtn.addEventListener('click', closeCollabModal);
+
+            // 3. Create Session
+            if (createSessionBtn) {
+                createSessionBtn.addEventListener('click', async () => {
+                    if (!isFirebaseReady) {
+                        alert("Firebase 尚未連線，請檢查設定。");
+                        return;
+                    }
+                    
+                    const password = document.getElementById('collab-password-input').value.trim();
+                    createSessionBtn.disabled = true;
+                    createSessionBtn.textContent = "建立中...";
+
+                    try {
+                        const newSessionId = Math.random().toString(36).substring(2, 10);
+                        
+                        // Gather current state
+                        const currentState = getCurrentState();
+                        const initialData = {
+                            created: firebase.firestore.FieldValue.serverTimestamp(),
+                            editPassword: password || null,
+                            boardData: JSON.stringify(currentState)
+                        };
+
+                        await db.collection('artifacts').doc(APP_ID)
+                            .collection('public').doc('data')
+                            .collection('sessions').doc(newSessionId)
+                            .set(initialData);
+
+                        localEditPassword = password;
+                        await joinSession(newSessionId, true);
+                        
+                        // Update UI
+                        collabStartView.classList.add('hidden');
+                        collabActiveView.classList.remove('hidden');
+                        shareLinkInput.value = window.location.href;
+                        displaySessionId.textContent = newSessionId;
+                        createSessionBtn.disabled = false;
+                        createSessionBtn.textContent = "建立新協作";
+
+                    } catch (err) {
+                        console.error("Error creating session:", err);
+                        alert("建立失敗：" + err.message);
+                        createSessionBtn.disabled = false;
+                        createSessionBtn.textContent = "建立新協作";
+                    }
+                });
+            }
+
+            // 4. Join Session
+            async function joinSession(sessionId, justCreated = false) {
+                updateCollabStatus('connecting');
+                currentSessionId = sessionId;
+                
+                // Update URL
+                const newUrl = `${window.location.pathname}?session=${sessionId}`;
+                window.history.pushState({path: newUrl}, '', newUrl);
+
+                // Change button style
+                if (collabButton) collabButton.classList.add('bg-indigo-50', 'border-indigo-400');
+
+                if (unsubscribe) unsubscribe();
+
+                unsubscribe = db.collection('artifacts').doc(APP_ID)
+                    .collection('public').doc('data')
+                    .collection('sessions').doc(sessionId)
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            updateCollabStatus('connected');
+                            const data = doc.data();
+
+                            // Check Password / ReadOnly
+                            if (!justCreated && !localEditPassword && data.editPassword && !isReadOnly) {
+                                passwordModal.classList.remove('hidden');
+                            }
+
+                            // Sync Data
+                            if (data.boardData) {
+                                // Avoid syncing if user is actively interacting (dragging/resizing)
+                                if (isDraggingNote || isDrawingLine || isPanning || isMarqueeing) {
+                                    // Skip this update to prevent jumping
+                                    return;
+                                }
+                                
+                                // Also check if active element is editable
+                                if (document.activeElement && document.activeElement.isContentEditable) {
+                                    return;
+                                }
+
+                                try {
+                                    const remoteState = JSON.parse(data.boardData);
+                                    // Compare with current state to avoid unnecessary redraws?
+                                    // For now, just restore.
+                                    restoreState(remoteState);
+                                    // Update history to avoid "undo" reverting to pre-sync state immediately?
+                                    // Actually, we should probably clear history or append?
+                                    // Let's just set it as the latest state.
+                                    history = [remoteState];
+                                    historyPointer = 0;
+                                } catch (e) {
+                                    console.error("Failed to parse remote board data", e);
+                                }
+                            }
+                        } else {
+                            alert("此協作 Session 不存在或已被刪除。");
+                            currentSessionId = null;
+                            updateCollabStatus('disconnected');
+                        }
+                    }, (error) => {
+                        console.error("Sync error:", error);
+                        updateCollabStatus('disconnected');
+                    });
+            }
+
+            // 5. Password Auth
+            if (authPasswordBtn) {
+                authPasswordBtn.addEventListener('click', () => {
+                    const inputPwd = authPasswordInput.value.trim();
+                    db.collection('artifacts').doc(APP_ID)
+                        .collection('public').doc('data')
+                        .collection('sessions').doc(currentSessionId)
+                        .get().then(doc => {
+                            if (doc.exists && doc.data().editPassword === inputPwd) {
+                                localEditPassword = inputPwd;
+                                passwordModal.classList.add('hidden');
+                                isReadOnly = false;
+                                // Trigger a sync to get latest data
+                                joinSession(currentSessionId);
+                            } else {
+                                alert("密碼錯誤");
+                            }
+                        });
+                });
+            }
+
+            // 6. Copy Link
+            if (copyLinkBtn) {
+                copyLinkBtn.addEventListener('click', () => {
+                    shareLinkInput.select();
+                    document.execCommand('copy');
+                    copyLinkBtn.textContent = "已複製";
+                    setTimeout(() => copyLinkBtn.textContent = "複製", 2000);
+                });
+            }
+
+            // 7. Debounced Update Function
+            function updateFirestoreDebounced(state) {
+                if (!db || !isFirebaseReady || !currentSessionId) return;
+                if (isReadOnly) return;
+
+                if (updateTimeout) clearTimeout(updateTimeout);
+
+                updateTimeout = setTimeout(() => {
+                    db.collection('artifacts').doc(APP_ID)
+                        .collection('public').doc('data')
+                        .collection('sessions').doc(currentSessionId)
+                        .update({
+                            boardData: JSON.stringify(state)
+                        }).catch(err => {
+                            console.error("Update failed:", err);
+                        });
+                }, 500);
+            }
+
+            // Helper to get current state (extracted from saveState)
+            function getCurrentState() {
+                const notesState = [];
+                board.querySelectorAll('.sticky-note').forEach(note => {
+                    const editable = note.querySelector('.editable');
+                    notesState.push({
+                        id: note.id,
+                        x: parseFloat(note.style.left),
+                        y: parseFloat(note.style.top),
+                        isTitle: note.classList.contains('note-title'),
+                        color: note.dataset.color,
+                        content: editable ? editable.innerHTML : '',
+                        isGroup: note.classList.contains('group-container'),
+                        width: note.style.width || null,
+                        height: note.style.height || null
+                    });
+                });
+                return {
+                    notes: notesState,
+                    connections: connections,
+                    settings: {
+                        fontSize: currentFontSize,
+                        minHeight: currentMinHeight
+                    }
+                };
+            }
+
             const board = document.getElementById('board');
             const boardContainer = document.getElementById('board-container');
             const contextMenu = document.getElementById('context-menu');
@@ -1968,6 +2333,9 @@
                 history = history.slice(0, historyPointer + 1);
                 history.push(currentState);
                 historyPointer++;
+
+                // [NEW] Firebase Sync
+                updateFirestoreDebounced(currentState);
             }
             function restoreState(state) {
                 if (!state) return;
@@ -2202,4 +2570,3 @@
     </script>
 </body>
 </html>
-
