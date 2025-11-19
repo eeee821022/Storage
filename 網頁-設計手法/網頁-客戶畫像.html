@@ -68,34 +68,40 @@
             color: #4b5563; /* gray-600 */
         }
         
-        /* ==================== 右上角按鈕組 ==================== */
+        /* ==================== 右上角按鈕組 (修正版) ==================== */
         .top-right-buttons {
             position: fixed;
             top: 1.5rem;
-            right: 5.75rem;
+            right: 1.5rem;
             z-index: 50;
             display: flex;
+            flex-direction: row; /* 預設橫向排列 */
             gap: 0.75rem;
+            align-items: center;
         }
 
-        #upload-button {
-            margin-left: 0rem;
-            margin-right: 0.5rem;
-        }
-        
+        /* 統一樣式，移除個別定位 */
         .icon-button {
+            position: relative; /* 讓父層 flex 控制位置 */
             background-color: #ffffff;
-            padding: 0.75rem;
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 9999px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             color: #2563eb;
-            transition: background-color 0.15s ease-in-out;
+            transition: all 0.15s ease-in-out;
             border: none;
             cursor: pointer;
+            padding: 0;
+            margin: 0; /* 清除預設邊距 */
         }
         
         .icon-button:hover {
             background-color: #eff6ff;
+            transform: translateY(-1px);
         }
         
         .icon-button svg {
@@ -103,36 +109,6 @@
             height: 1.5rem;
             display: block;
         }
-
-        .floating-action-button {
-            position: fixed;
-            padding: 0.75rem;
-            border-radius: 9999px;
-            background-color: #ffffff;
-            color: #2563eb;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.2s ease;
-            z-index: 60;
-        }
-
-        .floating-action-button:hover {
-            background-color: #eff6ff;
-            transform: translateY(-1px);
-        }
-
-        .floating-action-button svg {
-            width: 1.5rem;
-            height: 1.5rem;
-            display: block;
-        }
-
-        #help-button {
-            top: 1.5rem;
-            right: 1.5rem;
-        }
-
         
         /* 隱藏的檔案輸入 */
         #file-input {
@@ -626,7 +602,8 @@
         .mask-actions {
             display: flex;
             gap: 0.5rem;
-            margin-top: 0.75rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
             flex-wrap: wrap;
         }
 
@@ -648,7 +625,8 @@
         }
 
         .mask-list-status {
-            margin-top: 0.5rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
             font-size: 0.75rem;
             color: #6b7280;
         }
@@ -712,25 +690,16 @@
                 aspect-ratio: 1 / 1;
             }
             
+            /* 響應式：按鈕組轉為直向排列 */
             .top-right-buttons {
-                top: 4.5rem;
+                top: 1rem;
                 right: 1rem;
-                flex-direction: column;
-                align-items: flex-end;
+                flex-direction: column; /* 關鍵修改 */
+                gap: 0.5rem;
             }
             
             .filter-section h3 {
                 font-size: 1rem;
-            }
-
-            #help-button {
-                top: 1rem;
-                right: 1rem;
-            }
-
-            #book-help-button {
-                right: 1rem;
-                bottom: 1rem;
             }
         }
 
@@ -901,7 +870,7 @@
             padding: 2rem;
             border-radius: 0.5rem;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            max-height: 80vh;
+            max-height: 85vh;
             overflow-y: auto;
             margin: 2rem auto;
             z-index: 50;
@@ -1063,6 +1032,8 @@
             .top-right-buttons {
                 top: 1rem;
                 right: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
             }
             
             .filter-section h3 {
@@ -1073,6 +1044,7 @@
 </head>
 <body>
     <!-- 右上角按鈕組 -->
+    <!-- 修正：將所有操作按鈕放入同一個容器，以便統一管理排版 -->
     <div class="top-right-buttons">
         <button id="upload-button" class="icon-button" title="上傳 CSV 檔案">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -1086,14 +1058,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
             </svg>
         </button>
-        <!-- mask/shape controls moved to bottom-right panel -->
-    </div>
 
-    <button id="help-button" class="floating-action-button" title="查看使用說明" aria-label="查看使用說明">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-        </svg>
-    </button>
+        <button id="help-button" class="icon-button" title="查看使用說明" aria-label="查看使用說明">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+            </svg>
+        </button>
+    </div>
 
     <input type="file" id="file-input" accept=".csv" />
 
@@ -1233,13 +1204,16 @@
                     <p style="font-size:0.75rem;color:#6b7280;margin-bottom:0.5rem;">
                         從「剪影」資料夾的 PNG 圖片中挑選遮罩。新增檔案後可按「重新載入」更新清單。
                     </p>
-                    <div id="mask-gallery" class="mask-gallery"></div>
+                    
+                    <!-- Buttons moved above the gallery -->
                     <div class="mask-actions">
                         <button id="open-silhouette-btn">剪影選單</button>
                         <button id="reload-mask-btn">重新載入</button>
                         <button id="clear-mask-btn">清除</button>
                     </div>
                     <div id="mask-list-status" class="mask-list-status"></div>
+                    
+                    <div id="mask-gallery" class="mask-gallery"></div>
                     
                     <!-- Preview and Info -->
                     <div id="mask-preview-container" style="display:none;margin-top:0.5rem;padding:0.5rem;background:#f9fafb;border-radius:0.375rem;border:1px solid #e5e7eb;">
@@ -1388,6 +1362,8 @@
                 const GITHUB_RAW_PATH = 'https://raw.githubusercontent.com/eeee821022/Storage/main/網頁-設計手法/剪影/';
                 window.MASK_ASSET_BASE = GITHUB_RAW_PATH;
                 window.MASK_LIST_FILENAME = window.MASK_LIST_FILENAME || 'mask-list.json';
+                // 新增 CSV 範本路徑
+                window.DEFAULT_CSV_URL = GITHUB_RAW_PATH + '範本.csv';
             })();
             window.addEventListener('load', function () {
             let masterData = [];
@@ -1813,47 +1789,98 @@
                 }
             });
 
-            // CSV parsing & full data processing
-            function handleFileUpload(e){ const file = e.target.files[0]; if(!file) return; hideError(); Papa.parse(file,{ header:true, skipEmptyLines:true, complete: function(results){ try{ if(!results.data || results.data.length===0){ showError('CSV 檔案為空'); return; } masterData = []; globalMaxWeight = 0; uniqueThemes.clear(); uniqueEmotions.clear();
-                results.data.forEach(row=>{ if(!row['關鍵字1'] && !row['關鍵字2']) return;
-                    const themeEn = row['主題/情境']||''; const themeCn = themeMap.get(themeEn) || themeEn;
-                    const emotionsEnRaw = row['情緒/態度']||''; const emotionsEnList = emotionsEnRaw.split(',').map(e=>e.trim()); const emotionsCnList = emotionsEnList.map(e=>emotionMap.get(e)||e);
-                    const event = row['事件']||''; const weightStr = row['權重']||'0%'; const weight = Math.max(0.01, parseFloat(weightStr.toString().replace('%',''))/100 || 0.01);
-                    uniqueThemes.add(themeCn); emotionsCnList.forEach(e=>uniqueEmotions.add(e));
-                    if(weight > globalMaxWeight) globalMaxWeight = weight;
-                    if(row['關鍵字1']) masterData.push({keyword: row['關鍵字1'].trim(), weight: weight, theme: themeCn, emotions: emotionsCnList, event: event});
-                    if(row['關鍵字2']) masterData.push({keyword: row['關鍵字2'].trim(), weight: weight, theme: themeCn, emotions: emotionsCnList, event: event});
-                });
-                if(masterData.length === 0){ showError('無有效的關鍵字資料'); return; }
-                if(infoBox) infoBox.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:1.5rem;height:1.5rem;display:inline;margin-right:0.5rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg><p style="display:inline;">成功載入 '+ masterData.length + ' 個關鍵字！</p>';
-                if(filtersContainer) filtersContainer.classList.remove('hidden');
-                if(wordcloudContainer) wordcloudContainer.classList.remove('hidden');
-                if(eventDisplay) eventDisplay.style.display='block';
-                populateFilters(); setupCanvas(); renderWordCloud();
-
-                // New code to handle persona image as mask
-                const personaImageFile = document.getElementById('persona-image-upload')?.files[0];
-                if (personaImageFile) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const img = new Image();
-                        img.onload = function() {
-                            const generatedMask = generateMaskFromImage(img, 180);
-                            generatedMask.onload = function() {
-                                window.wordcloudMaskImage = generatedMask;
-                                updateMaskPreview(generatedMask);
-                                showMaskInfo({ hasTransparency: true, width: generatedMask.naturalWidth, height: generatedMask.naturalHeight, note: '來自客戶畫像' });
-                                renderWordCloud();
-                            };
-                        };
-                        img.src = event.target.result;
-                    };
-                    reader.readAsDataURL(personaImageFile);
+            // [重構] 抽取出共用的 CSV 資料處理邏輯
+            function processCSVData(results) {
+                try {
+                    if (!results.data || results.data.length === 0) {
+                        showError('CSV 檔案為空');
+                        return;
+                    }
+                    masterData = [];
+                    globalMaxWeight = 0;
+                    uniqueThemes.clear();
+                    uniqueEmotions.clear();
+                    
+                    results.data.forEach(row => {
+                        if (!row['關鍵字1'] && !row['關鍵字2']) return;
+                        const themeEn = row['主題/情境'] || '';
+                        const themeCn = themeMap.get(themeEn) || themeEn;
+                        const emotionsEnRaw = row['情緒/態度'] || '';
+                        const emotionsEnList = emotionsEnRaw.split(',').map(e => e.trim());
+                        const emotionsCnList = emotionsEnList.map(e => emotionMap.get(e) || e);
+                        const event = row['事件'] || '';
+                        const weightStr = row['權重'] || '0%';
+                        const weight = Math.max(0.01, parseFloat(weightStr.toString().replace('%', '')) / 100 || 0.01);
+                        
+                        uniqueThemes.add(themeCn);
+                        emotionsCnList.forEach(e => uniqueEmotions.add(e));
+                        
+                        if (weight > globalMaxWeight) globalMaxWeight = weight;
+                        
+                        if (row['關鍵字1']) masterData.push({keyword: row['關鍵字1'].trim(), weight: weight, theme: themeCn, emotions: emotionsCnList, event: event});
+                        if (row['關鍵字2']) masterData.push({keyword: row['關鍵字2'].trim(), weight: weight, theme: themeCn, emotions: emotionsCnList, event: event});
+                    });
+                    
+                    if (masterData.length === 0) {
+                        showError('無有效的關鍵字資料');
+                        return;
+                    }
+                    
+                    if (infoBox) infoBox.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:1.5rem;height:1.5rem;display:inline;margin-right:0.5rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg><p style="display:inline;">成功載入 ' + masterData.length + ' 個關鍵字！</p>';
+                    if (filtersContainer) filtersContainer.classList.remove('hidden');
+                    if (wordcloudContainer) wordcloudContainer.classList.remove('hidden');
+                    if (eventDisplay) eventDisplay.style.display = 'block';
+                    populateFilters();
+                    setupCanvas();
+                    renderWordCloud();
+                } catch (err) {
+                    console.error(err);
+                    showError('處理資料時發生錯誤：' + (err.message || err));
                 }
+            }
 
-            }catch(err){ console.error(err); showError('處理資料時發生錯誤：' + (err.message||err)); } }, error: function(err){ showError('CSV 解析失敗：'+(err.message||err)); } }); }
+            // 原始的上傳處理函數，改為呼叫 processCSVData
+            function handleFileUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                hideError();
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: processCSVData,
+                    error: function (err) {
+                        showError('CSV 解析失敗：' + (err.message || err));
+                    }
+                });
+            }
+            
+            // [新增] 自動載入預設 CSV 功能
+            async function loadDefaultCSV() {
+                if(infoBox) infoBox.innerHTML = '<p>正在載入範本資料...</p>';
+                try {
+                    const response = await fetch(window.DEFAULT_CSV_URL);
+                    if (!response.ok) throw new Error('無法下載範本檔案');
+                    const csvText = await response.text();
+                    
+                    Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: processCSVData,
+                        error: function (err) {
+                            showError('範本 CSV 解析失敗：' + (err.message || err));
+                        }
+                    });
+                } catch (err) {
+                    console.error(err);
+                    // 如果自動載入失敗，顯示預設提示
+                    if(infoBox) infoBox.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:1.5rem;height:1.5rem;display:inline;margin-right:0.5rem;"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg><p>自動載入範本失敗，請點擊右上角的「上傳」按鈕來上傳您的 CSV 檔案。</p>';
+                }
+            }
 
             window.addEventListener('resize', function(){ if (masterData.length) { setupCanvas(); renderWordCloud(); } });
+
+            // 啟動時自動載入
+            loadDefaultCSV();
         });
     </script>
     <!-- 遮罩 / 形狀控制面板（固定右下角，位於書本按鈕上方） -->
