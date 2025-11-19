@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>親和圖法 (Affinity Diagram) 工具</title>
+    <title>便條子法 (Affinity Diagram) 工具</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 載入 html2canvas (用於截圖) -->
@@ -26,6 +26,8 @@
             background-color: #f1f5f9;
             transition: transform 0.1s linear;
             position: relative;
+            /* [FIX] 修正縮放原點為左上角，解決縮放後定位跑掉的問題 */
+            transform-origin: 0 0;
         }
 
         #board-svg {
@@ -583,7 +585,7 @@
     <div class="top-right-buttons">
         <button id="settings-button" class="icon-button" title="設定">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.108 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.11v1.093c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.142.854.108 1.204l.527.738c.32.447.27.96-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.108-.398.165-.71.505-.78.93l-.15.893c-.09.543-.56.94-1.11.94h-1.094c-.55 0-1.019-.397-1.11-.94l-.149-.893c-.07-.425-.383-.765-.78-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-.96.27-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.11v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.764-.383.93-.78.165-.398.142-.854-.108-1.204l-.527-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.108.397-.165.71-.505.78-.93l.15-.893zM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.108 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.11v1.093c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.142.854.108 1.204l-.527.738c.32.447.27.96-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.108-.398.165-.71.505-.78.93l-.15.893c-.09.543-.56.94-1.11.94h-1.094c-.55 0-1.019-.397-1.11-.94l-.149-.893c-.07-.425-.383-.765-.78-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-.96.27-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.11v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.764-.383.93-.78.165-.398.142-.854-.108-1.204l-.527-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.108.397-.165.71-.505.78-.93l.15-.893zM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5z" />
             </svg>
         </button>
     </div>
@@ -606,7 +608,7 @@
                 </button>
 
                 <div class="space-y-4">
-                    <h2 class="text-2xl font-bold text-slate-800">方法介紹：親和圖法 (Affinity Diagram / KJ 法)</h2>
+                    <h2 class="text-2xl font-bold text-slate-800">方法介紹：便條子法 (Affinity Diagram / KJ 法)</h2>
                     <div class="prose max-w-none text-slate-700">
                         <table class="w-full border-collapse border border-slate-200">
                             <tbody class="align-baseline">
@@ -620,7 +622,7 @@
                                 </tr>
                                 <tr class="border-b border-slate-200">
                                     <td class="p-3 bg-slate-50 font-semibold">解決的核心問題</td>
-                                    <td class="p-3">當你面對一大堆看似混亂、零散的質化數據（例如：上百張的便利貼、訪談逐字稿、腦力激盪的點子），感到不知所措時。親和圖法能幫助團隊綜觀與收斂、發掘模式，並建立共識。</td>
+                                    <td class="p-3">當你面對一大堆看似混亂、零散的質化數據（例如：上百張的便利貼、訪談逐字稿、腦力激盪的點子），感到不知所措時。便條子法能幫助團隊綜觀與收斂、發掘模式，並建立共識。</td>
                                 </tr>
                                 <tr class="border-b border-slate-200">
                                     <td class="p-3 bg-slate-50 font-semibold">最佳使用時機</td>
@@ -882,12 +884,14 @@
                         boardContainer.style.cursor = 'grabbing';
                     } else if (e.button === 0) { 
                         isMarqueeing = true;
-                        const { x, y } = getBoardCoordinates(e.clientX, e.clientY, true); 
-                        marqueeStartX = e.clientX;
+                        // [FIX] 使用 getBoardCoordinates 取得正確的世界座標，修正縮放後的框選起始點錯誤
+                        const { x: worldX, y: worldY } = getBoardCoordinates(e.clientX, e.clientY);
+                        marqueeStartX = e.clientX; // 保留 ClientX 用於計算寬高
                         marqueeStartY = e.clientY;
                         
-                        selectionBox.style.left = `${(marqueeStartX - panX) / scale}px`;
-                        selectionBox.style.top = `${(marqueeStartY - panY) / scale}px`;
+                        // 使用世界座標設置起始位置
+                        selectionBox.style.left = `${worldX}px`;
+                        selectionBox.style.top = `${worldY}px`;
                         selectionBox.style.width = '0px';
                         selectionBox.style.height = '0px';
                         selectionBox.style.display = 'block';
@@ -935,19 +939,30 @@
                 if (isMarqueeing) {
                     isMarqueeing = false;
                     selectionBox.style.display = 'none';
-                    const rect = selectionBox.getBoundingClientRect();
-                    const boardRect = boardContainer.getBoundingClientRect();
-                    const selLeft = (parseFloat(selectionBox.style.left) * scale) + panX + boardRect.left;
-                    const selTop = (parseFloat(selectionBox.style.top) * scale) + panY + boardRect.top;
-                    const selRight = selLeft + (parseFloat(selectionBox.style.width) * scale);
-                    const selBottom = selTop + (parseFloat(selectionBox.style.height) * scale);
+                    
+                    // [FIX] 改用世界座標 (World Coordinates) 進行碰撞檢測
+                    // 這樣可以完全排除縮放 (scale) 和平移 (pan) 帶來的計算誤差
+                    const selLeft = parseFloat(selectionBox.style.left);
+                    const selTop = parseFloat(selectionBox.style.top);
+                    const selWidth = parseFloat(selectionBox.style.width);
+                    const selHeight = parseFloat(selectionBox.style.height);
+                    const selRight = selLeft + selWidth;
+                    const selBottom = selTop + selHeight;
 
                     board.querySelectorAll('.sticky-note').forEach(note => {
-                        const noteRect = note.getBoundingClientRect();
-                        const isOverlapping = !(noteRect.right < selLeft || 
-                                              noteRect.left > selRight || 
-                                              noteRect.bottom < selTop || 
-                                              noteRect.top > selBottom);
+                        // 取得卡片的世界座標
+                        const noteLeft = parseFloat(note.style.left);
+                        const noteTop = parseFloat(note.style.top);
+                        // 使用 offsetWidth/Height 取得卡片實際大小 (不含 scale)
+                        const noteRight = noteLeft + note.offsetWidth;
+                        const noteBottom = noteTop + note.offsetHeight;
+
+                        // 判斷是否重疊 (AABB collision detection)
+                        const isOverlapping = !(noteRight < selLeft || 
+                                              noteLeft > selRight || 
+                                              noteBottom < selTop || 
+                                              noteTop > selBottom);
+                        
                         if (isOverlapping) {
                             addNoteToSelection(note);
                         }
