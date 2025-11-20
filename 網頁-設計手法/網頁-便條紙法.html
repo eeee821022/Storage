@@ -57,6 +57,10 @@
             stroke-width: 4px; /* [FIX] hover 時加粗方便點擊 */
             stroke: #3b82f6; /* blue-500 */
         }
+        .connection-line.selected {
+            stroke: #ef4444; /* red-500 選取狀態為紅色 */
+            stroke-width: 3px;
+        }
 
         #temp-line {
             stroke: #3b82f6; /* blue-500 */
@@ -1311,6 +1315,9 @@
             // [NEW] 複製貼上剪貼簿 (Req 1)
             let clipboard = [];
             
+            // [NEW] 選取的關連線
+            let selectedConnection = null;
+            
             // [NEW] 設定的狀態變數
             let currentFontSize = 14;
             let currentMinHeight = 100;
@@ -1503,6 +1510,13 @@
                             return;
                         }
                         
+                        // 刪除選取的關連線
+                        if (selectedConnection) {
+                            e.preventDefault();
+                            deleteSelectedConnection();
+                            return;
+                        }
+                        
                         // 刪除選取的便利貼
                         if (selectedNotes.length > 0) {
                             e.preventDefault();
@@ -1604,6 +1618,7 @@
                 if (e.target === boardContainer || e.target === board) {
                     if (!isMarqueeing) {
                         clearSelection();
+                        clearConnectionSelection(); // [NEW] 清除關連線選取
                     }
                 }
             });
@@ -2564,6 +2579,12 @@
                     path.setAttribute('class', 'connection-line');
                     path.dataset.connId = conn.id;
                     
+                    // [NEW] 添加點擊選取關連線的事件
+                    path.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectConnection(conn.id);
+                    });
+                    
                     path.addEventListener('dblclick', (e) => {
                         e.stopPropagation();
                         if (!conn.label) {
@@ -2710,6 +2731,54 @@
                     if (labelEl) labelEl.remove();
                 });
                 connections = connections.filter(conn => conn.fromId !== note.id && conn.toId !== note.id);
+            }
+            
+            // [NEW] 選取關連線
+            function selectConnection(connId) {
+                // 清除之前選取的關連線
+                if (selectedConnection) {
+                    const oldPath = boardSvg.querySelector(`[data-conn-id="${selectedConnection}"]`);
+                    if (oldPath) oldPath.classList.remove('selected');
+                }
+                
+                // 清除選取的便利貼
+                clearSelection();
+                
+                // 選取新的關連線
+                selectedConnection = connId;
+                const path = boardSvg.querySelector(`[data-conn-id="${connId}"]`);
+                if (path) path.classList.add('selected');
+            }
+            
+            // [NEW] 清除關連線選取
+            function clearConnectionSelection() {
+                if (selectedConnection) {
+                    const path = boardSvg.querySelector(`[data-conn-id="${selectedConnection}"]`);
+                    if (path) path.classList.remove('selected');
+                    selectedConnection = null;
+                }
+            }
+            
+            // [NEW] 刪除選取的關連線
+            function deleteSelectedConnection() {
+                if (!selectedConnection) return;
+                
+                const conn = connections.find(c => c.id === selectedConnection);
+                if (!conn) return;
+                
+                // 移除 SVG 路徑
+                const path = boardSvg.querySelector(`[data-conn-id="${selectedConnection}"]`);
+                if (path) path.remove();
+                
+                // 移除標籤
+                const labelEl = document.getElementById(`label_${selectedConnection}`);
+                if (labelEl) labelEl.remove();
+                
+                // 從連接陣列中移除
+                connections = connections.filter(c => c.id !== selectedConnection);
+                
+                selectedConnection = null;
+                saveState();
             }
 
             // --- 座標轉換 ---
