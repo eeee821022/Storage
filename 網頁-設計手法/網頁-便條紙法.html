@@ -698,7 +698,7 @@
         <button data-action="delete-lines" title="移除關聯線" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-gray-700">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
         </button>
-        <button data-action="delete" title="刪除" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-red-500">
+        <button data-action="delete" title="刪除" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-red-500" id="note-delete-btn">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
         </button>
     </div>
@@ -1709,6 +1709,19 @@
                     });
                     editable.addEventListener('blur', () => {
                         editable.contentEditable = false;
+                        
+                        // [NEW] 如果是插入文字節點且內容為空，自動刪除
+                        if (note.dataset.isTextNode === 'true') {
+                            const text = editable.innerText.trim();
+                            if (text === '' || text === '輸入文字') {
+                                removeConnectionsForNote(note);
+                                note.remove();
+                                removeNoteFromSelection(note);
+                                saveState();
+                                return;
+                            }
+                        }
+                        
                         saveState();
                     });
                 }
@@ -2157,11 +2170,29 @@
                     note.classList.remove('selected', 'single-select');
                 });
                 selectedNotes = [];
+                clearConnectionSelection(); // [FIX] 同時清除關連線選取
                 updateToolbarStates();
             }
 
             // --- 工具列管理 ---
             function updateToolbarStates() {
+                // [FIX] 根據選取類型顯示/隱藏工具列按鈕
+                const titleBtn = contextMenu.querySelector('[data-action="title"]');
+                const deleteLinesBtn = contextMenu.querySelector('[data-action="delete-lines"]');
+                const deleteBtn = contextMenu.querySelector('#note-delete-btn');
+                
+                if (window.selectedLabel) {
+                    // 選取標籤時，隱藏「標題」、「移除關連線」和「刪除」按鈕
+                    if (titleBtn) titleBtn.style.display = 'none';
+                    if (deleteLinesBtn) deleteLinesBtn.style.display = 'none';
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                } else {
+                    // 選取便利貼時，顯示所有按鈕
+                    if (titleBtn) titleBtn.style.display = '';
+                    if (deleteLinesBtn) deleteLinesBtn.style.display = '';
+                    if (deleteBtn) deleteBtn.style.display = '';
+                }
+                
                 if (selectedNotes.length === 1) {
                     const note = selectedNotes[0];
                     note.classList.add('single-select');
@@ -2254,16 +2285,7 @@
                             drawConnectionLabel(conn); 
                             stateChanged = true;
                         }
-                        if (action === 'delete') {
-                            conn.label = '';
-                            conn.labelColor = null;
-                            const labelEl = document.getElementById(`label_${conn.id}`);
-                            if (labelEl) labelEl.remove();
-                            window.selectedLabel = null;
-                            window.selectedLabelConnId = null;
-                            contextMenu.classList.remove('visible');
-                            stateChanged = true;
-                        }
+                        // [REMOVED] 文字方塊的刪除功能已移除，現在由 blur 事件自動處理
                     }
                 } else if (selectedNotes.length === 1) {
                     const note = selectedNotes[0];
@@ -2636,22 +2658,38 @@
                     
                     labelEl.addEventListener('mousedown', (e) => {
                         e.stopPropagation(); 
-                        clearSelection();
+                        clearSelection(); // 這會同時清除便利貼和關連線選取
                         labelEl.classList.add('selected');
                         const rect = labelEl.getBoundingClientRect();
                         contextMenu.style.top = `${rect.top - 50}px`;
                         contextMenu.style.left = `${rect.left}px`;
-                        contextMenu.classList.add('visible');
                         
                         window.selectedLabel = labelEl;
                         window.selectedLabelConnId = conn.id;
+                        updateToolbarStates(); // [FIX] 更新工具列狀態以隱藏無用按鈕
+                        contextMenu.classList.add('visible');
                     });
                     
                     labelEl.addEventListener('blur', () => {
-                        conn.label = labelEl.innerText;
+                        // [FIX] 如果標籤正在被刪除，不要保存資料
+                        if (labelEl.dataset.isDeleting === 'true') {
+                            return;
+                        }
+                        
+                        // [NEW] 如果文字方塊沒有字，自動刪除標籤
+                        const text = labelEl.innerText.trim();
+                        if (text === '') {
+                            conn.label = '';
+                            conn.labelColor = null;
+                            labelEl.remove();
+                        } else {
+                            conn.label = labelEl.innerText;
+                        }
+                        
                         labelEl.classList.remove('selected');
                         window.selectedLabel = null;
                         window.selectedLabelConnId = null;
+                        contextMenu.classList.remove('visible'); // [FIX] 隱藏工具列
                         saveState();
                     });
                     
