@@ -49,6 +49,13 @@
             stroke-width: 2px;
             fill: none;
             marker-end: url(#arrowhead);
+            pointer-events: stroke; /* [FIX] 讓線條可以被點擊 (Req 2) */
+            cursor: pointer; /* [FIX] 顯示手型游標 (Req 2) */
+            transition: stroke-width 0.2s, stroke 0.2s;
+        }
+        .connection-line:hover {
+            stroke-width: 4px; /* [FIX] hover 時加粗方便點擊 */
+            stroke: #3b82f6; /* blue-500 */
         }
 
         #temp-line {
@@ -141,6 +148,12 @@
             -ms-user-select: none;
             user-select: none;
             cursor: inherit;
+            /* [FIX] 文字水平垂直置中 (Req 1) */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            word-break: break-word; /* 避免長單字撐開 */
         }
         
         .editable:focus {
@@ -481,6 +494,118 @@
         .status-connected { background-color: #22c55e; } /* Green */
         .status-disconnected { background-color: #9ca3af; } /* Gray */
 
+        /* [NEW] 純文字節點 (Req 1) */
+        .sticky-note.text-node {
+            /* [MODIFIED] 移除強制透明，改為 20% 不透明度 (Req) */
+            --tw-bg-opacity: 0.2;
+            box-shadow: none !important;
+            border: 1px dashed transparent; /* 預設透明邊框，方便選取時顯示 */
+            min-height: auto !important; /* [FIX] 自動高度 (Req 1) */
+            height: auto !important; /* [FIX] 自動高度 (Req 1) */
+            width: auto !important; /* [FIX] 自動寬度 (Req 1) */
+            min-width: 50px; /* 最小寬度 */
+        }
+        .sticky-note.text-node:hover {
+            border-color: #cbd5e1; /* hover 時顯示淡邊框 */
+        }
+        .sticky-note.text-node.selected {
+            border: 2px solid #3b82f6; /* 選取時顯示藍框 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .sticky-note.text-node .editable {
+            padding: 1px 4px; /* [FIX] 緊湊 padding (Req 1) */
+            min-height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* [NEW] 關聯線文字標籤 (Req 2) */
+        .connection-label {
+            position: absolute;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 20; /* 高於關聯線 (z-index 5) 和便利貼 (z-index 10) */
+            cursor: pointer;
+            transform: translate(-50%, -50%); /* 置中 */
+            white-space: nowrap;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        .connection-label:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            z-index: 25;
+        }
+        .connection-label.selected {
+            box-shadow: 0 0 0 2px #3b82f6, 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 30;
+        }
+        .connection-label:focus {
+            outline: none;
+            background-color: #000000; /* 編輯時保持黑色背景 */
+            color: #ffffff;
+            min-width: 50px;
+            z-index: 30;
+            overflow: visible;
+        }
+
+        /* [NEW] 圖片節點 (Req) */
+        .sticky-note.image-node {
+            background-color: transparent !important;
+            box-shadow: none !important;
+            border: none;
+            padding: 0;
+        }
+        .sticky-note.image-node img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            pointer-events: none;
+            display: block;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .sticky-note.image-node.selected {
+            outline: 2px solid #3b82f6;
+        }
+
+        /* [NEW] 旋轉控制點 */
+        .rotate-handle {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background-color: #fff;
+            border: 2px solid #3b82f6;
+            border-radius: 50%;
+            cursor: grab;
+            z-index: 20;
+            display: none;
+        }
+        .rotate-line {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            width: 1px;
+            height: 30px;
+            background-color: #3b82f6;
+            transform: translateX(-50%);
+            pointer-events: none;
+            display: none;
+        }
+        .sticky-note.selected .rotate-handle,
+        .sticky-note.selected .rotate-line {
+            display: block;
+        }
+
     </style>
 </head>
 <body class="bg-gray-100 overflow-hidden"> 
@@ -492,6 +617,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5-13.5h16.5a1.5 1.5 0 0 1 1.5 1.5v10.5a1.5 1.5 0 0 1-1.5 1.5h-16.5a1.5 1.5 0 0 1-1.5-1.5v-10.5a1.5 1.5 0 0 1 1.5-1.5z" />
             </svg>
             新增群組
+        </button>
+        <!-- [NEW] 插入文字按鈕 (Req 1) -->
+        <button id="add-text-btn" class="action-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>
+            插入文字
         </button>
         <div class="w-px h-10 bg-gray-300 mx-1"></div>
         <input type="file" id="import-input" accept="application/json" class="hidden">
@@ -730,7 +862,7 @@
             <div class="modal-content relative w-full max-w-md bg-white p-6 md:p-8 rounded-lg shadow-xl">
                 <!-- 關閉按鈕 -->
                 <button id="close-settings-button" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                     </svg>
                 </button>
@@ -1121,6 +1253,7 @@
             const deleteSelectedBtn = document.getElementById('delete-selected-btn'); // (Req 4)
             
             const addGroupBtn = document.getElementById('add-group-btn');
+            const addTextBtn = document.getElementById('add-text-btn'); // [NEW] (Req 1)
             const importBtn = document.getElementById('import-btn');
             const importInput = document.getElementById('import-input');
             const exportBtn = document.getElementById('export-btn');
@@ -1356,11 +1489,41 @@
                             e.preventDefault();
                             copySelectedNotes();
                             break;
-                        // [NEW] 貼上功能 (Req 1)
-                        case 'v':
+                        // [NEW] 貼上功能 (Req 1) - 移至 paste 事件處理
+                        /* case 'v':
                             e.preventDefault();
                             pasteNotes();
-                            break;
+                            break; */
+                    }
+                } else {
+                    // [NEW] 刪除功能 (Req 3)
+                    if (e.key === 'Delete' || e.key === 'Backspace') {
+                        // 避免在編輯文字時刪除
+                        if (document.activeElement.isContentEditable || document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+                            return;
+                        }
+                        
+                        // 刪除選取的便利貼
+                        if (selectedNotes.length > 0) {
+                            e.preventDefault();
+                            deleteSelectedNotes();
+                        }
+                        
+                        // 刪除選取的標籤
+                        if (window.selectedLabel && window.selectedLabelConnId) {
+                            e.preventDefault();
+                            const conn = connections.find(c => c.id === window.selectedLabelConnId);
+                            if (conn) {
+                                conn.label = '';
+                                conn.labelColor = null;
+                                const labelEl = document.getElementById(`label_${conn.id}`);
+                                if (labelEl) labelEl.remove();
+                                window.selectedLabel = null;
+                                window.selectedLabelConnId = null;
+                                contextMenu.classList.remove('visible');
+                                saveState();
+                            }
+                        }
                     }
                 }
                 
@@ -1378,9 +1541,60 @@
                 }
             });
 
+            // [NEW] 貼上圖片 (Req)
+            document.addEventListener('paste', (e) => {
+                if (document.activeElement.isContentEditable || document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+                    return;
+                }
+
+                const items = e.clipboardData.items;
+                let hasImage = false;
+
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        hasImage = true;
+                        const blob = items[i].getAsFile();
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const imgData = event.target.result;
+                            const { x, y } = getBoardCoordinates(window.innerWidth / 2, window.innerHeight / 2);
+                            
+                            const img = new Image();
+                            img.onload = () => {
+                                let width = img.width;
+                                let height = img.height;
+                                if (width > 400) {
+                                    const ratio = height / width;
+                                    width = 400;
+                                    height = 400 * ratio;
+                                }
+                                
+                                createNote({
+                                    x: x - width / 2,
+                                    y: y - height / 2,
+                                    width: `${width}px`,
+                                    height: `${height}px`,
+                                    isImage: true,
+                                    imgSrc: imgData
+                                });
+                            };
+                            img.src = imgData;
+                        };
+                        reader.readAsDataURL(blob);
+                        e.preventDefault();
+                    }
+                }
+
+                // [FIX] 如果剪貼簿沒有圖片，嘗試貼上內部筆記
+                if (!hasImage && clipboard.length > 0) {
+                    e.preventDefault();
+                    pasteNotes();
+                }
+            });
+
             boardContainer.addEventListener('dblclick', (e) => {
                 if (e.target !== boardContainer && e.target !== board) return;
-                if (e.target.closest('header') || e.target.closest('#help-button')) return; // [MODIFIED] (Req 3)
+                if (e.target.closest('header') || e.target.closest('#help-button')) return; 
                 
                 const { x, y } = getBoardCoordinates(e.clientX, e.clientY);
                 createNote({ x, y });
@@ -1396,67 +1610,109 @@
 
             // --- 建立便利貼/群組 ---
             function createNote(options, isRestoring = false) {
-                // [MODIFIED] 加入 width/height (Req 1)
-                const { id = `note_${crypto.randomUUID()}`, x = 100, y = 100, isTitle = false, color = 'bg-yellow-200', content = '', isGroup = false, width, height } = options;
+                const { 
+                    id = `note_${crypto.randomUUID()}`, 
+                    x = 100, 
+                    y = 100, 
+                    isTitle = false, 
+                    color = 'bg-yellow-200', 
+                    content = '', 
+                    isGroup = false, 
+                    width, 
+                    height, 
+                    isTextNode = false,
+                    isImage = false, 
+                    imgSrc = '',     
+                    rotation = 0     
+                } = options;
+
                 const note = document.createElement('div');
                 note.id = id;
                 note.className = 'sticky-note rounded-lg p-0 flex flex-col';
                 note.style.left = `${x}px`;
                 note.style.top = `${y}px`;
-                // [NEW] 恢復 w/h (Req 1)
+                
                 if (width) note.style.width = width;
                 if (height) note.style.height = height;
                 
-                note.classList.add(color);
-                note.dataset.color = color;
-                
-                const editable = document.createElement('div');
-                editable.className = 'editable';
-                editable.contentEditable = false;
-                
-                note.appendChild(editable);
-                
-                if (isTitle) {
-                    note.classList.add('note-title');
+                if (rotation) {
+                    note.style.transform = `rotate(${rotation}deg)`;
+                    note.dataset.rotation = rotation;
                 }
-                
-                if (isGroup) {
-                    note.classList.add('group-container');
-                    editable.innerHTML = content || '群組標題';
+
+                if (isImage) {
+                    note.classList.add('image-node');
+                    note.dataset.isImage = 'true';
+                    note.dataset.imgSrc = imgSrc;
                     
-                    // [NEW] 新增 resize handle (Req 1)
-                    // [MODIFIED] 替換舊的 handle，改為 8 向 (Req 1)
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.draggable = false;
+                    note.appendChild(img);
+                    
+                    const rotateLine = document.createElement('div');
+                    rotateLine.className = 'rotate-line';
+                    note.appendChild(rotateLine);
+                    
+                    const rotateHandle = document.createElement('div');
+                    rotateHandle.className = 'rotate-handle';
+                    note.appendChild(rotateHandle);
+                    rotateHandle.addEventListener('mousedown', (e) => onRotateMouseDown(e, note));
+
+                } else {
+                    note.classList.add(color);
+                    note.dataset.color = color;
+                    
+                    if (isTextNode) {
+                        note.classList.add('text-node');
+                        note.classList.remove(color);
+                        note.dataset.isTextNode = 'true';
+                    }
+
+                    const editable = document.createElement('div');
+                    editable.className = 'editable';
+                    editable.contentEditable = false;
+                    note.appendChild(editable);
+                    
+                    if (isTitle) {
+                        note.classList.add('note-title');
+                    }
+                    
+                    if (isGroup) {
+                        note.classList.add('group-container');
+                        editable.innerHTML = content || '群組標題';
+                    } else {
+                        editable.innerHTML = content || (isTitle ? '標題' : (isTextNode ? '輸入文字' : '輸入文字...'));
+                    }
+
+                    note.addEventListener('dblclick', (e) => {
+                        if ((e.target === note || e.target === editable || editable.contains(e.target)) && !e.target.closest('.connector-node') && !e.target.closest('.resize-handle')) {
+                            editable.contentEditable = true;
+                            editable.focus();
+                            document.execCommand('selectAll', false, null);
+                        }
+                    });
+                    editable.addEventListener('blur', () => {
+                        editable.contentEditable = false;
+                        saveState();
+                    });
+                }
+
+                if (isGroup || isImage) {
                     const directions = ['tl', 't', 'tr', 'l', 'r', 'bl', 'b', 'br'];
                     directions.forEach(dir => {
                         const resizeHandle = document.createElement('div');
                         resizeHandle.className = `resize-handle resize-handle-${dir}`;
                         resizeHandle.dataset.direction = dir;
                         note.appendChild(resizeHandle);
-                        // [MODIFIED] Call the new, unified resize function
                         resizeHandle.addEventListener('mousedown', (e) => onResizeMouseDown(e, note, dir));
                     });
-
-                } else {
-                    editable.innerHTML = content || (isTitle ? '標題' : '輸入文字...');
                 }
 
-                note.addEventListener('dblclick', (e) => {
-                    // 寬鬆的判斷：只要點在 note 或 editable 範圍內就允許編輯
-                    if ((e.target === note || e.target === editable || editable.contains(e.target)) && !e.target.closest('.connector-node') && !e.target.closest('.resize-handle')) {
-                        editable.contentEditable = true;
-                        editable.focus();
-                        document.execCommand('selectAll', false, null);
-                    }
-                });
-                editable.addEventListener('blur', () => {
-                    editable.contentEditable = false;
-                    saveState();
-                });
                 note.addEventListener('mousedown', (e) => onNoteMouseDown(e, note));
                 board.appendChild(note);
                 
-                // [MODIFIED] 只有非群組才建立節點 (Req 1)
-                if (!isGroup) {
+                if (!isGroup && !isImage) {
                     createConnectorNodes(note);
                 }
 
@@ -1468,81 +1724,122 @@
                 return note;
             }
             
-            // --- [NEW] 調整群組大小 (Req 1) ---
-            // [MODIFIED] 替換舊的 onResizeMouseDown (Req 1)
             function onResizeMouseDown(e, note, direction) {
-                e.stopPropagation(); // 停止冒泡，避免觸發拖曳
+                e.stopPropagation();
                 
                 let isResizing = true;
                 const startMouseX = e.clientX;
                 const startMouseY = e.clientY;
                 
                 const rect = note.getBoundingClientRect();
-                const startLeft = parseFloat(note.style.left);
-                const startTop = parseFloat(note.style.top);
+                const { x: centerX, y: centerY } = getBoardCoordinates(rect.left + rect.width/2, rect.top + rect.height/2);
+                
                 const startWidth = note.offsetWidth;
                 const startHeight = note.offsetHeight;
+                
+                const rotation = parseFloat(note.dataset.rotation || 0);
+                const angle = rotation * Math.PI / 180;
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
 
-                const minWidth = 200;
-                const minHeight = 150;
+                const minWidth = 20;
+                const minHeight = 20;
 
                 function onResizeMove(moveEvent) {
                     if (!isResizing) return;
                     
-                    const deltaX = (moveEvent.clientX - startMouseX) / scale;
-                    const deltaY = (moveEvent.clientY - startMouseY) / scale;
+                    const dx = (moveEvent.clientX - startMouseX) / scale;
+                    const dy = (moveEvent.clientY - startMouseY) / scale;
 
-                    let newLeft = startLeft;
-                    let newTop = startTop;
-                    let newWidth = startWidth;
-                    let newHeight = startHeight;
+                    const localDx = dx * cos + dy * sin;
+                    const localDy = -dx * sin + dy * cos;
 
-                    // Handle horizontal changes
-                    if (direction.includes('l')) { // left, top-left, bottom-left
-                        newWidth = startWidth - deltaX;
-                        if (newWidth > minWidth) {
-                            newLeft = startLeft + deltaX;
-                        } else {
-                            newWidth = minWidth;
-                        }
-                    } else if (direction.includes('r')) { // right, top-right, bottom-right
-                        newWidth = startWidth + deltaX;
+                    let newW = startWidth;
+                    let newH = startHeight;
+
+                    if (direction.includes('r')) newW = startWidth + localDx;
+                    if (direction.includes('l')) newW = startWidth - localDx;
+                    if (direction.includes('b')) newH = startHeight + localDy;
+                    if (direction.includes('t')) newH = startHeight - localDy;
+
+                    if (note.dataset.isImage === 'true' && !moveEvent.shiftKey) {
+                         const ratio = startWidth / startHeight;
+                         if (direction === 'l' || direction === 'r') {
+                             newH = newW / ratio;
+                         } else if (direction === 't' || direction === 'b') {
+                             newW = newH * ratio;
+                         } else {
+                             newH = newW / ratio;
+                         }
                     }
 
-                    // Handle vertical changes
-                    if (direction.includes('t')) { // top, top-left, top-right
-                        newHeight = startHeight - deltaY;
-                        if (newHeight > minHeight) {
-                            newTop = startTop + deltaY;
-                        } else {
-                            newHeight = minHeight;
-                        }
-                    } else if (direction.includes('b')) { // bottom, bottom-left, bottom-right
-                        newHeight = startHeight + deltaY;
-                    }
+                    if (newW < minWidth) newW = minWidth;
+                    if (newH < minHeight) newH = minHeight;
                     
-                    // Apply constraints
-                    if (newWidth >= minWidth) {
-                        note.style.left = `${newLeft}px`;
-                        note.style.width = `${newWidth}px`;
-                    }
-                    if (newHeight >= minHeight) {
-                        note.style.top = `${newTop}px`;
-                        note.style.height = `${newHeight}px`;
-                    }
+                    let dW = newW - startWidth;
+                    let dH = newH - startHeight;
+                    
+                    let localCenterShiftX = 0;
+                    let localCenterShiftY = 0;
+                    
+                    if (direction.includes('r')) localCenterShiftX += dW / 2;
+                    if (direction.includes('l')) localCenterShiftX -= dW / 2;
+                    if (direction.includes('b')) localCenterShiftY += dH / 2;
+                    if (direction.includes('t')) localCenterShiftY -= dH / 2;
+                    
+                    const globalShiftX = localCenterShiftX * cos - localCenterShiftY * sin;
+                    const globalShiftY = localCenterShiftX * sin + localCenterShiftY * cos;
+                    
+                    const newCenterX = centerX + globalShiftX;
+                    const newCenterY = centerY + globalShiftY;
+                    
+                    note.style.width = `${newW}px`;
+                    note.style.height = `${newH}px`;
+                    note.style.left = `${newCenterX - newW / 2}px`;
+                    note.style.top = `${newCenterY - newH / 2}px`;
 
-                    updateConnectionsForNote(note); // 尺寸改變時也要更新連線
+                    updateConnectionsForNote(note);
                 }
 
                 function onResizeEnd(upEvent) {
                     isResizing = false;
                     document.removeEventListener('mousemove', onResizeMove);
                     document.removeEventListener('mouseup', onResizeEnd);
-                    saveState(); // 調整大小後儲存
+                    saveState();
                 }
                 
                 document.addEventListener('mousemove', onResizeMove);
-                document.addEventListener('mouseup', onResizeEnd, { once: true });
+                document.addEventListener('mouseup', onResizeEnd);
+            }
+
+            function onRotateMouseDown(e, note) {
+                e.stopPropagation();
+                e.preventDefault();
+                
+                const rect = note.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                let startAngle = parseFloat(note.dataset.rotation || 0);
+                const startMouseAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+                
+                function onRotateMove(moveEvent) {
+                    const currentMouseAngle = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX) * 180 / Math.PI;
+                    const deltaAngle = currentMouseAngle - startMouseAngle;
+                    const newAngle = startAngle + deltaAngle;
+                    
+                    note.style.transform = `rotate(${newAngle}deg)`;
+                    note.dataset.rotation = newAngle;
+                }
+                
+                function onRotateEnd() {
+                    document.removeEventListener('mousemove', onRotateMove);
+                    document.removeEventListener('mouseup', onRotateEnd);
+                    saveState();
+                }
+                
+                document.addEventListener('mousemove', onRotateMove);
+                document.addEventListener('mouseup', onRotateEnd);
             }
 
             // --- 拖曳邏輯 (含群組拖曳) ---
@@ -1551,7 +1848,8 @@
                 if (editable && editable.isContentEditable) return;
                 if (e.target.closest('button')) return;
                 if (e.target.closest('.connector-node')) return;
-                if (e.target.closest('.resize-handle')) return; // [NEW] 點擊 resize handle 時不拖曳 (Req 1)
+                if (e.target.closest('.resize-handle')) return; 
+                if (e.target.closest('.rotate-handle')) return; // [NEW]
                 if (isSpacePressed || e.button === 1) {
                     isPanning = true;
                     panStartX = e.clientX - panX;
@@ -1613,7 +1911,6 @@
                 
                 dragOffsets.clear();
                 
-                // 【關鍵修復】使用世界座標計算 dragOffsets
                 const { x: mouseWorldX, y: mouseWorldY } = getBoardCoordinates(e.clientX, e.clientY);
                 
                 elementsToDrag.forEach(n => {
@@ -1641,20 +1938,16 @@
 
                     const { x: boardX, y: boardY } = getBoardCoordinates(moveEvent.clientX, moveEvent.clientY);
                     
-                    // 1. 取得主要拖曳物件
-                    // note 變數來自 onNoteMouseDown 的閉包
                     const primaryOffset = dragOffsets.get(note); 
-                    if (!primaryOffset) return; // 防禦
+                    if (!primaryOffset) return; 
                     
                     let newX = boardX - primaryOffset.offsetX;
                     let newY = boardY - primaryOffset.offsetY;
 
-                    // 2. [NEW] 智慧對齊線邏輯 (Req 2)
-                    hideSnapLines(); // [FIX] 呼叫移到前面的函數
+                    hideSnapLines(); 
                     let snappedX = false;
                     let snappedY = false;
                     
-                    // 取得主要物件的「預期」對齊點 (世界座標)
                     const primaryRect = {
                         left: newX,
                         top: newY,
@@ -1667,12 +1960,11 @@
                     };
                     
                     const allNotes = board.querySelectorAll('.sticky-note');
-                    const threshold = SNAP_THRESHOLD / scale; // 門檻值需要根據縮放調整
+                    const threshold = SNAP_THRESHOLD / scale; 
 
                     for (const targetNote of allNotes) {
-                        if (selectedNotes.includes(targetNote)) continue; // 不跟自己對齊
+                        if (selectedNotes.includes(targetNote)) continue; 
 
-                        // 取得目標物件的對齊點 (世界座標)
                         const targetRect = {
                             left: parseFloat(targetNote.style.left),
                             top: parseFloat(targetNote.style.top),
@@ -1684,7 +1976,6 @@
                         targetRect.hCenter = targetRect.left + targetRect.width / 2;
                         targetRect.vCenter = targetRect.top + targetRect.height / 2;
                         
-                        // 檢查 X 軸 (垂直線)
                         if (!snappedX) {
                             if (Math.abs(primaryRect.left - targetRect.left) < threshold) {
                                 newX = targetRect.left;
@@ -1698,18 +1989,17 @@
                                 newX = targetRect.right - primaryRect.width;
                                 showVLine(targetRect.right);
                                 snappedX = true;
-                            } else if (Math.abs(primaryRect.left - targetRect.right) < threshold) { // [FIX] 增加對齊 (左->右)
+                            } else if (Math.abs(primaryRect.left - targetRect.right) < threshold) { 
                                 newX = targetRect.right;
                                 showVLine(targetRect.right);
                                 snappedX = true;
-                            } else if (Math.abs(primaryRect.right - targetRect.left) < threshold) { // [FIX] 增加對齊 (右->左)
+                            } else if (Math.abs(primaryRect.right - targetRect.left) < threshold) { 
                                 newX = targetRect.left - primaryRect.width;
                                 showVLine(targetRect.left);
                                 snappedX = true;
                             }
                         }
 
-                        // 檢查 Y 軸 (水平線)
                         if (!snappedY) {
                             if (Math.abs(primaryRect.top - targetRect.top) < threshold) {
                                 newY = targetRect.top;
@@ -1723,11 +2013,11 @@
                                 newY = targetRect.bottom - primaryRect.height;
                                 showHLine(targetRect.bottom);
                                 snappedY = true;
-                            } else if (Math.abs(primaryRect.top - targetRect.bottom) < threshold) { // [FIX] 增加對齊 (上->下)
+                            } else if (Math.abs(primaryRect.top - targetRect.bottom) < threshold) { 
                                 newY = targetRect.bottom;
                                 showHLine(targetRect.bottom);
                                 snappedY = true;
-                            } else if (Math.abs(primaryRect.bottom - targetRect.top) < threshold) { // [FIX] 增加對齊 (下->上)
+                            } else if (Math.abs(primaryRect.bottom - targetRect.top) < threshold) { 
                                 newY = targetRect.top - primaryRect.height;
                                 showHLine(targetRect.top);
                                 snappedY = true;
@@ -1737,11 +2027,9 @@
                         if (snappedX && snappedY) break;
                     }
                     
-                    // 3. 計算位移 (Delta)
                     const deltaX = newX - parseFloat(note.style.left);
                     const deltaY = newY - parseFloat(note.style.top);
 
-                    // 4. 套用 Delta 到所有被選取的物件
                     dragOffsets.forEach((offset, element) => {
                         element.style.left = `${parseFloat(element.style.left) + deltaX}px`;
                         element.style.top = `${parseFloat(element.style.top) + deltaY}px`;
@@ -1756,8 +2044,7 @@
                     document.removeEventListener('mousemove', onNoteDrag);
                     document.removeEventListener('mouseup', onNoteDragEnd);
                     
-                    // [NEW] 拖曳結束，隱藏對齊線 (Req 2)
-                    hideSnapLines(); // [FIX] 呼叫移到前面的函數
+                    hideSnapLines(); 
 
                     if (!dragStarted) {
                         const isCtrlEnd = upEvent.ctrlKey || upEvent.metaKey;
@@ -1784,7 +2071,7 @@
             function getNoteState(note) {
                 const editable = note.querySelector('.editable');
                 return {
-                    id: note.id, // 僅用於計算相對位置，貼上時會產生新 ID
+                    id: note.id, 
                     x: parseFloat(note.style.left),
                     y: parseFloat(note.style.top),
                     isTitle: note.classList.contains('note-title'),
@@ -1792,14 +2079,17 @@
                     content: editable ? editable.innerHTML : '',
                     isGroup: note.classList.contains('group-container'),
                     width: note.style.width || null,
-                    height: note.style.height || null
+                    height: note.style.height || null,
+                    isTextNode: note.dataset.isTextNode === 'true',
+                    isImage: note.dataset.isImage === 'true', // [NEW]
+                    imgSrc: note.dataset.imgSrc || '', // [NEW]
+                    rotation: parseFloat(note.dataset.rotation || 0) // [NEW]
                 };
             }
 
             function copySelectedNotes() {
                 if (selectedNotes.length > 0) {
                     clipboard = selectedNotes.map(getNoteState);
-                    // console.log('Copied:', clipboard.length, 'items');
                 }
             }
             
@@ -1810,19 +2100,19 @@
                     const newClipboard = [];
                     
                     clipboard.forEach(noteData => {
-                        const newData = { ...noteData }; // 複製
-                        newData.id = `note_${crypto.randomUUID()}`; // 產生全新 ID
-                        newData.x += 20 / scale; // 位移 (受縮放影響)
+                        const newData = { ...noteData }; 
+                        newData.id = `note_${crypto.randomUUID()}`; 
+                        newData.x += 20 / scale; 
                         newData.y += 20 / scale;
                         
-                        const newNote = createNote(newData, true); // true = 正在恢復，不觸發 saveState
+                        const newNote = createNote(newData, true); 
                         addNoteToSelection(newNote);
-                        newClipboard.push(getNoteState(newNote)); // 將 *新* 資訊存入剪貼簿
+                        newClipboard.push(getNoteState(newNote)); 
                     });
                     
-                    clipboard = newClipboard; // 更新剪貼簿，以便連續貼上
+                    clipboard = newClipboard; 
                     updateToolbarStates();
-                    saveState(); // 所有動作完成後，儲存一次歷史紀錄
+                    saveState(); 
                 }
             }
             
@@ -1854,7 +2144,7 @@
                 selectedNotes = [];
                 updateToolbarStates();
             }
-            
+
             // --- 工具列管理 ---
             function updateToolbarStates() {
                 if (selectedNotes.length === 1) {
@@ -1924,44 +2214,77 @@
             }
 
             contextMenu.addEventListener('click', (e) => {
-                if (selectedNotes.length !== 1) return;
-                const note = selectedNotes[0];
+                if (selectedNotes.length !== 1 && !window.selectedLabel) return;
+                
                 const button = e.target.closest('button');
                 if (!button) return;
-                const color = button.dataset.color;
+                const colorClass = button.dataset.color; 
                 const action = button.dataset.action;
                 let stateChanged = false;
-                if (color) {
-                    note.classList.remove(note.dataset.color);
-                    note.classList.add(color);
-                    note.dataset.color = color;
-                    stateChanged = true;
+
+                if (window.selectedLabel && window.selectedLabelConnId) {
+                    const conn = connections.find(c => c.id === window.selectedLabelConnId);
+                    if (conn) {
+                        if (colorClass) {
+                            const colorMap = {
+                                'bg-yellow-200': '#fde047',
+                                'bg-green-200': '#86efac',
+                                'bg-blue-200': '#93c5fd',
+                                'bg-pink-200': '#f9a8d4',
+                                'bg-purple-200': '#d8b4fe',
+                                'bg-gray-200': '#e5e7eb'
+                            };
+                            
+                            conn.labelColor = colorMap[colorClass] || '#ffffff';
+                            drawConnectionLabel(conn); 
+                            stateChanged = true;
+                        }
+                        if (action === 'delete') {
+                            conn.label = '';
+                            conn.labelColor = null;
+                            const labelEl = document.getElementById(`label_${conn.id}`);
+                            if (labelEl) labelEl.remove();
+                            window.selectedLabel = null;
+                            window.selectedLabelConnId = null;
+                            contextMenu.classList.remove('visible');
+                            stateChanged = true;
+                        }
+                    }
+                } else if (selectedNotes.length === 1) {
+                    const note = selectedNotes[0];
+                    if (colorClass) {
+                        note.classList.remove(note.dataset.color);
+                        note.classList.add(colorClass);
+                        note.dataset.color = colorClass;
+                        stateChanged = true;
+                    }
+                    if (action === 'title') {
+                        note.classList.toggle('note-title');
+                        stateChanged = true;
+                    }
+                    if (action === 'delete-lines') {
+                        removeConnectionsForNote(note);
+                        stateChanged = true;
+                    }
+                    if (action === 'delete') {
+                        removeConnectionsForNote(note);
+                        note.remove();
+                        removeNoteFromSelection(note);
+                        stateChanged = true;
+                    }
                 }
-                if (action === 'title') {
-                    note.classList.toggle('note-title');
-                    note.classList.toggle('group-container'); 
-                    stateChanged = true;
-                }
-                // [NEW] "移除關聯線" 的邏輯
-                if (action === 'delete-lines') {
-                    removeConnectionsForNote(note);
-                    stateChanged = true;
-                }
-                if (action === 'delete') {
-                    removeConnectionsForNote(note);
-                    note.remove();
-                    removeNoteFromSelection(note);
-                    stateChanged = true;
-                }
+
                 if (stateChanged) {
                     saveState();
                 }
                 if (action === 'delete') {
-                    clearSelection();
                 } else {
-                    updateToolbarStates();
-                    if (action === 'title') {
-                         updateToolbarPositions();
+                    if (window.selectedLabel) {
+                    } else {
+                        updateToolbarStates();
+                        if (action === 'title') {
+                             updateToolbarPositions();
+                        }
                     }
                 }
             });
@@ -2231,13 +2554,32 @@
                         break;
                     }
                 }
+                
                 connections.forEach(conn => {
                     const fromEl = document.getElementById(conn.fromId);
                     const toEl = document.getElementById(conn.toId);
                     if (!fromEl || !toEl) return;
+                    
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     path.setAttribute('class', 'connection-line');
                     path.dataset.connId = conn.id;
+                    
+                    path.addEventListener('dblclick', (e) => {
+                        e.stopPropagation();
+                        if (!conn.label) {
+                            conn.label = '文字';
+                            conn.labelColor = '#ffffff'; 
+                            conn.labelBgColor = '#000000'; 
+                            saveState();
+                        }
+                        drawConnectionLabel(conn);
+                        const labelEl = document.getElementById(`label_${conn.id}`);
+                        if (labelEl) {
+                            labelEl.focus();
+                            document.execCommand('selectAll', false, null);
+                        }
+                    });
+
                     const startPos = getNodePosition(fromEl, conn.fromSide);
                     const endPos = getNodePosition(toEl, conn.toSide);
                     const offset = 50;
@@ -2251,10 +2593,85 @@
                     if (conn.toSide === 'bottom') c2.y += offset;
                     if (conn.toSide === 'left') c2.x -= offset;
                     if (conn.toSide === 'right') c2.x += offset;
+                    
                     path.setAttribute('d', `M${startPos.x} ${startPos.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endPos.x} ${endPos.y}`);
                     boardSvg.appendChild(path);
+                    
+                    if (conn.label) {
+                        drawConnectionLabel(conn, startPos, c1, c2, endPos);
+                    }
                 });
             }
+
+            function drawConnectionLabel(conn, startPos, c1, c2, endPos) {
+                let labelEl = document.getElementById(`label_${conn.id}`);
+                if (!labelEl) {
+                    labelEl = document.createElement('div');
+                    labelEl.id = `label_${conn.id}`;
+                    labelEl.className = 'connection-label';
+                    labelEl.contentEditable = true;
+                    labelEl.spellcheck = false;
+                    board.appendChild(labelEl);
+                    
+                    labelEl.addEventListener('mousedown', (e) => {
+                        e.stopPropagation(); 
+                        clearSelection();
+                        labelEl.classList.add('selected');
+                        const rect = labelEl.getBoundingClientRect();
+                        contextMenu.style.top = `${rect.top - 50}px`;
+                        contextMenu.style.left = `${rect.left}px`;
+                        contextMenu.classList.add('visible');
+                        
+                        window.selectedLabel = labelEl;
+                        window.selectedLabelConnId = conn.id;
+                    });
+                    
+                    labelEl.addEventListener('blur', () => {
+                        conn.label = labelEl.innerText;
+                        labelEl.classList.remove('selected');
+                        window.selectedLabel = null;
+                        window.selectedLabelConnId = null;
+                        saveState();
+                    });
+                    
+                    labelEl.addEventListener('dblclick', (e) => {
+                        e.stopPropagation();
+                        document.execCommand('selectAll', false, null);
+                    });
+                }
+                
+                labelEl.innerText = conn.label;
+                labelEl.style.color = conn.labelColor || '#ffffff';
+                
+                if (!startPos) {
+                    const fromEl = document.getElementById(conn.fromId);
+                    const toEl = document.getElementById(conn.toId);
+                    if (fromEl && toEl) {
+                        startPos = getNodePosition(fromEl, conn.fromSide);
+                        endPos = getNodePosition(toEl, conn.toSide);
+                        const offset = 50;
+                        c1 = { ...startPos };
+                        c2 = { ...endPos };
+                        if (conn.fromSide === 'top') c1.y -= offset;
+                        if (conn.fromSide === 'bottom') c1.y += offset;
+                        if (conn.fromSide === 'left') c1.x -= offset;
+                        if (conn.fromSide === 'right') c1.x += offset;
+                        if (conn.toSide === 'top') c2.y -= offset;
+                        if (conn.toSide === 'bottom') c2.y += offset;
+                        if (conn.toSide === 'left') c2.x -= offset;
+                        if (conn.toSide === 'right') c2.x += offset;
+                    }
+                }
+                
+                if (startPos && endPos) {
+                    const midX = 0.125 * startPos.x + 0.375 * c1.x + 0.375 * c2.x + 0.125 * endPos.x;
+                    const midY = 0.125 * startPos.y + 0.375 * c1.y + 0.375 * c2.y + 0.125 * endPos.y;
+                    
+                    labelEl.style.left = `${midX}px`;
+                    labelEl.style.top = `${midY}px`; 
+                }
+            }
+
             function updateConnectionsForNote(note) {
                 connections.forEach(conn => {
                     if (conn.fromId === note.id || conn.toId === note.id) {
@@ -2277,6 +2694,10 @@
                         if (conn.toSide === 'left') c2.x -= offset;
                         if (conn.toSide === 'right') c2.x += offset;
                         path.setAttribute('d', `M${startPos.x} ${startPos.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endPos.x} ${endPos.y}`);
+                        
+                        if (conn.label) {
+                            drawConnectionLabel(conn, startPos, c1, c2, endPos);
+                        }
                     }
                 });
             }
@@ -2285,6 +2706,8 @@
                 connectionsToRemove.forEach(conn => {
                     const path = boardSvg.querySelector(`[data-conn-id="${conn.id}"]`);
                     if (path) path.remove();
+                    const labelEl = document.getElementById(`label_${conn.id}`);
+                    if (labelEl) labelEl.remove();
                 });
                 connections = connections.filter(conn => conn.fromId !== note.id && conn.toId !== note.id);
             }
@@ -2314,11 +2737,14 @@
                         color: note.dataset.color,
                         content: editable ? editable.innerHTML : '',
                         isGroup: note.classList.contains('group-container'),
-                        width: note.style.width || null,  // [NEW] 儲存 w/h (Req 1)
-                        height: note.style.height || null // [NEW] 儲存 w/h (Req 1)
+                        width: note.style.width || null,
+                        height: note.style.height || null,
+                        isTextNode: note.dataset.isTextNode === 'true',
+                        isImage: note.dataset.isImage === 'true',
+                        imgSrc: note.dataset.imgSrc || '',
+                        rotation: parseFloat(note.dataset.rotation || 0)
                     });
                 });
-                // [MODIFIED] 將設定值加入 state
                 const currentState = {
                     notes: notesState,
                     connections: connections,
@@ -2334,7 +2760,6 @@
                 history.push(currentState);
                 historyPointer++;
 
-                // [NEW] Firebase Sync
                 updateFirestoreDebounced(currentState);
             }
             function restoreState(state) {
@@ -2344,19 +2769,19 @@
                 const nodesToRemove = board.querySelectorAll('.sticky-note');
                 nodesToRemove.forEach(n => n.remove());
                 
+                board.querySelectorAll('.connection-label').forEach(l => l.remove());
+
                 connections = [];
                 drawConnections();
                 
-                // [NEW] 恢復設定
                 if (state.settings) {
                     currentFontSize = state.settings.fontSize || 14;
                     currentMinHeight = state.settings.minHeight || 100;
                 } else {
-                    // 如果是舊的存檔，使用預設值
                     currentFontSize = 14;
                     currentMinHeight = 100;
                 }
-                applySettings(); // 關鍵：在這裡套用設定
+                applySettings(); 
                 
                 if (state.notes) {
                     state.notes.forEach(noteState => {
@@ -2368,8 +2793,12 @@
                             color: noteState.color,
                             content: noteState.content,
                             isGroup: noteState.isGroup,
-                            width: noteState.width,  // [NEW] 恢復 w/h (Req 1)
-                            height: noteState.height // [NEW] 恢復 w/h (Req 1)
+                            width: noteState.width,
+                            height: noteState.height,
+                            isTextNode: noteState.isTextNode,
+                            isImage: noteState.isImage,
+                            imgSrc: noteState.imgSrc,
+                            rotation: noteState.rotation
                         };
                         createNote(options, true);
                     });
@@ -2406,6 +2835,15 @@
                     y: y - 150,
                     isGroup: true, 
                     color: 'bg-gray-200' 
+                });
+            });
+
+            addTextBtn.addEventListener('click', () => {
+                const { x, y } = getBoardCoordinates(window.innerWidth / 2, window.innerHeight / 2);
+                createNote({ 
+                    x: x - 100, 
+                    y: y - 50,
+                    isTextNode: true,
                 });
             });
 
@@ -2465,7 +2903,6 @@
             });
 
             screenshotBtn.addEventListener('click', () => {
-                // [MODIFIED] 隱藏的 UI 列表更新 (Req 3)
                 const uisToHide = [headerToolbar, helpButton, contextMenu, alignToolbar, ...document.querySelectorAll('.connector-node'), ...document.querySelectorAll('.resize-handle'), selectionBox];
                 uisToHide.forEach(el => { if (el) el.style.visibility = 'hidden'; });
                 
@@ -2501,7 +2938,6 @@
                 });
             });
             
-            // --- [NEW] 說明 Modal 監聽 (Req 3) ---
             if (helpButton && helpModal) {
                 helpButton.addEventListener('click', () => {
                     helpModal.classList.remove('hidden');
@@ -2518,12 +2954,9 @@
                 });
             }
 
-
-            // [NEW] 設定 Modal 監聽
             if (settingsButton) {
                 settingsButton.addEventListener('click', () => {
                     settingsModal.classList.remove('hidden');
-                    // 確保 slider 反映目前狀態
                     fontSizeSlider.value = currentFontSize;
                     fontSizeValue.textContent = `${currentFontSize} px`;
                     cardHeightSlider.value = currentMinHeight;
@@ -2541,13 +2974,11 @@
                 });
             }
 
-            // [NEW] 綁定 Slider 事件
             fontSizeSlider.addEventListener('input', (e) => {
                 currentFontSize = parseInt(e.target.value, 10);
                 fontSizeValue.textContent = `${currentFontSize} px`;
-                applySettings(); // 動態套用
+                applySettings(); 
             });
-            // [MODIFIED] 當 "放開" slider 時才儲存 history
             fontSizeSlider.addEventListener('change', () => {
                 saveState(); 
             });
@@ -2555,17 +2986,19 @@
             cardHeightSlider.addEventListener('input', (e) => {
                 currentMinHeight = parseInt(e.target.value, 10);
                 cardHeightValue.textContent = `${currentMinHeight} px`;
-                applySettings(); // 動態套用
+                applySettings(); 
             });
-            // [MODIFIED] 當 "放開" slider 時才儲存 history
             cardHeightSlider.addEventListener('change', () => {
                 saveState();
             });
 
-            // --- [NEW] 立即套用一次預設值 ---
             applySettings();
 
-            saveState(); // 儲存初始的空白狀態
+            saveState(); 
+        });
+    </script>
+</body>
+</html>
         });
     </script>
 </body>
