@@ -39,7 +39,7 @@
         padding: 1.5rem 0;
         overflow-y: auto;
         transition: transform 0.3s ease;
-        z-index: 1000;
+        z-index: 1060; /* 提高層級，確保蓋過內容 */
     }
     #main-content {
         margin-left: var(--sidebar-width);
@@ -48,26 +48,51 @@
         transition: margin-left 0.3s ease;
     }
     
-    /* RWD: 手機版隱藏側邊欄 */
+    /* RWD: 手機版樣式 */
     @media (max-width: 992px) {
-        #sidebar { transform: translateX(-100%); }
+        #sidebar { 
+            transform: translateX(-100%); /* 預設隱藏 */
+            box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+        }
+        #sidebar.mobile-active {
+            transform: translateX(0); /* 顯示時滑入 */
+        }
         #main-content { margin-left: 0; }
-        .mobile-nav-toggle { display: block !important; }
+        .mobile-nav-toggle { display: flex !important; } /* 使用 flex 讓圖標置中 */
     }
+
+    /* 手機版導覽按鈕 */
     .mobile-nav-toggle {
         display: none;
         position: fixed;
-        bottom: 20px;
+        bottom: 30px; /* 稍微提高避免被手機底部 Bar 遮擋 */
         right: 20px;
-        z-index: 1050;
+        z-index: 1070; /* 最高層級 */
         background-color: var(--secondary-color);
         color: white;
         border: none;
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        width: 55px;
+        height: 55px;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.2s;
     }
+    .mobile-nav-toggle:active {
+        transform: scale(0.95);
+    }
+
+    /* 手機版側欄遮罩 */
+    .sidebar-backdrop {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(0,0,0,0.5); z-index: 1050;
+        opacity: 0; visibility: hidden; transition: all 0.3s;
+        backdrop-filter: blur(2px);
+    }
+    .sidebar-backdrop.active { opacity: 1; visibility: visible; }
 
     /* --- 內容樣式 --- */
     .page-content { display: none; animation: fadeIn 0.5s; }
@@ -79,7 +104,7 @@
     h3 { font-size: 1.3rem; margin-top: 25px; color: #555; font-weight: 600; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
     h4 { font-size: 1.1rem; margin-top: 20px; color: #666; font-weight: bold; }
 
-    /* --- 摘要視覺化卡片 (取代圖表) --- */
+    /* --- 摘要視覺化卡片 --- */
     .insight-card {
         background: white;
         border-radius: 10px;
@@ -120,7 +145,7 @@
     
     /* --- 引用彈出視窗 --- */
     .citation-popup {
-        position: fixed; bottom: 0; left: 0; right: 0; z-index: 1060;
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 1080;
         background-color: white;
         box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
         transform: translateY(100%);
@@ -134,7 +159,7 @@
     .citation-body { padding: 20px; overflow-y: auto; font-size: 1rem; line-height: 1.6; }
     .citation-backdrop {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(0,0,0,0.5); z-index: 1055;
+        background-color: rgba(0,0,0,0.5); z-index: 1075;
         opacity: 0; visibility: hidden; transition: all 0.3s;
     }
     .citation-backdrop.active { opacity: 1; visibility: visible; }
@@ -146,8 +171,11 @@
 </head>
 <body>
 
+<!-- 手機版側欄遮罩 -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
 <!-- 手機版導覽按鈕 -->
-<button class="mobile-nav-toggle" onclick="toggleSidebar()">
+<button class="mobile-nav-toggle" onclick="toggleSidebar()" aria-label="開啟選單">
     <i class="fas fa-bars"></i>
 </button>
 
@@ -354,7 +382,7 @@
                 <li><b>鑽爬與躲藏：</b> 貓咪天性喜歡躲藏在狹小的空間（如盒子）中<sup><a onclick="showCitation('cite-26')">[26]</a></sup>，這能滿足牠們尋求安全感和伏擊獵物的本能。如果產品能包含隧道、洞穴或半封閉的結構，將極大地增加其吸引力。</li>
             </ul>
 
-            <h4>3.8. 體能極限與休息</h4>
+            <h4>3.8.體能極限與休息</h4>
             <p>貓咪的運動模式是「爆發後休息」。根據來源中關於玩耍應在貓咪變得「疲倦 (tired)」<sup><a onclick="showCitation('cite-27')">[27]</a></sup>時結束的建議，以及遊戲節奏應如「煮沸後轉小火慢燉 (boil and simmer)」<sup><a onclick="showCitation('cite-28')">[28]</a></sup>的比喻，說明了高強度活動後必須有休息間隔。產品應內建自動休眠功能，將活躍時段控制在數分鐘內，然後進入靜止狀態，讓貓咪可以喘息和恢復體力。</p>
 
             <h4>3.9. 抓握與撕咬的設計</h4>
@@ -511,12 +539,22 @@
     // 側邊欄切換 (手機版)
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
-        const currentTransform = window.getComputedStyle(sidebar).getPropertyValue('transform');
-        if (currentTransform === 'none' || currentTransform.includes('matrix(1, 0, 0, 1, 0, 0)')) {
-             sidebar.style.transform = 'translateX(-100%)';
+        const backdrop = document.getElementById('sidebarBackdrop');
+        
+        sidebar.classList.toggle('mobile-active');
+        
+        if (sidebar.classList.contains('mobile-active')) {
+            backdrop.classList.add('active');
         } else {
-             sidebar.style.transform = 'translateX(0)';
+            backdrop.classList.remove('active');
         }
+    }
+
+    function closeSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        sidebar.classList.remove('mobile-active');
+        backdrop.classList.remove('active');
     }
 
     // 頁面切換功能
@@ -540,7 +578,7 @@
         
         // 4. 手機版點選後自動收合側邊欄
         if (window.innerWidth < 992) {
-            document.getElementById('sidebar').style.transform = 'translateX(-100%)';
+            closeSidebar();
         }
 
         // 5. 處理錨點跳轉 (平滑捲動)
