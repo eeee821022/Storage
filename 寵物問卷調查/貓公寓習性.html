@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<title>貓咪公寓生活適應性與產品設計研究報告 - RWD互動式報告</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- 引入 Font Awesome 增加視覺圖標 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+    :root {
+        --primary-color: #2c3e50; /* 穩重的深藍灰 */
+        --secondary-color: #e67e22; /* 活力橘，象徵貓咪的活力 */
+        --accent-color: #27ae60;   /* 綠色，象徵安全與自然 */
+        --text-color: #333;
+        --sidebar-width: 280px;
+        --bg-light: #f8f9fa;
+        --bg-white: #ffffff;
+        --border-color: #dee2e6;
+    }
+    body {
+        font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif;
+        background-color: var(--bg-light);
+        color: var(--text-color);
+        line-height: 1.6;
+    }
+    
+    /* --- 側邊欄與主內容佈局 --- */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: var(--sidebar-width);
+        background-color: var(--primary-color);
+        color: var(--bg-light);
+        padding: 1.5rem 0;
+        overflow-y: auto;
+        transition: transform 0.3s ease;
+        z-index: 1000;
+    }
+    #main-content {
+        margin-left: var(--sidebar-width);
+        padding: 30px;
+        min-height: 100vh;
+        transition: margin-left 0.3s ease;
+    }
+    
+    /* RWD: 手機版隱藏側邊欄 */
+    @media (max-width: 992px) {
+        #sidebar { transform: translateX(-100%); }
+        #main-content { margin-left: 0; }
+        .mobile-nav-toggle { display: block !important; }
+    }
+    .mobile-nav-toggle {
+        display: none;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1050;
+        background-color: var(--secondary-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    /* --- 內容樣式 --- */
+    .page-content { display: none; animation: fadeIn 0.5s; }
+    .page-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    h1 { font-size: 2rem; border-bottom: 3px solid var(--secondary-color); padding-bottom: 15px; margin-bottom: 30px; color: var(--primary-color); font-weight: 700; }
+    h2 { font-size: 1.6rem; margin-top: 40px; margin-bottom: 20px; color: var(--primary-color); border-left: 5px solid var(--secondary-color); padding-left: 15px; background-color: #fff; padding-top: 10px; padding-bottom: 10px; border-radius: 0 5px 5px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); scroll-margin-top: 20px;}
+    h3 { font-size: 1.3rem; margin-top: 25px; color: #555; font-weight: 600; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+    h4 { font-size: 1.1rem; margin-top: 20px; color: #666; font-weight: bold; }
+
+    /* --- 摘要視覺化卡片 (取代圖表) --- */
+    .insight-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-top: 4px solid var(--secondary-color);
+        height: 100%;
+        transition: transform 0.2s;
+    }
+    .insight-card:hover { transform: translateY(-5px); }
+    .insight-icon { font-size: 2rem; color: var(--secondary-color); margin-bottom: 15px; }
+    .insight-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; color: var(--primary-color); }
+    
+    /* --- 上標引用樣式 --- */
+    sup a {
+        color: var(--secondary-color);
+        text-decoration: none;
+        font-weight: bold;
+        padding: 0 3px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-radius: 4px;
+    }
+    sup a:hover {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+
+    /* --- 側邊欄導覽樣式 --- */
+    #sidebar-header { padding: 0 1.5rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 1rem; }
+    #sidebar .nav-link { color: rgba(255,255,255,0.7); padding: 0.8rem 1.5rem; transition: all 0.3s; }
+    #sidebar .nav-link:hover, #sidebar .nav-link.active-main { color: white; background-color: rgba(255,255,255,0.1); border-left: 4px solid var(--secondary-color); }
+    .accordion-button { background: transparent !important; color: rgba(255,255,255,0.7) !important; padding: 0.8rem 1.5rem; box-shadow: none !important; }
+    .accordion-button:not(.collapsed) { color: white !important; font-weight: bold; }
+    .accordion-body { padding: 0; background: rgba(0,0,0,0.1); }
+    .report-nav-link { padding-left: 3rem !important; font-size: 0.9rem; }
+    
+    /* --- 引用彈出視窗 --- */
+    .citation-popup {
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 1060;
+        background-color: white;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        max-height: 50vh;
+        display: flex; flex-direction: column;
+        border-radius: 15px 15px 0 0;
+    }
+    .citation-popup.active { transform: translateY(0); }
+    .citation-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--bg-light); border-radius: 15px 15px 0 0; }
+    .citation-body { padding: 20px; overflow-y: auto; font-size: 1rem; line-height: 1.6; }
+    .citation-backdrop {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(0,0,0,0.5); z-index: 1055;
+        opacity: 0; visibility: hidden; transition: all 0.3s;
+    }
+    .citation-backdrop.active { opacity: 1; visibility: visible; }
+
+    /* --- 表格樣式 --- */
+    table { width: 100%; margin-bottom: 1rem; background-color: #fff; }
+    th { background-color: var(--primary-color); color: white; }
+</style>
+</head>
+<body>
+
+<!-- 手機版導覽按鈕 -->
+<button class="mobile-nav-toggle" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- 側邊欄 -->
+<nav id="sidebar">
+    <div id="sidebar-header">
+        <h5 class="mt-2"><i class="fas fa-paw me-2"></i>貓咪產品研究</h5>
+        <small class="text-muted" style="color: #aaa !important;">互動式設計報告</small>
+    </div>
+    <div class="nav flex-column">
+        <a class="nav-link active-main" href="#" onclick="showPage('overview', this)">
+            <i class="fas fa-home me-2"></i>摘要：以貓為本
+        </a>
+        
+        <div class="accordion accordion-flush" id="reportAccordion">
+            <div class="accordion-item bg-transparent">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                        <i class="fas fa-book-open me-2"></i>原始報告
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#reportAccordion">
+                    <div class="accordion-body">
+                        <nav class="nav flex-column">
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('report', null, '#sec-intro')">引言</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('report', null, '#sec-1')">Ch1. 核心本能 (Why)</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('report', null, '#sec-2')">Ch2. 互動設計 (How Long)</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('report', null, '#sec-3')">Ch3. 貓體工學 (How-to-Move)</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('report', null, '#sec-4')">Ch4. 安全性 (Where & Safe)</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('report', null, '#sec-5')">Ch5. 個體差異 (Who)</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('report', null, '#sec-6')">Ch6. 驗證與紅線</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('report', null, '#sec-7')">Ch7. 飼主體驗</a>
+                            <a class="nav-link report-nav-link" href="#" onclick="showPage('report', null, '#sec-8')">Ch8. 產品生命週期</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <a class="nav-link" href="#" onclick="showPage('datalist', this)">
+            <i class="fas fa-list-ol me-2"></i>資料列表
+        </a>
+    </div>
+</nav>
+
+<!-- 主內容區 -->
+<main id="main-content">
+    
+    <!-- 1. 摘要頁面 -->
+    <div id="overview" class="page-content active">
+        <h1>貓咪公寓生活適應性與產品設計研究報告</h1>
+        
+        <div class="alert alert-info border-0 shadow-sm" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>報告宗旨：</strong> 本報告基於行為學專家 Jackson Galaxy 及相關研究，旨在為公寓家貓開發滿足其「原始天性」的創新產品，解決環境限制引發的行為問題。
+        </div>
+
+        <p class="lead text-secondary mb-5">
+            在現代都市生活中，越來越多的貓咪在有限的公寓空間內度過一生。本報告系統性地剖析貓咪的內在動機、互動模式與安全考量，為產品設計者提供「以貓為本」的科學依據。
+        </p>
+
+        <!-- 視覺化摘要卡片 (替代圖表) -->
+        <h3 class="mb-4">本篇研究數據重點與結構分析</h3>
+        <div class="row g-4">
+            <!-- 卡片 1 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="insight-card">
+                    <div class="insight-icon"><i class="fas fa-cat"></i></div>
+                    <div class="insight-title">核心驅動力 (The Why)</div>
+                    <p class="small text-muted">
+                        <strong>Play = Prey (玩耍即獵物)</strong><br>
+                        貓咪的一生由「狩獵、捕捉、獵殺」循環驅動。產品必須提供實質的物理回饋（可抓、可咬），讓貓展現 Cat Mojo。
+                    </p>
+                </div>
+            </div>
+            <!-- 卡片 2 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="insight-card">
+                    <div class="insight-icon"><i class="fas fa-gamepad"></i></div>
+                    <div class="insight-title">互動機制 (How Long)</div>
+                    <p class="small text-muted">
+                        <strong>不可預測性 vs. 成功率</strong><br>
+                        拒絕雷射筆挫折感。獵物必須「可被終結」且「可被叼走」。模擬真實獵物的停頓與逃跑，避免過度刺激。
+                    </p>
+                </div>
+            </div>
+            <!-- 卡片 3 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="insight-card">
+                    <div class="insight-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="insight-title">安全與環境 (Where)</div>
+                    <p class="small text-muted">
+                        <strong>零細繩、材質中性</strong><br>
+                        自動化產品嚴禁細繩設計以防纏繞。運作噪音需極低（貓聽覺敏感）。位置應融入「貓咪高速公路」。
+                    </p>
+                </div>
+            </div>
+            <!-- 卡片 4 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="insight-card">
+                    <div class="insight-icon"><i class="fas fa-users"></i></div>
+                    <div class="insight-title">飼主與市場 (User)</div>
+                    <p class="small text-muted">
+                        <strong>雙使用者體驗</strong><br>
+                        需解決飼主的分離焦慮（如提供遊戲報告）。產品需具備家居美學，且易於清潔維護，創造長期的投資價值。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 原始報告頁面 -->
+    <div id="report" class="page-content">
+        <h1>原始報告內容</h1>
+        
+        <div id="sec-intro">
+            <h2>引言</h2>
+            <p>本報告旨在深入探討公寓家貓的核心本能與行為需求，並基於貓咪行為學專家傑克森·蓋ラクシー (Jackson Galaxy) 及相關研究的見解，為開發滿足貓咪福祉的創新產品提供一份全面的分析框架。在現代都市生活中，越來越多的貓咪在有限的公寓空間內度過一生，其原始天性常因環境限制而受到壓抑，進而引發行為問題與健康隱憂。本報告將嚴格依據所提供的資料來源，系統性地剖析貓咪的內在動機、互動模式、運動能力、安全考量及飼主體驗，以期為產品設計者提供一個以貓為本、兼顧市場需求的科學依據，從而創造出真正能提升家貓生活品質的創新解決方案。</p>
+        </div>
+
+        <hr class="my-5">
+
+        <div id="sec-1">
+            <h2>一、 核心本能與動機 (The "Why")</h2>
+            
+            <h4>引言</h4>
+            <p>理解貓咪的核心本能——特別是其作為「獵食者」的原始驅動力——是設計任何成功貓咪產品的基石。貓咪看似慵懶無害，其內心深處仍住著一隻野性的獵手。本章節將深入剖析貓咪的狩獵模式、感官偏好及領地需求，為產品概念的建立提供根本性的「為何如此」的解答，揭示驅動貓咪一切行為背後的深層動機。</p>
+
+            <h4>1.1. 關鍵需求分析</h4>
+            <p>綜合分析來源資料，對公寓家貓而言，最根本且最常被忽略的本能需求，是模擬狩獵的遊戲行為與確保領地安全感。傑克森·蓋ラクシー明確指出，「玩耍即是獵物 (Play equals prey)」<sup><a onclick="showCitation('cite-1')">[1]</a></sup>，這揭示了遊戲的本質。貓咪的整個生命由「狩獵、捕捉、獵殺 (hunt, catch, and kill)」<sup><a onclick="showCitation('cite-2')">[2]</a></sup>的循環所驅動。當貓咪能在家中安全地實踐這一天性時，牠們便能展現出一種稱為「Cat Mojo」<sup><a onclick="showCitation('cite-3')">[3]</a></sup>的終極自信。因此，成功的產品設計必須滿足貓咪扮演「原始之貓 (raw cat)」的渴望，讓牠們透過模擬狩獵的遊戲來釋放天性、建立自信，這不僅是娛樂，更是維持其身心健康的關鍵。</p>
+
+            <h4>1.2. 狩獵模式與滿足機制</h4>
+            <p>一個完整的狩獵循環包含「獵食-追逐-啃咬-獵殺」，這對貓咪的滿足感至關重要。僅有追逐是不夠的，貓咪需要在遊戲結束時「殺死某樣東西，當然，我指的是玩具 (kill something, and of course, I mean a toy)」<sup><a onclick="showCitation('cite-4')">[4]</a></sup>。來源資料中對某些硬塑膠自動玩具的批評一針見血地指出問題所在：「沒有東西可以抓，沒有東西可以咬 (there's nothing to grab, there's nothing to bite)」<sup><a onclick="showCitation('cite-5')">[5]</a></sup>。這表明，產品在狩獵的最後階段，必須提供實質的物理回饋。獵物配件的材質必須是可被爪子抓住、可被牙齒啃咬的，才能讓貓咪完成整個滿足鏈。</p>
+
+            <h4>1.3. 「成功狩獵」的定義</h4>
+            <p>對貓而言，「成功」的狩獵終結意味著獵物必須是「可被終結」且「可以被叼走」的。來源資料描述了狩獵循環的終點：「獵殺並進食（即叼走羽毛，有時會帶著它走開）(kill and eat (which is taking the feathers, sometimes walking away with it))」<sup><a onclick="showCitation('cite-6')">[6]</a></sup>。這個「叼走」獵物的行為，象徵著一次完整狩獵的勝利，是獎勵鏈的最高點。一個無法被叼走的獵物，即使被抓住了，也剝奪了貓咪展示戰利品的滿足感。</p>
+
+            <h4>1.4. 「獵殺」後的滿足感</h4>
+            <p>雖然來源資料並未提供關於獵物應「裝死」多久的具體時間數據，但基於「殺死它 (kill it)」<sup><a onclick="showCitation('cite-7')">[7]</a></sup>的概念，我們可以推論，產品應提供一個明確的「停止不動」階段。這個階段標誌著狩獵的成功結束，獵物已被「征服」。這個靜止的時刻讓貓咪得以檢視自己的「戰利品」，從而最大化其成就感與滿足感，為一次成功的狩獵體驗畫上圓滿的句號。</p>
+
+            <h4>1.5. 獎勵機制設計</h4>
+            <p>「玩耍即是獵物 (play equals prey)」<sup><a onclick="showCitation('cite-1')">[1]</a></sup>的概念再次強調，對貓而言，成功的「獵物捕捉」本身就是最強大的非食物獎勵。遊戲過程滿足了其狩獵本能，這種內在動機的滿足感，遠比零食等外在獎勵更能激發其自主使用的意願。產品設計應專注於打造一個引人入勝且最終能被征服的狩獵體驗，這本身就是對貓咪最好的獎勵。</p>
+
+            <h4>1.6. 感官偏好分析</h4>
+            <p>貓咪擁有卓越的感官能力，這為產品設計提供了豐富的靈感。</p>
+            <ul>
+                <li><b>視覺：</b> 貓眼後方有一層稱為「脈絡膜毯 (tapetum lucidum)」<sup><a onclick="showCitation('cite-8')">[8]</a></sup>的組織，能收集並反射光線，使其在低光環境下擁有絕佳視力。這意味著產品應考慮在晨昏等貓咪活躍的低光時段的可見性，例如使用微光或反光材料。</li>
+                <li><b>聽覺：</b> 貓的聽力範圍比人類高約1.5個八度<sup><a onclick="showCitation('cite-9')">[9]</a></sup>，能聽到許多人耳無法察覺的高頻聲音。產品可以利用這一點，設計出僅對貓有吸引力的高頻聲音，以引起其注意，同時減少對飼主的干擾。</li>
+                <li><b>嗅覺：</b> 貓的嗅覺比人類強9到16倍<sup><a onclick="showCitation('cite-10')">[10]</a></sup>，並且擁有一個稱為「犁鼻器 (Jacobson's organ)」<sup><a onclick="showCitation('cite-11')">[11]</a></sup>的輔助嗅覺器官來分析氣味。這意味著產品材質本身的氣味，或添加的天然氣味（如貓薄荷、木天蓼），將是影響貓咪是否對產品感興趣的關鍵因素。</li>
+            </ul>
+
+            <h4>1.7. 獨處與互動遊戲的差異</h4>
+            <p>來源資料區分了兩種核心遊戲模式。「互動遊戲 (interactive play)」<sup><a onclick="showCitation('cite-12')">[12]</a></sup>，即飼主手持逗貓棒等玩具與貓玩耍，是建立人貓情感連結、釋放貓咪旺盛精力的主要方式。相對地，「益智玩具 (puzzle toy)」<sup><a onclick="showCitation('cite-13')">[13]</a></sup>則適用於飼主不在時，提供貓咪獨立的腦力與體力消耗，透過解決難題來獲得食物獎勵。一個自動化產品的理想目標，應是以模擬「互動遊戲」中獵物的不可預測性為核心，以維持長期的吸引力，而非僅僅是作為一個被動的食物分配器。</p>
+
+            <h4>1.8. 非狩獵的自主行為</h4>
+            <p>貓咪的「Cat Mojo」<sup><a onclick="showCitation('cite-3')">[3]</a></sup>不僅來自狩獵，也源於對領地的掌控感。因此，產品設計也應考慮滿足貓的領地巡視（Patrolling）與標記（Scent-marking/Scratching）需求。來源中提到的「貓咪高速公路 (Cat Superhighway)」<sup><a onclick="showCitation('cite-14')">[14]</a></sup>概念，即讓貓咪可以不落地地環繞房間，以及「氣味浸泡物 (scent soakers)」<sup><a onclick="showCitation('cite-15')">[15]</a></sup>（如貓抓板、床鋪）的概念，都強調了垂直空間和可供標記氣味的表面的重要性。若產品能結合制高點、可供摩擦或抓撓的表面，將能極大提升貓咪在公寓環境中的安全感與福祉。</p>
+        </div>
+
+        <hr class="my-5">
+
+        <div id="sec-2">
+            <h2>二、 互動設計與成癮性 (The "How Long")</h2>
+            
+            <h4>引言</h4>
+            <p>在理解貓咪的內在動機後，下一步的挑戰是如何設計出能夠長期吸引貓咪、避免「三分鐘熱度」的互動模式。僅僅滿足本能是不夠的，產品必須具備持續的新鮮感與挑戰性。本章節將聚焦於隨機性、使用頻次、獵物模擬，以及多貓家庭中的動態平衡，探討如何讓產品具備持久的吸引力，讓貓咪一玩再玩。</p>
+
+            <h4>2.1. 對抗無聊的策略</h4>
+            <p>維持貓咪長期興趣的關鍵在於製造「不可預測性」。傑克森·蓋ラクシー在談論玩耍技巧時強調：「獵物會移動開。我們要讓它動得不可預測。(prey moves away. We do it unpredictably.)」<sup><a onclick="showCitation('cite-16')">[16]</a></sup>。這條原則同樣適用於自動化產品。一個固定模式、可被預測路徑的玩具很快就會讓貓感到無聊。因此，產品的移動路徑、速度變化、停頓時機和發出的聲音都應具備隨機演算法，以模擬真實獵物在逃跑時的動態，持續激發貓咪的狩獵慾望。</p>
+
+            <h4>2.2. 理想的使用頻次與時長</h4>
+            <p>自動化產品必須避免過度刺激。來源中警告，持續不斷的刺激可能導致「過度刺激攻擊行為 (over stimulation aggression)」<sup><a onclick="showCitation('cite-17')">[17]</a></sup>。貓咪的精力是爆發式而非持續性的。因此，產品應設計自動「休眠」機制，避免長時間運作。理想的遊戲時段應安排在貓咪精力最旺盛的晨昏或飯前<sup><a onclick="showCitation('cite-18')">[18]</a></sup>，這不僅符合牠們的自然作息節律（circadian rhythm），也契合了「狩獵後進食」的本能順序，從而最大化遊戲的正面效益。</p>
+
+            <h4>2.3. 獵物模擬的維度</h4>
+            <p>一個有效的獵物模擬，必須能同時調動貓咪的多種感官。整合來源中的描述，一個理想的模擬獵物應具備以下特質：</p>
+            <ul>
+                <li><b>移動模式：</b> 必須是「不可預測的」，模擬真實獵物在躲避和逃跑時的猶豫、衝刺與停頓<sup><a onclick="showCitation('cite-16')">[16]</a></sup>。</li>
+                <li><b>材質觸感：</b> 必須是「可被抓住且可啃咬的」，能讓貓咪的爪子和牙齒深陷其中，而不是光滑無法下口的硬塑膠<sup><a onclick="showCitation('cite-5')">[5]</a></sup>。</li>
+                <li><b>發聲：</b> 可利用貓咪極其敏感的高頻聽力範圍<sup><a onclick="showCitation('cite-9')">[9]</a></sup>，設計出模擬小型獵物（如老鼠）的細微吱吱聲，這種聲音對人類幾乎不可聞，卻能精準地吸引貓的注意力。</li>
+            </ul>
+
+            <h4>2.4. 挫折感與滿足感的平衡</h4>
+            <p>一個「永遠抓不到」的獵物是貓咪挫敗感的最大來源。根據「玩耍即是獵物」的原則<sup><a onclick="showCitation('cite-1')">[1]</a></sup>，遊戲的最終目標是完成狩獵循環。像雷射筆這樣的玩具，雖然能激發貓咪追逐，但因為永遠無法被物理捕捉，最終會導致貓咪產生嚴重的挫折感與焦慮<sup><a onclick="showCitation('cite-19')">[19]</a></sup>。因此，產品設計的關鍵在於平衡挑戰與成就：獵物應該難以捕捉，但絕不能無法捕捉。它必須是「可被終結」的，讓貓咪能夠在付出努力後，體驗到「捕捉 (catch)」和「獵殺 (kill)」的終極滿足感。</p>
+
+            <h4>2.5. 多貓家庭的動態考量</h4>
+            <p><b>2.5.1. 資源競爭：</b> 在多貓家庭中，資源的分配至關重要。來源中提到，在引入新貓時，需要將牠們分開餵食以避免競爭<sup><a onclick="showCitation('cite-20')">[20]</a></sup>。這個原則同樣適用於遊戲資源。如果一個自動化玩具的獵物僅從單一出口出現，那麼這個出口很容易被家庭中地位較高或性格較強勢的貓咪獨佔，引發資源守衛行為，導致其他貓咪無法參與。因此，產品設計應採用「多點、分散式」的獵物出口，或能同時在多個位置進行互動，以降低衝突，確保每隻貓都有公平的遊戲機會。</p>
+            <p><b>2.5.2. 轉向攻擊：</b> 挫折感是多貓家庭衝突的催化劑。來源中描述了當貓咪因過度刺激或挫折而亂咬人的「遊戲攻擊行為 (play aggression)」<sup><a onclick="showCitation('cite-21')">[21]</a></sup>或「過度刺激攻擊行為 (over stimulation aggression)」<sup><a onclick="showCitation('cite-17')">[17]</a></sup>。在多貓環境中，這種挫折感更容易轉化為對同伴的攻擊。一個速度過快、路徑不定且無法被成功捕捉的獵物模式，會讓貓群的整體焦慮水平升高，當一隻貓因抓不到獵物而感到沮喪時，牠很可能會將這股無處發洩的攻擊慾轉向身邊最靠近的另一隻貓，引發「轉向攻擊」。</p>
+            <p><b>2.5.3. 遊戲公平性：</b> 雖然來源資料未直接討論「多個獵物」的設計，但基於降低競爭和衝突的總體原則，設計多個可同時互動的目標，或讓獵物能被多隻貓共同「圍剿」，將有助於維持家庭和諧。讓多隻貓咪能夠「同時成功」，而不是為了單一目標而競爭，能將遊戲從一場潛在的衝突轉變為促進群體關係的正面活動。</p>
+            <p><b>2.5.4. 弱勢貓咪的機會：</b> 在任何貓群中，都存在性格差異。來源中提到了如何幫助膽小的「壁花貓 (Wallflower)」<sup><a onclick="showCitation('cite-22')">[22]</a></sup>建立自信，例如在牠們感覺安全的環境中引導遊戲。針對這一點，產品可以設計一種特定的「召喚」聲音或一個特殊的「低強度模式」。這種模式可以在強勢貓咪不在附近時，由飼主遠程啟動或定時觸發，用溫和的移動和聲音吸引膽小或地位較低的貓咪在感覺安全時出來探索和使用，逐步建立牠們的自信心。</p>
+        </div>
+
+        <hr class="my-5">
+
+        <div id="sec-3">
+            <h2>三、 貓體工學與運動能力 (The "How-to-Move")</h2>
+            
+            <h4>引言</h4>
+            <p>產品的物理形態設計必須與貓的身體結構與運動能力相匹配，這即是「貓體工學 (Cat Ergonomics)」。貓是天生的運動健將，擁有驚人的爆發力、平衡感和柔軟度。一個優秀的產品不應限制這些能力，而應提供一個能讓牠們充分施展天賦的舞台。本章節將探討貓咪在跳躍、衝刺、攀爬等方面的能力與偏好，確保產品的設計既能挑戰貓咪，又兼顧其舒適與安全。</p>
+            
+            <h4>3.1-3.7. 運動能力與尺度分析</h4>
+            <p>儘管來源資料並未提供精確的物理測量數據，我們仍可根據其中的定性描述，推導出關鍵的設計原則：</p>
+            <ul>
+                <li><b>跳躍與衝刺：</b> 貓咪擁有「強而有力的後腿 (powerful rear legs)」<sup><a onclick="showCitation('cite-23')">[23]</a></sup>，在玩耍時會「跳躍、奔跑和追逐 (jump and run and chase)」<sup><a onclick="showCitation('cite-24')">[24]</a></sup>。這表明產品設計需要提供足夠的開放空間，讓貓咪能夠施展其從靜止到高速的爆發性衝刺，以及精準的跳躍能力。</li>
+                <li><b>攀爬與高處：</b> 「貓咪高速公路 (Cat Superhighway)」<sup><a onclick="showCitation('cite-14')">[14]</a></sup>以及讓貓咪能夠「不接觸地面環繞房間 (circle the room without touching the floor)」<sup><a onclick="showCitation('cite-25')">[25]</a></sup>的概念，深刻揭示了垂直空間對貓的重要性。產品設計應鼓勵貓咪向上移動，提供穩固、防滑且寬度足夠的平台。</li>
+                <li><b>鑽爬與躲藏：</b> 貓咪天性喜歡躲藏在狹小的空間（如盒子）中<sup><a onclick="showCitation('cite-26')">[26]</a></sup>，這能滿足牠們尋求安全感和伏擊獵物的本能。如果產品能包含隧道、洞穴或半封閉的結構，將極大地增加其吸引力。</li>
+            </ul>
+
+            <h4>3.8. 體能極限與休息</h4>
+            <p>貓咪的運動模式是「爆發後休息」。根據來源中關於玩耍應在貓咪變得「疲倦 (tired)」<sup><a onclick="showCitation('cite-27')">[27]</a></sup>時結束的建議，以及遊戲節奏應如「煮沸後轉小火慢燉 (boil and simmer)」<sup><a onclick="showCitation('cite-28')">[28]</a></sup>的比喻，說明了高強度活動後必須有休息間隔。產品應內建自動休眠功能，將活躍時段控制在數分鐘內，然後進入靜止狀態，讓貓咪可以喘息和恢復體力。</p>
+
+            <h4>3.9. 抓握與撕咬的設計</h4>
+            <p>「啃咬-獵殺 (Bite-Kill)」階段是狩獵行為的終點。來源中對劣質玩具的批評：「沒有東西可以抓，沒有東西可以咬」<sup><a onclick="showCitation('cite-5')">[5]</a></sup>，直接指導了獵物配件的設計：材質需柔軟到足以讓牙齒咬入，但又要足夠堅固，能承受貓咪用後腳猛踢（俗稱 "Bunny Kicks"）時的撕扯力道。</p>
+        </div>
+        
+        <hr class="my-5">
+
+        <div id="sec-4">
+            <h2>四、 安全性與環境考量 (The "Where & Safe")</h2>
+            
+            <h4>4.1. 最大隱患評估</h4>
+            <p>傑克森·蓋ラクシー明確警告：「不要讓牠們在無人看管的情況下玩很多不同的玩具，因為它們可能很危險」<sup><a onclick="showCitation('cite-29')">[29]</a></sup>。特別是繩索或細線類玩具，極易造成纏繞、勒頸的致命風險。因此，任何自動化產品的移動部件或獵物附件，都必須徹底排除細長繩索的設計。</p>
+
+            <h4>4.2. 材質禁忌與氣味考量</h4>
+            <p>參考寵物水碗材質建議——「陶瓷、玻璃或不銹鋼」<sup><a onclick="showCitation('cite-30')">[30]</a></sup>，貓咪玩具應優先選擇安全無毒、耐用且不易殘留氣味的中性材質。這能避免材質本身因吸收過多氣味而成為多貓家庭中的領地衝突焦點。</p>
+
+            <h4>4.3. 聲音的兩面性分析</h4>
+            <p><b>有意噪音 (獵物聲音)：</b> 利用貓的高頻聽力<sup><a onclick="showCitation('cite-9')">[9]</a></sup>，設計人類幾乎聽不到但能吸引貓的微弱叫聲。</p>
+            <p><b>無意噪音 (機械噪音)：</b> 貓的聽覺極其敏感<sup><a onclick="showCitation('cite-31')">[31]</a></sup>，產品運作時的馬達噪音和震動必須嚴格控制，避免成為壓力源。</p>
+
+            <h4>4.4. 放置位置與氣味標記</h4>
+            <p>產品應放置在「貓咪高速公路」<sup><a onclick="showCitation('cite-14')">[14]</a></sup>的路徑上。此外，貓咪會透過摩擦留下氣味標記領地<sup><a onclick="showCitation('cite-32')">[32]</a></sup>，過度清潔會洗掉這些安全標記，降低使用意願。</p>
+        </div>
+
+        <hr class="my-5">
+
+        <div id="sec-5">
+            <h2>五、 個體差異與市場區隔 (The "Who")</h2>
+            
+            <h4>5.1. 年齡差異分析</h4>
+            <ul>
+                <li><b>幼貓 (Kitten)：</b> 精力旺盛，處於學習期<sup><a onclick="showCitation('cite-34')">[34]</a></sup>。需要高強度、耐咬的產品。</li>
+                <li><b>成貓 (Adult)：</b> 需規律遊戲預防肥胖與無聊<sup><a onclick="showCitation('cite-35')">[35]</a></sup>。</li>
+                <li><b>老貓 (Senior)：</b> 可能患有關節炎<sup><a onclick="showCitation('cite-36')">[36]</a></sup>。需要溫和、低強度的「慢節奏」模式，避免高難度跳躍。</li>
+            </ul>
+
+            <h4>5.2. 性格與模式設計</h4>
+            <p>產品應區分模式：針對「拿破崙貓 (Napoleon)」<sup><a onclick="showCitation('cite-37')">[37]</a></sup>的高強度模式，以及針對「壁花貓 (Wallflower)」<sup><a onclick="showCitation('cite-22')">[22]</a></sup>的低強度、易捕捉模式。</p>
+            
+            <h4>5.3. 品種與特殊需求</h4>
+            <p>高能量品種如豹貓（Bengal）需要更高強度的互動<sup><a onclick="showCitation('cite-38')">[38]</a></sup>。對於視力受損的貓，應強化聽覺和嗅覺引導<sup><a onclick="showCitation('cite-39')">[39]</a></sup>。</p>
+        </div>
+
+        <hr class="my-5">
+
+        <div id="sec-6">
+            <h2>六、 驗證與紅線 (The "Red Flags")</h2>
+            
+            <h4>6.1. 正面行為指標</h4>
+            <p>正面指標包括：緩慢眨眼 (slow blink)<sup><a onclick="showCitation('cite-40')">[40]</a></sup>，以及遊戲後的滿足行為（理毛、伸懶腰）<sup><a onclick="showCitation('cite-41')">[41]</a></sup>。</p>
+
+            <h4>6.2. 負面壓力訊號</h4>
+            <p>需警惕：飛機耳 (ears flattened)<sup><a onclick="showCitation('cite-42')">[42]</a></sup>、瞳孔異常放大 (dilated pupils)<sup><a onclick="showCitation('cite-43')">[43]</a></sup>、過度理毛或躲藏<sup><a onclick="showCitation('cite-44')">[44]</a></sup>，以及嘶吼 (hissing)<sup><a onclick="showCitation('cite-45')">[45]</a></sup>。</p>
+
+            <h4>6.3. 常見設計錯誤</h4>
+            <ul>
+                <li><b>迷思一：</b> 貓喜歡單一出口的封閉空間。事實：這會讓貓感到被圍困<sup><a onclick="showCitation('cite-46')">[46]</a></sup>。</li>
+                <li><b>迷思二：</b> 雷射筆是好玩具。事實：無法捕捉會導致挫折感<sup><a onclick="showCitation('cite-19')">[19]</a></sup>。</li>
+            </ul>
+        </div>
+        
+        <hr class="my-5">
+
+        <div id="sec-7">
+            <h2>七、 飼主介入與感知 (The "Owner's Experience")</h2>
+            <p>產品成功也取決於飼主。提供「行為引導建議」幫助飼主引導貓咪<sup><a onclick="showCitation('cite-48')">[48]</a></sup>。產品設計需具備美學，融入家居<sup><a onclick="showCitation('cite-50')">[50]</a></sup>。提供數據回饋（如狩獵次數）可緩解飼主的分離焦慮<sup><a onclick="showCitation('cite-51')">[51]</a></sup>。</p>
+        </div>
+
+        <hr class="my-5">
+
+        <div id="sec-8">
+            <h2>八、 產品生命週期與擴充性 (The "Lifecycle")</h2>
+            <p>獵物應設計為「可被破壞且易於替換」的消耗品<sup><a onclick="showCitation('cite-6')">[6]</a></sup>。模組化設計（如「貓化」概念的延伸<sup><a onclick="showCitation('cite-52')">[52]</a></sup>）能對抗長期無聊。清潔便利性至關重要，如同貓砂盆一樣<sup><a onclick="showCitation('cite-53')">[53]</a></sup>。產品需具備無人看管時的自主脫困機制<sup><a onclick="showCitation('cite-54')">[54]</a></sup>。</p>
+        </div>
+    </div>
+
+    <!-- 3. 資料列表頁面 -->
+    <div id="datalist" class="page-content">
+        <h1>引用資料來源</h1>
+        <ol class="list-group list-group-numbered">
+            <li id="cite-1" class="list-group-item">Jackson Galaxy_組別1.txt---Whether you call it play or you call it hunt, play equals prey, folks. Play equals prey.<br><span class="text-secondary small">中文翻譯：無論你稱之為玩耍還是狩獵，各位，玩耍即是獵物。玩耍即是獵物。</span></li>
+            <li id="cite-2" class="list-group-item">Can a Laser Toy Make Your Cat Crazy!_transcript.txt---they are regulated by hunt, catch, and kill.<br><span class="text-secondary small">中文翻譯：牠們被狩獵、捕捉和獵殺的模式所支配。</span></li>
+            <li id="cite-3" class="list-group-item">Jackson Galaxy_組別1.txt---If you don't know what Cat Mojo is, Mojo is that ultimate confidence—that confidence that's born of knowing that I own territory, that I'm safe in my territory, and that I can secure food in that territory.<br><span class="text-secondary small">中文翻譯：如果你不知道什麼是「貓咪Mojo」，Mojo是那種終極的自信——這種自信源於知道我擁有領地，我在我的領地裡是安全的，並且我能在這片領地裡獲取食物。</span></li>
+            <li id="cite-4" class="list-group-item">Jackson Galaxy_組別1.txt---The best thing that you can do is just get air out by getting them to run around and chase an appropriate victim and kill it. You know, kill something, and of course, I mean a toy as opposed to your leg.<br><span class="text-secondary small">中文翻譯：你能做的最好的事就是讓牠們跑來跑去，追逐一個合適的受害者並殺死它，來釋放能量。你知道，殺死某樣東西，當然，我指的是玩具，而不是你的腿。</span></li>
+            <li id="cite-5" class="list-group-item">Jackson Galaxy_組別2.txt---But at the end of the day, there's nothing to grab, there's nothing to bite. It's just a hard plastic.<br><span class="text-secondary small">中文翻譯：但說到底，沒有東西可以抓，沒有東西可以咬。它只是一個硬塑膠。</span></li>
+            <li id="cite-6" class="list-group-item">The Perfect Way to Play With Your Cat_transcript.txt---Once your cat gets the hunt, catch, and then the kill and eat (which is taking the feathers, sometimes walking away with it, and you have to follow along), and then up again until they're tired.<br><span class="text-secondary small">中文翻譯：一旦你的貓完成了狩獵、捕捉，然後是獵殺和進食（即叼走羽毛，有時會帶著它走開，你得跟著），然後再繼續玩，直到牠們累了。</span></li>
+            <li id="cite-7" class="list-group-item">Jackson Galaxy_組別1.txt---...and kill it.<br><span class="text-secondary small">中文翻譯：……並殺死它。</span></li>
+            <li id="cite-8" class="list-group-item">Can a Laser Toy Make Your Cat Crazy!_transcript.txt---The tapetum lucidum collects all of that light. It could be the lowest little bit of light, and it actually gathers it and brings it back through the retina as light.<br><span class="text-secondary small">中文翻譯：脈絡膜毯收集所有的光線。即使是最低微的光，它實際上也能收集起來，並作為光線再次穿過視網膜。</span></li>
+            <li id="cite-9" class="list-group-item">Can a Laser Toy Make Your Cat Crazy!_transcript.txt---They can hear at about 1.5 octaves higher than we can.<br><span class="text-secondary small">中文翻譯：牠們的聽力範圍比我們高約1.5個八度。</span></li>
+            <li id="cite-10" class="list-group-item">Can a Laser Toy Make Your Cat Crazy!_transcript.txt---Cats have the ability to smell things about 9 to 16 times greater than we can.<br><span class="text-secondary small">中文翻譯：貓的嗅聞能力比我們強約9到16倍。</span></li>
+            <li id="cite-11" class="list-group-item">Can a Laser Toy Make Your Cat Crazy!_transcript.txt---Not only that, they have another source of collecting scent. It's called the Jacobson's organ.<br><span class="text-secondary small">中文翻譯：不僅如此，牠們還有另一個收集氣味的來源。它被稱為犁鼻器。</span></li>
+            <li id="cite-12" class="list-group-item">Speaking Cat 5 Ways to Show Your Cat You LOVE Them_transcript.txt---When I talk about play, I'm talking about interactive play where you're attached to one end of a toy, your cat's attached to the other end of the toy.<br><span class="text-secondary small">中文翻譯：當我談論玩耍時，我指的是互動遊戲，你連接著玩具的一端，你的貓連接著玩具的另一端。</span></li>
+            <li id="cite-13" class="list-group-item">Does My Cat Love Me_transcript.txt---One of the things that you can do that's not just a crinkle mouse somewhere is a puzzle toy. We put their favorite food in it, and they basically have to work that puzzle in order to get the food out.<br><span class="text-secondary small">中文翻譯：除了某處的響紙老鼠，你可以做的其中一件事是益智玩具。我們把牠們最喜歡的食物放進去，牠們基本上必須解決那個謎題才能把食物弄出來。</span></li>
+            <li id="cite-14" class="list-group-item">Does My Cat Love Me_transcript.txt---Let's start with this concept that I call the Cat Superhighway. Can your cat walk into the living room, jump up on something, and then circle the room without touching the floor, and then leave the room?<br><span class="text-secondary small">中文翻譯：讓我們從我稱之為「貓咪高速公路」的這個概念開始。你的貓能走進客廳，跳上某樣東西，然後不接觸地面地環繞房間，再離開房間嗎？</span></li>
+            <li id="cite-15" class="list-group-item">Does My Cat Love Me_transcript.txt---It talks about the concept of scent soakers. And scent soakers are those things, those soft things that cats can leave their scent on just by rubbing their body on it, just by pawing at it, and just by scratching at it.<br><span class="text-secondary small">中文翻譯：它談到了「氣味浸泡物」的概念。而氣味浸泡物是那些東西，那些貓咪可以僅僅透過摩擦身體、用爪子抓扒、以及抓撓來留下氣味的柔軟物品。</span></li>
+            <li id="cite-16" class="list-group-item">Jackson Galaxy_組別2.txt---prey moves away. We do it unpredictably.<br><span class="text-secondary small">中文翻譯：獵物會移動開。我們要讓它動得不可預測。</span></li>
+            <li id="cite-17" class="list-group-item">Jackson Galaxy_組別1.txt---Petting induced aggression is part, in my book, of a much bigger thing, which is over stimulation aggression.<br><span class="text-secondary small">中文翻譯：在我看來，撫摸引發的攻擊行為是一個更大問題的一部分，那就是過度刺激攻擊行為。</span></li>
+            <li id="cite-18" class="list-group-item">Does My Cat Love Me_transcript.txt---The best time to play with your cat is before they eat their meal. Think about your ancestral cat... they hunt, they catch, they kill, they eat. We can do that with interactive play, and then we end it with food.<br><span class="text-secondary small">中文翻譯：與你的貓玩耍的最佳時機是在牠們吃飯前。想想你的貓的祖先……牠們狩獵、捕捉、獵殺、然後進食。我們可以透過互動遊戲來做到這一點，然後用食物結束。</span></li>
+            <li id="cite-19" class="list-group-item">The Seven Deadly Cat Sins!_transcript.txt---But then just don't forget, when you're dealing with lasers, you always want to transition to something like a kicker or an interactive toy so he can finally get that sort of kill part out of the hunting, and that'll really satisfy him all the way around.<br><span class="text-secondary small">中文翻譯：不過別忘了，當你使用雷射筆時，你總是要轉換到像是踢抓玩具或互動玩具之類的東西，這樣牠才能最終從狩獵中獲得那種「獵殺」的滿足感，這會讓牠全面感到滿足。</span></li>
+            <li id="cite-20" class="list-group-item">How to Introduce Cats_transcript.txt---You have your resident cat who has, you know, for the most part, free run of the house, and you're gonna introduce them at mealtimes. One on one side of the door, one on the other.<br><span class="text-secondary small">中文翻譯：你讓你的原住貓，你知道，在大部分時間裡，可以在房子裡自由活動，然後你將在用餐時間介紹牠們認識。一隻在門的一邊，另一隻在另一邊。</span></li>
+            <li id="cite-21" class="list-group-item">Jackson Galaxy_組別1.txt---So the first type of cat aggression that we're going to talk about today is play aggression.<br><span class="text-secondary small">中文翻譯：所以我們今天要談論的第一種貓咪攻擊行為是遊戲攻擊行為。</span></li>
+            <li id="cite-22" class="list-group-item">What is Cat Mojo_transcript.txt---On this side of the Mojito, we've got the Wallflower. The Wallflower feels like they don't own anything, so they hide.<br><span class="text-secondary small">中文翻譯：在Mojito貓的這一邊，我們有「壁花貓」。壁花貓感覺自己什麼都不擁有，所以牠們會躲藏起來。</span></li>
+            <li id="cite-23" class="list-group-item">Cats vs. Gravity Science of Stupid_transcript.txt---This allows her to exploit the full strength of her powerful rear legs as she leaps upwards.<br><span class="text-secondary small">中文翻譯：這讓牠在向上跳躍時能充分利用其強而有力的後腿。</span></li>
+            <li id="cite-24" class="list-group-item">Jackson Galaxy_組別2.txt---So as we're seeing with Joni and Brucy, they're just crazy. They just want to jump and run and chase and whatever.<br><span class="text-secondary small">中文翻譯：所以我們看到Joni和Brucy，牠們簡直瘋了。牠們只想跳躍、奔跑、追逐等等。</span></li>
+            <li id="cite-25" class="list-group-item">Does My Cat Love Me_transcript.txt---...and then circle the room without touching the floor...<br><span class="text-secondary small">中文翻譯：……然後不接觸地面地環繞房間……</span></li>
+            <li id="cite-26" class="list-group-item">7 Things Cats LOVE (That You Might Hate)_transcript.txt---Boxes. Cats love boxes. If you've had a cat for any length of time—like 48 hours—and you have a box nearby, your cat's going to be in the box.<br><span class="text-secondary small">中文翻譯：盒子。貓喜歡盒子。如果你養貓有任何一段時間——比如48小時——而附近又有一個盒子，你的貓就會鑽進盒子裡。</span></li>
+            <li id="cite-27" class="list-group-item">A Dirty Mess Keeping Your Cats out of Your Plants_transcript.txt---That way, at that point where he was going to zoom up to an eight, you've played with him, you've made him tired...<br><span class="text-secondary small">中文翻譯：那樣，在他即將瘋狂到八級的時候，你已經跟他玩過了，你已經讓他累了……</span></li>
+            <li id="cite-28" class="list-group-item">The Perfect Way to Play With Your Cat_transcript.txt---That is where boil and simmer comes in. You just brought your cat to a boil. Now you're gonna let them simmer.<br><span class="text-secondary small">中文翻譯：這就是「煮沸後轉小火慢燉」的用武之地。你剛把你的貓帶到沸點。現在你要讓牠們慢燉一下。</span></li>
+            <li id="cite-29" class="list-group-item">Does My Cat Love Me_transcript.txt---Don't leave it on the floor. Don't let them play unsupervised with a lot of different toys because they could be dangerous...<br><span class="text-secondary small">中文翻譯：不要把它（指玩具）留在地板上。不要讓牠們在無人看管的情況下玩很多不同的玩具，因為它們可能很危險……</span></li>
+            <li id="cite-30" class="list-group-item">Does My Cat Love Me_transcript.txt---So again, I recommend cat fountains that are made primarily of ceramic or glass or stainless steel.<br><span class="text-secondary small">中文翻譯：所以再次，我推薦主要由陶瓷、玻璃或不銹鋼製成的貓用飲水噴泉。</span></li>
+            <li id="cite-31" class="list-group-item">Does My Cat Love Me_transcript.txt---We have to remember cat hearing is incredibly sensitive.<br><span class="text-secondary small">中文翻譯：我們必須記住，貓的聽覺是極其敏感的。</span></li>
+            <li id="cite-32" class="list-group-item">Does My Cat Love Me_transcript.txt---They are claiming territory in a very positive way. So make sure that you have a lot of scent soakers...<br><span class="text-secondary small">中文翻譯：牠們正在以一種非常積極的方式宣示領地。所以要確保你有很多氣味浸泡物……</span></li>
+            <li id="cite-33" class="list-group-item">Why Does My Cat Sleep on Me Google Questions Answered_transcript.txt---Don't forget, all cats are individuals.<br><span class="text-secondary small">中文翻譯：別忘了，所有貓都是個體。</span></li>
+            <li id="cite-34" class="list-group-item">Two Are Better Than One!_transcript.txt---They're about play. They're about that early form of, "How do I talk to other cats? What is play? When have I gone too far?<br><span class="text-secondary small">中文翻譯：牠們關心的是玩耍。牠們關心的是那種早期的形式，「我如何與其他貓交談？什麼是玩耍？我什麼時候做得太過火了？」</span></li>
+            <li id="cite-35" class="list-group-item">Caroline's Cancer Journal - Episode 1_transcript.txt---Play every day keeps your cat physically and behaviorally vital as they transition from teenager to those prime adult years to the mature adult years.<br><span class="text-secondary small">中文翻譯：每天玩耍能讓你的貓在從青少年過渡到壯年期再到熟齡期的過程中，保持身體和行為上的活力。</span></li>
+            <li id="cite-36" class="list-group-item">Grieving Your Cat, Dog or Any Other Animal Family Member - Tips, Tools and My Story._transcript.txt---Leland came to me a while back for some hind end weakness and a little wobbly walking. And we started doing some acupuncture, which helped relieve his spinal arthritis and his weakness.<br><span class="text-secondary small">中文翻譯：Leland不久前因為後腿無力和走路有點搖晃來找我。我們開始做一些針灸，這有助於緩解他的脊椎關節炎和無力。</span></li>
+            <li id="cite-37" class="list-group-item">What is Cat Mojo_transcript.txt---And then, on this side, today's topic: the Napoleon. The Napoleon feels just as disenfranchised, let's say, as the Wallflower, but they express it in a totally opposite way: they  over-own .<br><span class="text-secondary small">中文翻譯：然後，在這邊，是今天的主題：拿破崙貓。拿破崙貓感覺和壁花貓一樣被剝奪了權利，但牠們以完全相反的方式表達：牠們「過度佔有」。</span></li>
+            <li id="cite-38" class="list-group-item">Why Is My Cat NOT a Lap Cat (5 Reasons)_transcript.txt---On the other hand, highly active breeds like Bengals, Abyssinians, and Orientals may prefer interactive play over quiet lap time.<br><span class="text-secondary small">中文翻譯：另一方面，像豹貓、阿比西尼亞貓和東方貓這樣高度活躍的品種，可能更喜歡互動遊戲而不是安靜的膝上時光。</span></li>
+            <li id="cite-39" class="list-group-item">Grieving Your Cat, Dog or Any Other Animal Family Member - Tips, Tools and My Story._transcript.txt---But if you see the way they work with blind cats: you rip off the top here, now when you do, give it a little bit of a squeeze. See how it comes? So that way we're using our nose there.<br><span class="text-secondary small">中文翻譯：但如果你看到牠們與盲貓互動的方式：你撕開頂部，然後當你這麼做時，稍微擠壓一下。看到它是如何出來的嗎？這樣我們就在那裡用到了我們的鼻子。</span></li>
+            <li id="cite-40" class="list-group-item">How to Introduce Cats_transcript.txt---The way that I have laid that out for you guys in the past is something we call the slow blink.<br><span class="text-secondary small">中文翻譯：過去我為你們闡述的方式，我們稱之為「緩慢眨眼」。</span></li>
+            <li id="cite-41" class="list-group-item">A Dirty Mess Keeping Your Cats out of Your Plants_transcript.txt---...and then he just goes off and sleeps it off or does whatever.<br><span class="text-secondary small">中文翻譯：……然後他就走開，睡一覺消化掉，或者做些別的。</span></li>
+            <li id="cite-42" class="list-group-item">How To PET A CAT (For Maximum Cuddles)_transcript.txt---2. Ears Flattened or Rotating Backward: When your cat's ears move back or flatten against their head, it's a clear sign that they're uncomfortable.<br><span class="text-secondary small">中文翻譯：2. 耳朵壓平或向後轉動：當你的貓的耳朵向後移動或貼在頭上時，這是一個明確的信號，表示牠們感到不舒服。</span></li>
+            <li id="cite-43" class="list-group-item">How To PET A CAT (For Maximum Cuddles)_transcript.txt---3. Dilated Pupils: Large pupils can indicate excitement but also frustration or overstimulation.<br><span class="text-secondary small">中文翻譯：3. 瞳孔放大：大的瞳孔可以表示興奮，但也可能表示挫折或過度刺激。</span></li>
+            <li id="cite-44" class="list-group-item">How to Tell if Your Cat is Stressed (Cat Stress 101)_transcript.txt---...which can lead to a number of physical and emotional issues including over-grooming, hiding, and changes in appetite.<br><span class="text-secondary small">中文翻譯：……這可能導致一系列身體和情緒問題，包括過度理毛、躲藏和食慾改變。</span></li>
+            <li id="cite-45" class="list-group-item">10 Signs of Stress in Cats (And How to Help!)_transcript.txt---An aggressive cat may hiss, growl, or spit.<br><span class="text-secondary small">中文翻譯：一隻具攻擊性的貓可能會發出嘶嘶聲、低吼聲或吐口水。</span></li>
+            <li id="cite-46" class="list-group-item">Does My Cat Love Me_transcript.txt---...take litter boxes and shove them behind things or in the corner where they are literally cornered. In multiple cat homes, absolutely not.<br><span class="text-secondary small">中文翻譯：……把貓砂盆推到東西後面或角落裡，讓牠們簡直就是被逼到角落。在多貓家庭中，絕對不行。</span></li>
+            <li id="cite-47" class="list-group-item">Does My Cat Love Me_transcript.txt---Play with your cat. Play with your cat. That is just such a key to life with cats.<br><span class="text-secondary small">中文翻譯：和你的貓玩。和你的貓玩。這就是與貓共處的關鍵所在。</span></li>
+            <li id="cite-48" class="list-group-item">Grieving Your Cat, Dog or Any Other Animal Family Member - Tips, Tools and My Story._transcript.txt---"I play with him and he comes out." What you're doing now is you're giving him an incentive to come out.<br><span class="text-secondary small">中文翻譯：「我跟他玩，他就出來了。」你現在正在做的就是給他一個出來的動機。</span></li>
+            <li id="cite-49" class="list-group-item">My Cat Doesn't Like to Be Touched!_transcript.txt---In another instance, it would be that you have a cat who hides in the closet all the time. And in order to make them more comfortable, you start putting beds in the closet, you start feeding them in the closet, you start making that den for them even more appealing, which does what? Keeps them in the closet.<br><span class="text-secondary small">中文翻譯：在另一種情況下，你有一隻總是躲在衣櫃裡的貓。為了讓牠們更舒服，你開始在衣櫃裡放床，開始在衣櫃裡餵牠們，你讓那個窩對牠們更有吸引力，而這會導致什麼？讓牠們一直待在衣櫃裡。</span></li>
+            <li id="cite-50" class="list-group-item">A Dirty Mess Keeping Your Cats out of Your Plants_transcript.txt---You can find a way to merge the utilitarian with the aesthetic and make sure that everybody wins.<br><span class="text-secondary small">中文翻譯：你可以找到一種方法，將實用性與美學結合起來，確保每個人都贏。</span></li>
+            <li id="cite-51" class="list-group-item">8 Signs of Separation Anxiety in Cats (& How to Help Them)_transcript.txt---Since we can't exactly tell our cats where we are going and when we will be home, we often leave them in a state of unknowing. For some cats, this can be extremely anxiety-inducing.<br><span class="text-secondary small">中文翻譯：因為我們無法確切地告訴我們的貓我們要去哪裡以及何時回家，我們常常讓牠們處於未知的狀態。對某些貓來說，這可能極度引發焦慮。</span></li>
+            <li id="cite-52" class="list-group-item">Does My Cat Love Me_transcript.txt---...they know all about "catification" and getting cats to own the entire place from floor to ceiling.<br><span class="text-secondary small">中文翻譯：……他們完全了解「貓化」以及如何讓貓從地板到天花板完全佔有整個空間。</span></li>
+            <li id="cite-53" class="list-group-item">15 Things You Should NEVER Do to Your Cat_transcript.txt---Number six: Leave the litter box dirty. Just like you wouldn't want to use a dirty bathroom, your cat doesn't want to use a dirty litter box.<br><span class="text-secondary small">中文翻譯：第六點：讓貓砂盆保持骯髒。就像你不想使用骯髒的浴室一樣，你的貓也不想使用骯髒的貓砂盆。</span></li>
+            <li id="cite-54" class="list-group-item">Does My Cat Love Me_transcript.txt---Don't let them play unsupervised...<br><span class="text-secondary small">中文翻譯：不要讓牠們在無人看管的情況下玩耍……</span></li>
+        </ol>
+    </div>
+
+</main>
+
+<!-- 引用彈出視窗 -->
+<div class="citation-backdrop" id="citationBackdrop"></div>
+<div class="citation-popup" id="citationPopup">
+    <div class="citation-header">
+        <h5 class="m-0 text-primary"><i class="fas fa-quote-left me-2"></i>資料來源</h5>
+        <button type="button" class="btn-close" onclick="hideCitation()"></button>
+    </div>
+    <div class="citation-body" id="citationBody">
+        <!-- 內容由 JS 動態填入 -->
+    </div>
+</div>
+
+<script>
+    // 側邊欄切換 (手機版)
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const currentTransform = window.getComputedStyle(sidebar).getPropertyValue('transform');
+        if (currentTransform === 'none' || currentTransform.includes('matrix(1, 0, 0, 1, 0, 0)')) {
+             sidebar.style.transform = 'translateX(-100%)';
+        } else {
+             sidebar.style.transform = 'translateX(0)';
+        }
+    }
+
+    // 頁面切換功能
+    function showPage(pageId, navElement, anchorId) {
+        // 1. 隱藏所有頁面
+        document.querySelectorAll('.page-content').forEach(page => {
+            page.classList.remove('active');
+        });
+
+        // 2. 顯示目標頁面
+        const targetPage = document.getElementById(pageId);
+        if (targetPage) targetPage.classList.add('active');
+
+        // 3. 更新側邊欄 Active 狀態
+        if (navElement) {
+            document.querySelectorAll('#sidebar .nav-link').forEach(link => link.classList.remove('active-main'));
+            if (!navElement.classList.contains('report-nav-link')) {
+                 navElement.classList.add('active-main');
+            }
+        }
+        
+        // 4. 手機版點選後自動收合側邊欄
+        if (window.innerWidth < 992) {
+            document.getElementById('sidebar').style.transform = 'translateX(-100%)';
+        }
+
+        // 5. 處理錨點跳轉 (平滑捲動)
+        if (anchorId) {
+            // 給予一點延遲確保頁面 display:block 後再抓位置
+            setTimeout(() => {
+                const element = document.querySelector(anchorId);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // 高亮效果
+                    element.style.transition = 'background 0.5s';
+                    element.style.backgroundColor = '#fff3cd';
+                    setTimeout(() => element.style.backgroundColor = 'transparent', 1500);
+                }
+            }, 100);
+        } else {
+            window.scrollTo(0,0);
+        }
+    }
+
+    // 引用彈出功能
+    const popup = document.getElementById('citationPopup');
+    const backdrop = document.getElementById('citationBackdrop');
+    const popupBody = document.getElementById('citationBody');
+
+    function showCitation(citationId) {
+        const sourceElement = document.getElementById(citationId);
+        if (sourceElement) {
+            // 取得引用文字，這裡會直接抓取包含 English 和 <span class="text-secondary">中文翻譯</span> 的 HTML
+            // 所以彈出視窗也會有格式
+            popupBody.innerHTML = `<p class="mb-0"><strong>[${citationId.replace('cite-','')}]</strong> ${sourceElement.innerHTML}</p>`;
+            popup.classList.add('active');
+            backdrop.classList.add('active');
+        }
+    }
+
+    function hideCitation() {
+        popup.classList.remove('active');
+        backdrop.classList.remove('active');
+    }
+
+    // 點擊背景關閉
+    backdrop.addEventListener('click', hideCitation);
+</script>
+
+</body>
+</html>
