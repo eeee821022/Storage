@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoTool 產品分析儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --base-font-size: 14px;
+        }
+        
+        body { 
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            font-size: var(--base-font-size);
+        }
+        
+        .chart-container { position: relative; width: 100%; min-height: 500px; }
+        .small-chart-container { position: relative; width: 100%; }
+        
+        /* 應用字體大小到各種元素 */
+        table, th, td, p, span, div, label, input, select, button {
+            font-size: var(--base-font-size);
+        }
+        
+        /* 保持標題相對大小 */
+        h3 { font-size: calc(var(--base-font-size) * 1.2); }
+        h2 { font-size: calc(var(--base-font-size) * 1.4); }
+        
+        /* 小字體保持相對 */
+        .text-xs { font-size: calc(var(--base-font-size) * 0.75); }
+        .text-sm { font-size: calc(var(--base-font-size) * 0.875); }
+        
+        /* Y軸覆蓋層樣式 */
+        #yAxisOverlay {
+            box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+        }
+        
+        /* 篩選器樣式 */
+        .filter-dropdown summary {
+            cursor: pointer; padding: 0.5rem 1rem; border: 1px solid #d1d5db;
+            border-radius: 0.375rem; background-color: white;
+            transition: background-color 0.2s, border-color 0.2s;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .filter-dropdown summary:hover { background-color: #f9fafb; }
+        .filter-dropdown[open] summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .filter-dropdown .filter-panel {
+            max-height: 300px; overflow-y: auto; border: 1px solid #d1d5db; border-top: none;
+            padding: 0.75rem; background-color: white; z-index: 10; position: absolute;
+            width: 100%; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem;
+        }
+        .filter-dropdown { position: relative; }
+        
+        .multi-select-box {
+            border: 1px solid #d1d5db; border-radius: 0.375rem;
+            padding: 0.5rem; max-height: 200px; overflow-y: auto;
+            background-color: white;
+        }
+        .multi-select-box label { display: block; margin-bottom: 0.25rem; cursor: pointer; }
+        
+        .filter-active {
+            background-color: #fefce8 !important;
+            border-color: #fde047 !important;
+            font-weight: 600;
+        }
+        
+        /* 收折區塊樣式 */
+        details summary {
+            cursor: pointer; font-size: 1.25rem; font-weight: 700;
+            color: #1e3a8a; background-color: #eef2ff;
+            padding: 0.75rem 1.25rem; border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        details[open] summary {
+            border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+        }
+        details summary:hover { background-color: #e0e7ff; }
+        details > div {
+            border: 1px solid #e0e7ff; border-top: none;
+            padding: 1.5rem; border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+        }
+
+        /* 產品提示框樣式 */
+        #custom-tooltip {
+            background-color: #ffffff; border: 1px solid #e5e7eb;
+            border-radius: 0.5rem; padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            position: relative; z-index: 1000;
+            max-width: 100%;
+            display: none;
+        }
+        
+        /* 產品圖片預覽樣式 */
+        .product-image-preview {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border: 2px solid #3b82f6;
+            border-radius: 0.375rem;
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transform: translate(-50%, calc(-100% - 20px));
+        }
+        
+        .tab-container {
+            display: flex; border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 0.75rem;
+        }
+        
+        .tab-button {
+            padding: 0.5rem 1rem; cursor: pointer;
+            border: none; background: none;
+            color: #6b7280; font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .tab-button.active {
+            color: #2563eb; border-bottom: 2px solid #2563eb;
+            margin-bottom: -2px;
+        }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .info-row {
+            display: flex; margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .info-label {
+            font-weight: 600; color: #4b5563;
+            min-width: 100px; flex-shrink: 0;
+        }
+        
+        .info-value {
+            color: #1f2937; word-break: break-word;
+        }
+        
+        .tooltip-image {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.375rem;
+            margin-top: 0.5rem;
+            object-fit: contain;
+        }
+
+        /* 圖例樣式 */
+        .legend-item { cursor: pointer; transition: opacity 0.2s; }
+        .legend-item-hidden { opacity: 0.5; text-decoration: line-through; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="w-full p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-800">GoTool 產品分析儀表板</h1>
+            <p class="text-gray-600 mt-2">電動工具產品數據分析</p>
+        </header>
+
+        <!-- 載入中 -->
+        <div id="loading" class="text-center p-8">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="mt-4 text-lg" id="loadingMessage">正在載入資料，請稍候...</p>
+            <div id="debugInfo" class="mt-4 text-sm text-red-600 max-w-xl mx-auto text-left bg-white p-4 rounded shadow border hidden"></div>
+        </div>
+
+        <!-- 儀表板 -->
+        <main id="dashboard" class="hidden">
+            <!-- 智慧篩選區 (橫向，可摺疊) -->
+            <details id="filterSection" open class="mb-6">
+                <summary class="cursor-pointer text-lg font-bold text-gray-800 bg-white p-4 rounded-lg shadow-lg hover:bg-gray-50 list-none">
+                    <span class="inline-flex items-center">
+                        <i class="fas fa-filter mr-2"></i> 智慧篩選
+                        <i class="fas fa-chevron-down ml-2 text-sm transition-transform" id="filterToggleIcon"></i>
+                    </span>
+                </summary>
+                <div class="bg-white p-4 rounded-lg shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">篩選條件 <span id="filterCount" class="text-sm text-blue-600 font-normal"></span></h3>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <label for="fontSizeSlider" class="text-xs text-gray-600 whitespace-nowrap">字體大小:</label>
+                                <input type="range" id="fontSizeSlider" min="10" max="20" value="14" step="1" class="w-24">
+                                <span id="fontSizeValue" class="text-xs text-gray-600 w-8">14px</span>
+                            </div>
+                            <button id="clearAllFilters" class="text-xs bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600">
+                                清除全部
+                            </button>
+                        </div>
+                    </div>
+                    <div id="filtersContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        <!-- 動態生成篩選器 -->
+                    </div>
+                </div>
+            </details>
+            
+            <div class="lg:grid lg:grid-cols-12 lg:gap-6">
+                <!-- 左側圖表區 (9欄) -->
+                <div class="lg:col-span-9 space-y-6">
+                
+                <!-- 點布圖 (Scatter Plot) -->
+                <details id="scatterSection" open>
+                    <summary>產品點布圖分析</summary>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-white rounded-lg shadow-md">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="scatterXAxis" class="block text-sm font-medium text-gray-700">X軸</label>
+                                    <select id="scatterXAxis" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="售價">售價</option>
+                                        <option value="原價">原價</option>
+                                        <option value="伏特">伏特</option>
+                                        <option value="鋸片尺寸">鋸片尺寸</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="scatterYAxis" class="block text-sm font-medium text-gray-700">Y軸</label>
+                                    <select id="scatterYAxis" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <!-- 動態生成 -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="scatterColorBy" class="block text-sm font-medium text-gray-700">顏色分組</label>
+                                    <select id="scatterColorBy" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="none">無分組</option>
+                                        <!-- 動態生成 -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold text-gray-800">產品分布圖</h3>
+                                <div class="flex gap-2 items-center flex-wrap">
+                                    <span id="scatterDataCount" class="text-sm text-gray-700 font-semibold"></span>
+                                    <button id="scatter-toggle-images" class="text-sm bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                                        <i class="fas fa-image mr-1"></i> 顯示照片
+                                    </button>
+                                    <span class="text-sm text-gray-600">縮放:</span>
+                                    <button id="scatter-zoom-out" class="text-sm bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <button id="scatter-zoom-in" class="text-sm bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button id="scatter-zoom-reset" class="text-sm bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">
+                                        重置
+                                    </button>
+                                    <button id="scatter-download-screenshot" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700">
+                                        <i class="fas fa-camera mr-1"></i> 下載截圖
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="scatterLegend" class="flex flex-wrap gap-x-4 gap-y-1 mb-4"></div>
+                            <div style="position: relative; padding-top: 100px;">
+                                <!-- Y軸固定區域 -->
+                                <div id="yAxisContainer" style="position: absolute; left: 16px; top: 100px; width: 60px; height: 730px; background: white; z-index: 100; pointer-events: none; border-right: 2px solid #e5e7eb; box-shadow: 2px 0 4px rgba(0,0,0,0.05);">
+                                    <canvas id="yAxisCanvas" width="60" height="730" style="display: block;"></canvas>
+                                </div>
+                                <div id="scatterChartWrapper" class="border border-gray-200 rounded" style="max-width: 100%; position: relative; overflow-x: auto; overflow-y: hidden;">
+                                    <div id="scatterChartContainer" class="chart-container" style="min-width: 100%; height: 730px; transition: min-width 0.3s; position: relative; padding-left: 60px;">
+                                        <canvas id="scatterChart" style="display: block;"></canvas>
+                                        <div id="scatterImageContainer" style="position: absolute; top: 0; left: 60px; width: calc(100% - 60px); height: 100%; pointer-events: none;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- 交叉長條圖分析 -->
+                <details id="crossBarSection">
+                    <summary>交叉長條圖分析</summary>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-white rounded-lg shadow-md">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label for="crossBarYAxis" class="block text-sm font-medium text-gray-700">主要組別 (Y軸)</label>
+                                    <select id="crossBarYAxis" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <!-- 動態生成 -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="crossBarYAxisSub" class="block text-sm font-medium text-gray-700">次要組別 (可選)</label>
+                                    <select id="crossBarYAxisSub" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="">無</option>
+                                        <!-- 動態生成 -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="crossBarColorBy" class="block text-sm font-medium text-gray-700">欄 (分組)</label>
+                                    <select id="crossBarColorBy" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="none">不分組</option>
+                                        <!-- 動態生成 -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="crossBarValue" class="block text-sm font-medium text-gray-700">值</label>
+                                    <select id="crossBarValue" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="count">筆數 (COUNT)</option>
+                                        <option value="percent">各列佔比 (%)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold text-gray-800">交叉分析圖表</h3>
+                                <div class="flex gap-2">
+                                    <button id="crossBar-export-csv" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">
+                                        <i class="fas fa-file-csv mr-1"></i> 匯出 CSV
+                                    </button>
+                                    <button id="crossBar-download-screenshot" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700">
+                                        <i class="fas fa-camera mr-1"></i> 下載截圖
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="crossBarLegend" class="flex flex-wrap gap-x-4 gap-y-1 mb-4"></div>
+                            <div class="chart-container">
+                                <canvas id="crossBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- 樞紐圖表分析 -->
+                <details id="pivotTableSection">
+                    <summary>樞紐圖表分析</summary>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-white rounded-lg shadow-md">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <!-- 列設定 -->
+                                <div class="space-y-3">
+                                    <h3 class="text-sm font-semibold text-gray-700 border-b pb-1">列 (Row)</h3>
+                                    <div>
+                                        <label for="pivotRowMain" class="block text-xs font-medium text-gray-600">主要分組</label>
+                                        <select id="pivotRowMain" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                            <option value="">請選擇</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="pivotRowSub" class="block text-xs font-medium text-gray-600">次要分組（可選）</label>
+                                        <select id="pivotRowSub" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                            <option value="">無</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- 欄設定 -->
+                                <div class="space-y-3">
+                                    <h3 class="text-sm font-semibold text-gray-700 border-b pb-1">欄 (Column) - 數據欄位</h3>
+                                    <div id="pivotColumnsContainer" class="space-y-2 max-h-64 overflow-y-auto">
+                                        <!-- 動態生成 -->
+                                    </div>
+                                    <button id="addPivotColumn" class="w-full py-1.5 px-3 text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md border border-indigo-200">
+                                        + 新增數據欄
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg shadow-lg overflow-x-auto">
+                            <div class="flex justify-end mb-2 gap-2">
+                                <button id="pivotTable-export-csv" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">
+                                    <i class="fas fa-file-csv mr-1"></i> 匯出 CSV
+                                </button>
+                                <button id="pivotTable-add-all-columns" class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700">
+                                    <i class="fas fa-plus-circle mr-1"></i> 添加全部欄位
+                                </button>
+                                <button id="pivotTable-download-screenshot" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700">
+                                    <i class="fas fa-camera mr-1"></i> 下載截圖
+                                </button>
+                            </div>
+                            <div id="pivotTableContainer" class="text-sm">
+                                <p class="text-gray-500">請選擇列和欄以生成樞紐分析表</p>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+            </div>
+
+            <!-- 右側產品資訊卡 (3欄) -->
+            <div class="lg:col-span-3">
+                <div class="bg-white p-4 rounded-lg shadow-lg sticky top-4">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">產品資訊</h3>
+                    <div id="custom-tooltip">
+                        <p class="text-gray-500 text-sm">點擊圖表上的產品點查看詳細資訊</p>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 設定
+        const HARDCODED_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8N5bP_YkaeZRr2PYI0qrETEhJrvn4L2dKCs5YiALue-pFe0GmLr3SuY1JivLsTOEP/exec';
+        
+        const COLOR_PALETTE = [
+            '#1e40af', '#dc2626', '#16a34a', '#ea580c', '#9333ea', '#0891b2', '#ca8a04', '#db2777',
+            '#65a30d', '#7c3aed', '#0d9488', '#c026d3', '#4338ca', '#be123c', '#15803d'
+        ];
+
+        // 分類欄位定義
+        const CATEGORICAL_FIELDS = ['品牌', '機型', '伏特', '鋸片尺寸', '電源分類', '英文分類', '中文名稱', '產品分類', '加工材質'];
+        const NUMERIC_FIELDS = ['售價', '原價', '伏特', '鋸片尺寸'];
+        
+        // 全局變數
+        let rawData = [];
+        let filteredData = [];
+        let charts = {};
+        let colorMaps = {};
+        let filterSelections = {};
+        let tempFilterSelections = {}; // 暫時篩選（圖例點擊用）
+        let scatterZoomLevel = 1; // 散點圖縮放級別
+        let showProductImages = false; // 是否顯示產品圖片
+        let selectedProduct = null; // 當前選中的產品
+
+        // 頁面載入
+        window.addEventListener('DOMContentLoaded', () => {
+            initDashboard();
+        });
+
+        async function initDashboard() {
+            try {
+                const response = await fetch(HARDCODED_SCRIPT_URL + '?sheet=GoTool PT清單');
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                rawData = processData(data);
+                filteredData = [...rawData];
+                
+                console.log('原始資料筆數:', rawData.length);
+                console.log('前3筆資料樣本:', rawData.slice(0, 3));
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                
+                setupControls();
+                setupFilters();
+                updateAllCharts();
+                
+            } catch (error) {
+                const debugInfo = document.getElementById('debugInfo');
+                debugInfo.textContent = '載入失敗: ' + error.message;
+                debugInfo.classList.remove('hidden');
+            }
+        }
+
+        function processData(data) {
+            return data.map(row => {
+                const processed = {...row};
+                
+                // 處理數值欄位，統一取小數點後2位
+                if (row['售價']) {
+                    const priceStr = String(row['售價']).replace(/[$,]/g, '');
+                    const price = parseFloat(priceStr) || 0;
+                    processed['售價'] = Math.round(price * 100) / 100;
+                }
+                if (row['原價']) {
+                    const priceStr = String(row['原價']).replace(/[$,]/g, '');
+                    const price = parseFloat(priceStr) || 0;
+                    processed['原價'] = Math.round(price * 100) / 100;
+                }
+                if (row['伏特']) {
+                    const voltStr = String(row['伏特']).replace(/[Vv\s]/g, '');
+                    const volt = parseFloat(voltStr) || 0;
+                    processed['伏特'] = Math.round(volt * 100) / 100;
+                }
+                if (row['鋸片尺寸']) {
+                    const sizeStr = String(row['鋸片尺寸']).replace(/[mm\s]/g, '');
+                    const size = parseFloat(sizeStr) || 0;
+                    processed['鋸片尺寸'] = Math.round(size * 100) / 100;
+                }
+                
+                return processed;
+            });
+        }
+
+        function setupControls() {
+            // 點布圖 Y軸選項
+            const scatterYAxis = document.getElementById('scatterYAxis');
+            CATEGORICAL_FIELDS.forEach(field => {
+                const option = document.createElement('option');
+                option.value = field;
+                option.textContent = field;
+                scatterYAxis.appendChild(option);
+            });
+            
+            // 點布圖顏色分組
+            const scatterColorBy = document.getElementById('scatterColorBy');
+            CATEGORICAL_FIELDS.forEach(field => {
+                const option = document.createElement('option');
+                option.value = field;
+                option.textContent = field;
+                scatterColorBy.appendChild(option);
+            });
+            
+            // 交叉長條圖
+            const crossBarYAxis = document.getElementById('crossBarYAxis');
+            const crossBarYAxisSub = document.getElementById('crossBarYAxisSub');
+            const crossBarColorBy = document.getElementById('crossBarColorBy');
+            CATEGORICAL_FIELDS.forEach(field => {
+                const option1 = document.createElement('option');
+                option1.value = field;
+                option1.textContent = field;
+                crossBarYAxis.appendChild(option1);
+                
+                const option1b = document.createElement('option');
+                option1b.value = field;
+                option1b.textContent = field;
+                crossBarYAxisSub.appendChild(option1b);
+                
+                const option2 = document.createElement('option');
+                option2.value = field;
+                option2.textContent = field;
+                crossBarColorBy.appendChild(option2);
+            });
+            
+            // 樞紐表
+            const pivotRowMain = document.getElementById('pivotRowMain');
+            const pivotRowSub = document.getElementById('pivotRowSub');
+            CATEGORICAL_FIELDS.forEach(field => {
+                const option1 = document.createElement('option');
+                option1.value = field;
+                option1.textContent = field;
+                pivotRowMain.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = field;
+                option2.textContent = field;
+                pivotRowSub.appendChild(option2);
+            });
+            
+            // 事件監聽
+            document.getElementById('scatterXAxis').addEventListener('change', updateScatterChart);
+            document.getElementById('scatterYAxis').addEventListener('change', updateScatterChart);
+            document.getElementById('scatterColorBy').addEventListener('change', updateScatterChart);
+            
+            document.getElementById('crossBarYAxis').addEventListener('change', updateCrossBarChart);
+            document.getElementById('crossBarYAxisSub').addEventListener('change', updateCrossBarChart);
+            document.getElementById('crossBarColorBy').addEventListener('change', updateCrossBarChart);
+            document.getElementById('crossBarValue').addEventListener('change', updateCrossBarChart);
+            
+            document.getElementById('pivotRowMain').addEventListener('change', updatePivotTable);
+            document.getElementById('pivotRowSub').addEventListener('change', updatePivotTable);
+            document.getElementById('addPivotColumn').addEventListener('click', addPivotColumnSelect);
+            
+            document.getElementById('clearAllFilters').addEventListener('click', clearAllFilters);
+            
+            // 截圖按鈕
+            document.getElementById('scatter-download-screenshot').addEventListener('click', () => downloadScreenshot('scatterSection', 'scatter-plot'));
+            document.getElementById('crossBar-download-screenshot').addEventListener('click', () => downloadScreenshot('crossBarSection', 'cross-bar-chart'));
+            document.getElementById('pivotTable-download-screenshot').addEventListener('click', () => downloadScreenshot('pivotTableSection', 'pivot-table'));
+            
+            // 散點圖縮放按鈕
+            document.getElementById('scatter-zoom-in').addEventListener('click', () => {
+                scatterZoomLevel = Math.min(scatterZoomLevel + 0.5, 5);
+                updateScatterChartWidth();
+                updateScatterChart();
+            });
+            document.getElementById('scatter-zoom-out').addEventListener('click', () => {
+                scatterZoomLevel = Math.max(scatterZoomLevel - 0.5, 1);
+                updateScatterChartWidth();
+                updateScatterChart();
+            });
+            document.getElementById('scatter-zoom-reset').addEventListener('click', () => {
+                scatterZoomLevel = 1;
+                updateScatterChartWidth();
+                updateScatterChart();
+            });
+            
+            // 照片顯示切換
+            document.getElementById('scatter-toggle-images').addEventListener('click', () => {
+                showProductImages = !showProductImages;
+                const btn = document.getElementById('scatter-toggle-images');
+                if (showProductImages) {
+                    btn.innerHTML = '<i class="fas fa-image mr-1"></i> 隱藏照片';
+                    btn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                    btn.classList.add('bg-orange-600', 'hover:bg-orange-700');
+                } else {
+                    btn.innerHTML = '<i class="fas fa-image mr-1"></i> 顯示照片';
+                    btn.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+                    btn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                }
+                renderProductImages();
+            });
+            
+            // 監聽水平滾動，確保Y軸覆蓋層在正確位置
+            const scatterWrapper = document.querySelector('#scatterChartWrapper > div');
+            if (scatterWrapper) {
+                scatterWrapper.addEventListener('scroll', () => {
+                    // Y軸覆蓋層會自動保持在固定位置，不需要額外處理
+                });
+            }
+            
+            // 點擊頁面其他地方關閉篩選下拉選單
+            document.addEventListener('click', (e) => {
+                // 檢查是否點擊在篩選器區域外
+                const isFilterButton = e.target.closest('button[data-field]');
+                const isInsidePanel = e.target.closest('.filter-panel');
+                const isFilterLabel = e.target.closest('label');
+                
+                if (!isFilterButton && !isInsidePanel && !isFilterLabel) {
+                    document.querySelectorAll('.filter-panel').forEach(p => p.classList.add('hidden'));
+                }
+            });
+            
+            // 智慧篩選區摺疊圖示切換
+            const filterSection = document.getElementById('filterSection');
+            if (filterSection) {
+                filterSection.addEventListener('toggle', () => {
+                    const icon = document.getElementById('filterToggleIcon');
+                    if (icon) {
+                        if (filterSection.open) {
+                            icon.classList.remove('fa-chevron-right');
+                            icon.classList.add('fa-chevron-down');
+                        } else {
+                            icon.classList.remove('fa-chevron-down');
+                            icon.classList.add('fa-chevron-right');
+                        }
+                    }
+                });
+            }
+            
+            // 字體大小控制
+            const fontSizeSlider = document.getElementById('fontSizeSlider');
+            const fontSizeValue = document.getElementById('fontSizeValue');
+            if (fontSizeSlider && fontSizeValue) {
+                fontSizeSlider.addEventListener('input', (e) => {
+                    const size = e.target.value;
+                    fontSizeValue.textContent = size + 'px';
+                    document.documentElement.style.setProperty('--base-font-size', size + 'px');
+                    
+                    // 更新所有圖表以適應新字體大小
+                    updateScatterChart();
+                    updateCrossBarChart();
+                    updatePivotTable();
+                });
+                
+                // 設定初始字體大小
+                document.documentElement.style.setProperty('--base-font-size', '14px');
+            }
+            
+            // CSV 匯出
+            document.getElementById('crossBar-export-csv').addEventListener('click', () => exportChartCSV('crossBar'));
+            document.getElementById('pivotTable-export-csv').addEventListener('click', exportPivotTableCSV);
+            document.getElementById('pivotTable-add-all-columns').addEventListener('click', addAllPivotColumns);
+        }
+
+        function setupFilters() {
+            const filtersContainer = document.getElementById('filtersContainer');
+            
+            CATEGORICAL_FIELDS.forEach(field => {
+                const uniqueValues = [...new Set(filteredData.map(d => d[field]).filter(v => v))].sort();
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'space-y-2';
+                
+                const label = document.createElement('label');
+                label.className = 'block text-sm font-semibold text-gray-700';
+                label.textContent = field;
+                
+                const selectContainer = document.createElement('div');
+                selectContainer.className = 'relative';
+                selectContainer.style.zIndex = '10';
+                
+                const summary = document.createElement('button');
+                summary.type = 'button';
+                summary.className = 'w-full text-left px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 text-sm';
+                summary.textContent = '請選擇...';
+                summary.dataset.field = field;
+                
+                const panel = document.createElement('div');
+                panel.className = 'filter-panel hidden absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto';
+                panel.style.minWidth = '200px';
+                panel.dataset.field = field;
+                
+                // 阻止面板內的點擊事件冒泡到document
+                panel.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                
+                // 添加全選/清除按鈕
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'flex gap-2 mb-2 pb-2 border-b border-gray-300';
+                
+                const selectAllBtn = document.createElement('button');
+                selectAllBtn.textContent = '全選';
+                selectAllBtn.type = 'button';
+                selectAllBtn.className = 'flex-1 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600';
+                selectAllBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const checkboxes = panel.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => {
+                        cb.checked = true;
+                    });
+                    handleFilterChangeForField(field);
+                });
+                
+                const clearAllBtn = document.createElement('button');
+                clearAllBtn.textContent = '清除';
+                clearAllBtn.type = 'button';
+                clearAllBtn.className = 'flex-1 text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600';
+                clearAllBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const checkboxes = panel.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => {
+                        cb.checked = false;
+                    });
+                    handleFilterChangeForField(field);
+                });
+                
+                buttonGroup.appendChild(selectAllBtn);
+                buttonGroup.appendChild(clearAllBtn);
+                panel.appendChild(buttonGroup);
+                
+                // 添加選項
+                uniqueValues.forEach(value => {
+                    const optionLabel = document.createElement('label');
+                    optionLabel.className = 'block text-sm px-3 py-1 hover:bg-gray-100 cursor-pointer';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = value;
+                    checkbox.checked = true;
+                    checkbox.dataset.field = field;
+                    checkbox.className = 'mr-2';
+                    checkbox.addEventListener('change', (e) => {
+                        e.stopPropagation();
+                        handleFilterChange(e);
+                    });
+                    
+                    // 阻止label點擊關閉下拉選單
+                    optionLabel.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                    
+                    optionLabel.appendChild(checkbox);
+                    optionLabel.appendChild(document.createTextNode(value));
+                    panel.appendChild(optionLabel);
+                });
+                
+                // 切換下拉選單
+                summary.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const isOpen = !panel.classList.contains('hidden');
+                    // 關閉所有其他下拉選單
+                    document.querySelectorAll('[data-field]').forEach(container => {
+                        if (container.tagName === 'DIV' && container.classList.contains('relative')) {
+                            const otherPanel = container.querySelector('.filter-panel');
+                            if (otherPanel && otherPanel !== panel) {
+                                otherPanel.classList.add('hidden');
+                            }
+                        }
+                    });
+                    if (!isOpen) {
+                        panel.classList.remove('hidden');
+                    } else {
+                        panel.classList.add('hidden');
+                    }
+                });
+                
+                selectContainer.appendChild(summary);
+                selectContainer.appendChild(panel);
+                wrapper.appendChild(label);
+                wrapper.appendChild(selectContainer);
+                filtersContainer.appendChild(wrapper);
+                
+                filterSelections[field] = uniqueValues;
+            });
+        }
+
+        function handleFilterChange(e) {
+            const field = e.target.dataset.field;
+            const value = e.target.value;
+            
+            if (e.target.checked) {
+                if (!filterSelections[field].includes(value)) {
+                    filterSelections[field].push(value);
+                }
+            } else {
+                filterSelections[field] = filterSelections[field].filter(v => v !== value);
+            }
+            
+            applyFilters();
+            updateFilterStyles();
+        }
+
+        function handleFilterChangeForField(field) {
+            const panel = document.querySelector(`.filter-panel[data-field="${field}"]`);
+            if (!panel) {
+                console.error('找不到篩選面板:', field);
+                return;
+            }
+            const checkboxes = panel.querySelectorAll('input[type="checkbox"]');
+            
+            filterSelections[field] = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    filterSelections[field].push(cb.value);
+                }
+            });
+            
+            applyFilters();
+            updateFilterStyles();
+        }
+
+        function applyFilters() {
+            filteredData = rawData.filter(row => {
+                return CATEGORICAL_FIELDS.every(field => {
+                    const value = row[field];
+                    return !value || filterSelections[field].includes(value);
+                });
+            });
+            
+            updateAllCharts();
+        }
+        
+        // 取得套用暫時篩選後的資料
+        // tempFilterSelections[field] 存的是「要隱藏的值」
+        function getTempFilteredData() {
+            if (Object.keys(tempFilterSelections).length === 0) {
+                return filteredData;
+            }
+            
+            return filteredData.filter(row => {
+                return Object.entries(tempFilterSelections).every(([field, hiddenValues]) => {
+                    if (hiddenValues.length === 0) return true;
+                    const value = row[field];
+                    // 如果這筆資料的值在隱藏清單中，就排除它
+                    return !hiddenValues.includes(value);
+                });
+            });
+        }
+
+        function updateFilterStyles() {
+            document.querySelectorAll('[data-field]').forEach(container => {
+                if (container.tagName === 'BUTTON') {
+                    const field = container.dataset.field;
+                    const panel = container.nextElementSibling;
+                    if (panel && panel.classList.contains('filter-panel')) {
+                        const checkboxes = panel.querySelectorAll('input[type="checkbox"]');
+                        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+                        const totalCount = checkboxes.length;
+                        
+                        if (checkedCount === totalCount) {
+                            container.classList.remove('filter-active');
+                            container.textContent = '全部';
+                        } else if (checkedCount === 0) {
+                            container.classList.add('filter-active');
+                            container.textContent = '未選擇';
+                        } else {
+                            container.classList.add('filter-active');
+                            container.textContent = `已選 ${checkedCount}/${totalCount}`;
+                        }
+                    }
+                }
+            });
+            
+            // 更新篩選筆數顯示
+            const filterCount = document.getElementById('filterCount');
+            if (filterCount) {
+                filterCount.textContent = `(共 ${filteredData.length} 筆資料)`;
+            }
+            
+            // 更新散點圖資料筆數
+            const scatterDataCount = document.getElementById('scatterDataCount');
+            if (scatterDataCount) {
+                scatterDataCount.textContent = `資料: ${filteredData.length} 筆`;
+            }
+            
+            // 更新照片按鈕狀態（使用暫時篩選後的資料）
+            const imageBtn = document.getElementById('scatter-toggle-images');
+            const tempFiltered = getTempFilteredData();
+            if (tempFiltered.length <= 100) {
+                imageBtn.disabled = false;
+                imageBtn.title = `顯示 ${tempFiltered.length} 個產品照片`;
+            } else {
+                imageBtn.disabled = true;
+                showProductImages = false;
+                imageBtn.innerHTML = '<i class="fas fa-image mr-1"></i> 顯示照片';
+                imageBtn.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+                imageBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                imageBtn.title = `資料筆數 (${tempFiltered.length}) 超過 100，無法顯示照片`;
+                const imgContainer = document.getElementById('scatterImageContainer');
+                if (imgContainer) imgContainer.innerHTML = '';
+            }
+        }
+
+        function clearAllFilters() {
+            document.querySelectorAll('.filter-dropdown input[type="checkbox"]').forEach(cb => {
+                cb.checked = true;
+            });
+            
+            CATEGORICAL_FIELDS.forEach(field => {
+                filterSelections[field] = [...new Set(rawData.map(d => d[field]).filter(v => v))];
+            });
+            
+            // 清除暫時篩選
+            tempFilterSelections = {};
+            
+            applyFilters();
+            updateFilterStyles();
+        }
+
+        function updateAllCharts() {
+            updateScatterChart();
+            updateCrossBarChart();
+            updatePivotTable();
+        }
+
+        // ===== 點布圖 =====
+        function updateScatterChart() {
+            const xField = document.getElementById('scatterXAxis').value;
+            const yField = document.getElementById('scatterYAxis').value;
+            const colorField = document.getElementById('scatterColorBy').value;
+            
+            if (charts.scatter) {
+                charts.scatter.destroy();
+            }
+            
+            // 判斷 Y 軸是數值型還是分類型
+            const isYNumeric = NUMERIC_FIELDS.includes(yField);
+            
+            // 準備數據（包含動態 X 軸調整）
+            const { datasets, xAxisMapping } = prepareScatterDataWithSpread(xField, yField, colorField, isYNumeric);
+            
+            const ctx = document.getElementById('scatterChart').getContext('2d');
+            charts.scatter = new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false },
+                        datalabels: { display: false }
+                    },
+                    layout: {
+                        padding: {
+                            left: 0,
+                            right: 20,
+                            top: 100,
+                            bottom: 30
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: xField },
+                            position: 'bottom',
+                            ticks: {
+                                callback: function(value, index, ticks) {
+                                    // 使用原始價格值來顯示刻度
+                                    const originalValue = xAxisMapping.find(m => m.displayStart <= value && value < m.displayEnd);
+                                    return originalValue ? originalValue.original.toFixed(2) : value.toFixed(2);
+                                },
+                                maxTicksLimit: 15 // 限制刻度數量避免過於擁擠
+                            }
+                        },
+                        y: {
+                            title: { display: false },
+                            type: isYNumeric ? 'linear' : 'category',
+                            position: 'left',
+                            ticks: {
+                                display: false
+                            },
+                            grid: {
+                                drawOnChartArea: true,
+                                drawTicks: false
+                            }
+                        }
+                    },
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const element = activeElements[0];
+                            const datasetIndex = element.datasetIndex;
+                            const dataIndex = element.index;
+                            const point = datasets[datasetIndex].data[dataIndex];
+                            selectedProduct = point.product;
+                            showProductTooltip(point.product);
+                            
+                            // 如果啟用照片顯示，重新渲染以高亮選中的點
+                            if (showProductImages) {
+                                renderProductImages();
+                            }
+                        }
+                    },
+                    onHover: (event, activeElements) => {
+                        const canvas = event.native.target;
+                        canvas.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                    }
+                }
+            });
+            
+            updateScatterLegend(colorField);
+            
+            // 更新Y軸覆蓋層
+            updateYAxisOverlay();
+            
+            // 渲染產品圖片（如果啟用）
+            const tempFiltered = getTempFilteredData();
+            if (showProductImages && tempFiltered.length <= 100) {
+                renderProductImages();
+            }
+        }
+        
+        function updateYAxisOverlay() {
+            const yAxisCanvas = document.getElementById('yAxisCanvas');
+            const mainCanvas = document.getElementById('scatterChart');
+            
+            if (!yAxisCanvas || !mainCanvas || !charts.scatter) return;
+            
+            const ctx = yAxisCanvas.getContext('2d');
+            const chart = charts.scatter;
+            
+            // 清空Y軸canvas
+            ctx.clearRect(0, 0, yAxisCanvas.width, yAxisCanvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, yAxisCanvas.width, yAxisCanvas.height);
+            
+            // 繪製Y軸標籤
+            const yScale = chart.scales.y;
+            const ticks = yScale.ticks;
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            
+            ticks.forEach((tick, index) => {
+                const y = yScale.getPixelForTick(index);
+                const label = tick.label;
+                
+                // 繪製刻度線
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.beginPath();
+                ctx.moveTo(50, y);
+                ctx.lineTo(60, y);
+                ctx.stroke();
+                
+                // 繪製標籤文字
+                ctx.fillText(label, 48, y);
+            });
+            
+            // 繪製Y軸標題
+            ctx.save();
+            ctx.translate(15, yAxisCanvas.height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.font = 'bold 12px Arial';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            ctx.fillText(chart.options.scales.y.title.text, 0, 0);
+            ctx.restore();
+        }
+
+        function renderProductImages() {
+            const container = document.getElementById('scatterImageContainer');
+            container.innerHTML = '';
+            
+            const tempFiltered = getTempFilteredData();
+            if (!showProductImages || !charts.scatter || tempFiltered.length > 100) {
+                return;
+            }
+            
+            const chart = charts.scatter;
+            const datasets = chart.data.datasets;
+            
+            datasets.forEach((dataset, datasetIndex) => {
+                dataset.data.forEach((point, pointIndex) => {
+                    const product = point.product;
+                    if (!product['圖片連結']) return;
+                    
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    const element = meta.data[pointIndex];
+                    
+                    if (element) {
+                        const x = element.x;
+                        const y = element.y;
+                        
+                        const img = document.createElement('img');
+                        img.src = product['圖片連結'];
+                        img.className = 'product-image-preview';
+                        img.style.left = (x - 60) + 'px'; // 減去左側padding
+                        img.style.top = y + 'px'; // Y軸位置已包含top padding
+                        img.onerror = () => img.remove();
+                        
+                        container.appendChild(img);
+                    }
+                });
+            });
+        }
+
+        function updateScatterChartWidth() {
+            const container = document.getElementById('scatterChartContainer');
+            const baseWidth = 100;
+            const newWidth = baseWidth * scatterZoomLevel;
+            container.style.minWidth = newWidth + '%';
+        }
+
+        function prepareScatterDataWithSpread(xField, yField, colorField, isYNumeric) {
+            // 步驟 0: 先建立 colorMaps（基於 filteredData，確保圖例完整）
+            if (colorField !== 'none') {
+                const allCategories = [...new Set(filteredData.map(d => d[colorField]).filter(v => v))].sort();
+                colorMaps.scatter = {};
+                allCategories.forEach((cat, idx) => {
+                    colorMaps.scatter[cat] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
+                });
+            }
+            
+            // 步驟 1: 收集所有有效數據（使用暫時篩選後的資料）
+            const dataToUse = getTempFilteredData();
+            const allValidData = dataToUse.map(row => {
+                const xVal = row[xField] || 0;
+                const yVal = isYNumeric ? (row[yField] || 0) : (row[yField] || '');
+                return {
+                    x: xVal,
+                    y: yVal,
+                    product: row,
+                    group: colorField === 'none' ? '產品' : (row[colorField] || '未分類')
+                };
+            }).filter(d => {
+                return d.x > 0 && (isYNumeric ? d.y !== null && d.y !== undefined : d.y !== '');
+            });
+            
+            // 步驟 2: 統計每個 X 值的數量
+            const xValueCounts = {};
+            allValidData.forEach(d => {
+                const xKey = d.x.toFixed(2);
+                xValueCounts[xKey] = (xValueCounts[xKey] || 0) + 1;
+            });
+            
+            // 步驟 3: 建立 X 軸映射表（原始值 -> 展開後的顯示範圍）
+            const uniqueXValues = [...new Set(allValidData.map(d => d.x))].sort((a, b) => a - b);
+            const xAxisMapping = [];
+            let currentDisplayPosition = 0;
+            
+            uniqueXValues.forEach(originalX => {
+                const xKey = originalX.toFixed(2);
+                const count = xValueCounts[xKey];
+                const width = count; // 每個產品佔 1 個單位寬度
+                
+                xAxisMapping.push({
+                    original: originalX,
+                    displayStart: currentDisplayPosition,
+                    displayEnd: currentDisplayPosition + width,
+                    count: count
+                });
+                
+                currentDisplayPosition += width;
+            });
+            
+            console.log(`X軸映射表樣本 (前5個):`, xAxisMapping.slice(0, 5));
+            
+            // 步驟 4: 將數據點分配到展開後的位置
+            const xValuePositionCounters = {};
+            
+            allValidData.forEach(d => {
+                const xKey = d.x.toFixed(2);
+                const mapping = xAxisMapping.find(m => m.original.toFixed(2) === xKey);
+                
+                if (mapping) {
+                    // 計算當前這個 X 值已經放了幾個點
+                    if (!xValuePositionCounters[xKey]) {
+                        xValuePositionCounters[xKey] = 0;
+                    }
+                    
+                    // 在該區段內均勻分布
+                    const offset = xValuePositionCounters[xKey];
+                    d.displayX = mapping.displayStart + offset + 0.5; // +0.5 讓點居中
+                    d.originalX = d.x; // 保留原始值用於提示
+                    
+                    xValuePositionCounters[xKey]++;
+                }
+            });
+            
+            console.log(`散點圖資料: X軸=${xField}, Y軸=${yField}, 數據點數=${allValidData.length}`);
+            console.log('前3筆展開後資料:', allValidData.slice(0, 3));
+            
+            // 步驟 5: 按分組組織數據
+            if (colorField === 'none') {
+                return {
+                    datasets: [{
+                        label: '產品',
+                        data: allValidData.map(d => ({
+                            x: d.displayX,
+                            y: d.y,
+                            product: d.product,
+                            originalX: d.originalX
+                        })),
+                        backgroundColor: COLOR_PALETTE[0],
+                        pointRadius: 6
+                    }],
+                    xAxisMapping: xAxisMapping
+                };
+            }
+            
+            const groups = {};
+            allValidData.forEach(d => {
+                if (!groups[d.group]) groups[d.group] = [];
+                groups[d.group].push(d);
+            });
+            
+            // 使用已建立的 colorMaps 來建立資料集
+            const datasets = Object.keys(groups).sort().map(group => {
+                const color = colorMaps.scatter[group] || COLOR_PALETTE[0];
+                
+                return {
+                    label: group,
+                    data: groups[group].map(d => ({
+                        x: d.displayX,
+                        y: d.y,
+                        product: d.product,
+                        originalX: d.originalX
+                    })),
+                    backgroundColor: color,
+                    pointRadius: 6
+                };
+            });
+            
+            return { datasets, xAxisMapping };
+        }
+
+        function updateScatterLegend(colorField) {
+            const legend = document.getElementById('scatterLegend');
+            legend.innerHTML = '';
+            
+            if (colorField === 'none') return;
+            
+            Object.entries(colorMaps.scatter).forEach(([label, color], index) => {
+                const item = document.createElement('div');
+                item.className = 'legend-item flex items-center cursor-pointer';
+                
+                // 檢查該類別是否被暫時篩選（隱藏）
+                const isTempFiltered = tempFilterSelections[colorField] && tempFilterSelections[colorField].includes(label);
+                if (isTempFiltered) {
+                    item.classList.add('legend-item-hidden');
+                }
+                
+                item.innerHTML = `
+                    <span style="display:inline-block;width:12px;height:12px;background:${color};margin-right:4px;border-radius:2px;"></span>
+                    <span class="text-sm">${label}</span>
+                `;
+                
+                // Add click handler to toggle temp filter
+                item.addEventListener('click', () => {
+                    // 初始化該欄位的暫時篩選陣列
+                    if (!tempFilterSelections[colorField]) {
+                        tempFilterSelections[colorField] = [];
+                    }
+                    
+                    const idx = tempFilterSelections[colorField].indexOf(label);
+                    if (idx === -1) {
+                        // 目前顯示中，加入暫時篩選（隱藏）
+                        tempFilterSelections[colorField].push(label);
+                        item.classList.add('legend-item-hidden');
+                    } else {
+                        // 目前被隱藏，從暫時篩選移除（恢復顯示）
+                        tempFilterSelections[colorField].splice(idx, 1);
+                        item.classList.remove('legend-item-hidden');
+                    }
+                    
+                    // 重新渲染圖表（不改變 filteredData，只更新顯示）
+                    updateScatterChart();
+                });
+                
+                legend.appendChild(item);
+            });
+        }
+
+        function showProductTooltip(product) {
+            const tooltip = document.getElementById('custom-tooltip');
+            
+            // 格式化數值顯示
+            const formatValue = (val) => {
+                if (typeof val === 'number') {
+                    return val.toFixed(2);
+                }
+                return val || '-';
+            };
+            
+            tooltip.innerHTML = `
+                <div class="tab-container">
+                    <button class="tab-button active" data-tab="info">簡介</button>
+                    <button class="tab-button" data-tab="features">特徵</button>
+                    <button class="tab-button" data-tab="specs">規格</button>
+                    <button class="tab-button" data-tab="contents">內容物</button>
+                </div>
+                <div class="tab-content active" data-tab="info">
+                    <div class="info-row"><span class="info-label">品牌:</span><span class="info-value">${product['品牌'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">機型:</span><span class="info-value">${product['機型'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">伏特:</span><span class="info-value">${formatValue(product['伏特'])}</span></div>
+                    <div class="info-row"><span class="info-label">鋸片尺寸:</span><span class="info-value">${formatValue(product['鋸片尺寸'])}</span></div>
+                    <div class="info-row"><span class="info-label">電源分類:</span><span class="info-value">${product['電源分類'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">英文分類:</span><span class="info-value">${product['英文分類'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">中文名稱:</span><span class="info-value">${product['中文名稱'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">產品分類:</span><span class="info-value">${product['產品分類'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">加工材質:</span><span class="info-value">${product['加工材質'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">ARTIKEL:</span><span class="info-value">${product['ARTIKEL'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">售價:</span><span class="info-value">$${formatValue(product['售價'])}</span></div>
+                    <div class="info-row"><span class="info-label">原價:</span><span class="info-value">$${formatValue(product['原價'])}</span></div>
+                    ${product['產品連結'] ? `<div class="info-row"><span class="info-label">產品連結:</span><span class="info-value"><a href="${product['產品連結']}" target="_blank" class="text-blue-600 hover:underline">查看產品頁面</a></span></div>` : ''}
+                    ${product['圖片連結'] ? `<img src="${product['圖片連結']}" class="tooltip-image" onerror="this.style.display='none'"/>` : ''}
+                </div>
+                <div class="tab-content" data-tab="features">
+                    <pre style="white-space:pre-wrap;font-size:0.875rem;">${product['特徵'] || '無資料'}</pre>
+                </div>
+                <div class="tab-content" data-tab="specs">
+                    <pre style="white-space:pre-wrap;font-size:0.875rem;">${product['規格'] || '無資料'}</pre>
+                </div>
+                <div class="tab-content" data-tab="contents">
+                    <pre style="white-space:pre-wrap;font-size:0.875rem;">${product['內容物'] || '無資料'}</pre>
+                </div>
+            `;
+            
+            tooltip.querySelectorAll('.tab-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tooltip.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                    tooltip.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    tooltip.querySelector(`.tab-content[data-tab="${btn.dataset.tab}"]`).classList.add('active');
+                });
+            });
+            
+            tooltip.style.display = 'block';
+        }
+
+        // ===== 交叉長條圖 =====
+        function updateCrossBarChart() {
+            const yField = document.getElementById('crossBarYAxis').value;
+            const ySubField = document.getElementById('crossBarYAxisSub').value;
+            const colorField = document.getElementById('crossBarColorBy').value;
+            const valueType = document.getElementById('crossBarValue').value;
+            
+            if (!yField) return;
+            
+            if (charts.crossBar) {
+                charts.crossBar.destroy();
+            }
+            
+            const { labels, datasets } = prepareCrossBarData(yField, ySubField, colorField, valueType);
+            
+            const ctx = document.getElementById('crossBarChart').getContext('2d');
+            charts.crossBar = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            color: '#fff',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (value, context) => {
+                                // 空白行不顯示標籤
+                                const label = context.chart.data.labels[context.dataIndex];
+                                if (label && label.startsWith('__spacer_')) return '';
+                                
+                                if (valueType === 'percent') {
+                                    return value > 5 ? value.toFixed(1) + '%' : '';
+                                }
+                                return value > 0 ? value : '';
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: colorField !== 'none',
+                            title: { display: true, text: valueType === 'percent' ? '百分比 (%)' : '筆數' },
+                            max: valueType === 'percent' ? 100 : undefined
+                        },
+                        y: {
+                            stacked: colorField !== 'none',
+                            ticks: {
+                                callback: function(value, index, ticks) {
+                                    const label = this.getLabelForValue(value);
+                                    // 空白行顯示為空
+                                    if (label && label.startsWith('__spacer_')) return '';
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            updateCrossBarLegend(colorField);
+        }
+
+        function prepareCrossBarData(yField, ySubField, colorField, valueType) {
+            // 使用暫時篩選後的資料
+            const dataToUse = getTempFilteredData();
+            
+            // 建立標籤（考慮次要組別）
+            let labels = [];
+            let labelToData = new Map();
+            let labelMetadata = []; // 儲存標籤的元數據（用於分組）
+            
+            if (ySubField) {
+                // 有次要組別：建立階層式標籤
+                const mainCategories = [...new Set(dataToUse.map(d => d[yField]).filter(v => v))].sort();
+                mainCategories.forEach((mainCat, mainIdx) => {
+                    const mainData = dataToUse.filter(d => d[yField] === mainCat);
+                    const subCategories = [...new Set(mainData.map(d => d[ySubField]).filter(v => v))].sort();
+                    
+                    // 在每個主要組別之後添加空白分隔（除了最後一個）
+                    subCategories.forEach((subCat, subIdx) => {
+                        const label = `${mainCat} - ${subCat}`;
+                        labels.push(label);
+                        labelToData.set(label, mainData.filter(d => d[ySubField] === subCat));
+                        labelMetadata.push({ main: mainCat, sub: subCat, isFirst: subIdx === 0 });
+                    });
+                    
+                    // 在主要組別之間添加空白行
+                    if (mainIdx < mainCategories.length - 1) {
+                        const spacerLabel = `__spacer_${mainIdx}__`;
+                        labels.push(spacerLabel);
+                        labelToData.set(spacerLabel, []);
+                        labelMetadata.push({ main: null, sub: null, isSpacer: true });
+                    }
+                });
+            } else {
+                // 無次要組別：只用主要組別
+                const yCategories = [...new Set(dataToUse.map(d => d[yField]).filter(v => v))].sort();
+                labels = yCategories;
+                yCategories.forEach(cat => {
+                    labelToData.set(cat, dataToUse.filter(d => d[yField] === cat));
+                    labelMetadata.push({ main: cat, sub: null, isFirst: true });
+                });
+            }
+            
+            if (colorField === 'none') {
+                // 不分顏色：單一數據集
+                const data = labels.map(label => {
+                    const rowData = labelToData.get(label);
+                    return rowData.length;
+                });
+                
+                return {
+                    labels,
+                    datasets: [{
+                        label: '筆數',
+                        data,
+                        backgroundColor: COLOR_PALETTE[0]
+                    }]
+                };
+            }
+            
+            // 有顏色分組：先建立 colorMaps（基於 filteredData，確保圖例完整）
+            const allColorCategories = [...new Set(filteredData.map(d => d[colorField]).filter(v => v))].sort();
+            
+            // 計算每個顏色分類的總數（基於 filteredData），用於排序
+            const allCategoryTotals = {};
+            allColorCategories.forEach(cat => {
+                allCategoryTotals[cat] = filteredData.filter(d => d[colorField] === cat).length;
+            });
+            
+            // 按總數從小到大排序並建立 colorMaps
+            const sortedAllColorCategories = allColorCategories.sort((a, b) => allCategoryTotals[a] - allCategoryTotals[b]);
+            colorMaps.crossBar = {};
+            sortedAllColorCategories.forEach((cat, idx) => {
+                colorMaps.crossBar[cat] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
+            });
+            
+            // 使用暫時篩選後的資料建立實際顯示的矩陣
+            const colorCategories = [...new Set(dataToUse.map(d => d[colorField]).filter(v => v))].sort();
+            
+            // 建立矩陣
+            const matrix = {};
+            labels.forEach(label => {
+                matrix[label] = {};
+                const rowData = labelToData.get(label);
+                rowData.forEach(row => {
+                    const c = row[colorField] || '未分類';
+                    matrix[label][c] = (matrix[label][c] || 0) + 1;
+                });
+            });
+            
+            // 使用已建立的 colorMaps 來建立資料集
+            const datasets = sortedAllColorCategories.map(cat => {
+                const color = colorMaps.crossBar[cat];
+                
+                let data;
+                if (valueType === 'percent') {
+                    // 百分比：每個標籤內部計算百分比（總和=100%）
+                    data = labels.map(label => {
+                        const total = Object.values(matrix[label] || {}).reduce((a, b) => a + b, 0);
+                        const count = (matrix[label] || {})[cat] || 0;
+                        return total > 0 ? (count / total * 100) : 0;
+                    });
+                } else {
+                    // 筆數：直接顯示數量
+                    data = labels.map(label => (matrix[label] || {})[cat] || 0);
+                }
+                
+                return {
+                    label: cat,
+                    data,
+                    backgroundColor: color
+                };
+            });
+            
+            return { labels, datasets };
+        }
+
+        function updateCrossBarLegend(colorField) {
+            const legend = document.getElementById('crossBarLegend');
+            legend.innerHTML = '';
+            
+            if (colorField === 'none') return;
+            
+            Object.entries(colorMaps.crossBar).forEach(([label, color], index) => {
+                const item = document.createElement('div');
+                item.className = 'legend-item flex items-center cursor-pointer';
+                
+                // 檢查該類別是否被暫時篩選（隱藏）
+                const isTempFiltered = tempFilterSelections[colorField] && tempFilterSelections[colorField].includes(label);
+                if (isTempFiltered) {
+                    item.classList.add('legend-item-hidden');
+                }
+                
+                item.innerHTML = `
+                    <span style="display:inline-block;width:12px;height:12px;background:${color};margin-right:4px;border-radius:2px;"></span>
+                    <span class="text-sm">${label}</span>
+                `;
+                
+                // Add click handler to toggle temp filter
+                item.addEventListener('click', () => {
+                    // 初始化該欄位的暫時篩選陣列
+                    if (!tempFilterSelections[colorField]) {
+                        tempFilterSelections[colorField] = [];
+                    }
+                    
+                    const idx = tempFilterSelections[colorField].indexOf(label);
+                    if (idx === -1) {
+                        // 目前顯示中，加入暫時篩選（隱藏）
+                        tempFilterSelections[colorField].push(label);
+                        item.classList.add('legend-item-hidden');
+                    } else {
+                        // 目前被隱藏，從暫時篩選移除（恢復顯示）
+                        tempFilterSelections[colorField].splice(idx, 1);
+                        item.classList.remove('legend-item-hidden');
+                    }
+                    
+                    // 重新渲染圖表（不改變 filteredData，只更新顯示）
+                    updateCrossBarChart();
+                });
+                
+                legend.appendChild(item);
+            });
+        }
+
+        // ===== 樞紐表 =====
+        function updatePivotTable() {
+            const rowMain = document.getElementById('pivotRowMain').value;
+            const rowSub = document.getElementById('pivotRowSub').value;
+            
+            if (!rowMain) {
+                document.getElementById('pivotTableContainer').innerHTML = '<p class="text-gray-500">請選擇主要列分組</p>';
+                return;
+            }
+            
+            const columns = getPivotColumns();
+            
+            if (columns.length === 0) {
+                document.getElementById('pivotTableContainer').innerHTML = '<p class="text-gray-500">請至少添加一個數據欄</p>';
+                return;
+            }
+            
+            const table = buildPivotTable(rowMain, rowSub, columns);
+            document.getElementById('pivotTableContainer').innerHTML = table;
+        }
+
+        function buildPivotTable(rowMain, rowSub, columns) {
+            const mainCategories = [...new Set(filteredData.map(d => d[rowMain]).filter(v => v))].sort();
+            
+            let html = '<table class="min-w-full divide-y divide-gray-200 border">';
+            
+            // 表頭
+            html += '<thead class="bg-gray-50"><tr>';
+            html += `<th class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border">${rowMain}</th>`;
+            if (rowSub) {
+                html += `<th class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border">${rowSub}</th>`;
+            }
+            columns.forEach(col => {
+                html += `<th class="px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase tracking-wider border">${col.label}</th>`;
+            });
+            html += '</tr></thead><tbody class="bg-white divide-y divide-gray-200">';
+            
+            // 數據行
+            mainCategories.forEach(mainCat => {
+                const mainData = filteredData.filter(d => d[rowMain] === mainCat);
+                
+                if (!rowSub) {
+                    html += '<tr>';
+                    html += `<td class="px-4 py-2 whitespace-nowrap text-sm border">${mainCat}</td>`;
+                    columns.forEach(col => {
+                        const value = calculateAggregation(mainData, col.field, col.agg, col.format);
+                        html += `<td class="px-4 py-2 whitespace-nowrap text-sm text-right border">${value}</td>`;
+                    });
+                    html += '</tr>';
+                } else {
+                    const subCategories = [...new Set(mainData.map(d => d[rowSub]).filter(v => v))].sort();
+                    subCategories.forEach((subCat, idx) => {
+                        const subData = mainData.filter(d => d[rowSub] === subCat);
+                        html += '<tr>';
+                        if (idx === 0) {
+                            html += `<td rowspan="${subCategories.length}" class="px-4 py-2 whitespace-nowrap text-sm font-medium border bg-gray-50">${mainCat}</td>`;
+                        }
+                        html += `<td class="px-4 py-2 whitespace-nowrap text-sm border">${subCat}</td>`;
+                        columns.forEach(col => {
+                            const value = calculateAggregation(subData, col.field, col.agg, col.format);
+                            html += `<td class="px-4 py-2 whitespace-nowrap text-sm text-right border">${value}</td>`;
+                        });
+                        html += '</tr>';
+                    });
+                }
+            });
+            
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function calculateAggregation(data, field, agg, format = '') {
+            let result = 0;
+            
+            if (agg === 'count') {
+                result = data.length;
+            } else if (agg === 'countunique') {
+                result = new Set(data.map(d => d[field]).filter(v => v)).size;
+            } else if (agg === 'countx') {
+                // X函數：計算欄位值等於指定值的筆數
+                const targetValue = format.trim();
+                result = data.filter(d => String(d[field]).trim() === targetValue).length;
+            } else if (agg === 'sum' || agg === 'average' || agg === 'max' || agg === 'min') {
+                const values = data.map(d => parseFloat(d[field])).filter(v => !isNaN(v));
+                if (values.length === 0) return format ? '0' + format : '0';
+                
+                if (agg === 'sum') result = values.reduce((a, b) => a + b, 0);
+                if (agg === 'average') result = values.reduce((a, b) => a + b, 0) / values.length;
+                if (agg === 'max') result = Math.max(...values);
+                if (agg === 'min') result = Math.min(...values);
+                
+                result = result.toFixed(2);
+            } else if (agg === 'median') {
+                const values = data.map(d => parseFloat(d[field])).filter(v => !isNaN(v)).sort((a, b) => a - b);
+                if (values.length === 0) return format ? '0' + format : '0';
+                const mid = Math.floor(values.length / 2);
+                result = values.length % 2 === 0 ? ((values[mid - 1] + values[mid]) / 2).toFixed(2) : values[mid].toFixed(2);
+            } else if (agg === 'stdev') {
+                const values = data.map(d => parseFloat(d[field])).filter(v => !isNaN(v));
+                if (values.length === 0) return format ? '0' + format : '0';
+                const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                const variance = values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length;
+                result = Math.sqrt(variance).toFixed(2);
+            } else if (agg === 'var') {
+                const values = data.map(d => parseFloat(d[field])).filter(v => !isNaN(v));
+                if (values.length === 0) return format ? '0' + format : '0';
+                const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                result = (values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length).toFixed(2);
+            }
+            
+            // 添加格式化單位
+            if (format && agg !== 'countx') {
+                return result + format;
+            }
+            
+            return result;
+        }
+
+        let pivotColumnCounter = 0;
+        
+        function addPivotColumnSelect(defaultField = '') {
+            const container = document.getElementById('pivotColumnsContainer');
+            const id = pivotColumnCounter++;
+            
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'flex gap-2 items-center p-2 bg-gray-50 rounded border border-gray-200';
+            fieldDiv.id = `pivotCol_${id}`;
+            
+            // 欄位選擇
+            const fieldSelect = document.createElement('select');
+            fieldSelect.className = 'flex-1 py-1.5 px-2 border border-gray-300 bg-white rounded text-xs';
+            fieldSelect.innerHTML = '<option value="">選擇欄位</option>';
+            CATEGORICAL_FIELDS.forEach(key => {
+                const selected = key === defaultField ? ' selected' : '';
+                fieldSelect.innerHTML += `<option value="${key}"${selected}>${key}</option>`;
+            });
+            
+            // 聚合函數選擇
+            const aggSelect = document.createElement('select');
+            aggSelect.className = 'w-24 py-1.5 px-2 border border-gray-300 bg-white rounded text-xs';
+            aggSelect.innerHTML = `
+                <option value="count">COUNT</option>
+                <option value="countunique">UNIQUE</option>
+                <option value="sum">SUM</option>
+                <option value="average">AVG</option>
+                <option value="max">MAX</option>
+                <option value="min">MIN</option>
+                <option value="median">MEDIAN</option>
+                <option value="stdev">STDEV</option>
+                <option value="var">VAR</option>
+                <option value="countx">X</option>
+            `;
+            
+            // 格式/X值輸入框
+            const formatInput = document.createElement('input');
+            formatInput.type = 'text';
+            formatInput.placeholder = '格式/X值';
+            formatInput.className = 'w-32 py-1.5 px-2 border border-gray-300 bg-white rounded text-xs';
+            formatInput.title = 'X函數：輸入要計算的值（如：1、0、是）\n格式：直接輸入單位文字（如："元"、"個"）';
+            
+            // 刪除按鈕
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'px-2 py-1 text-red-600 hover:bg-red-50 rounded text-xs';
+            removeBtn.innerHTML = '✕';
+            removeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                fieldDiv.remove();
+                updatePivotTable();
+            });
+            
+            fieldDiv.appendChild(fieldSelect);
+            fieldDiv.appendChild(aggSelect);
+            fieldDiv.appendChild(formatInput);
+            fieldDiv.appendChild(removeBtn);
+            container.appendChild(fieldDiv);
+            
+            fieldSelect.addEventListener('change', updatePivotTable);
+            aggSelect.addEventListener('change', updatePivotTable);
+            formatInput.addEventListener('change', updatePivotTable);
+            formatInput.addEventListener('blur', updatePivotTable);
+            
+            return fieldDiv;
+        }
+
+        function getPivotColumns() {
+            const container = document.getElementById('pivotColumnsContainer');
+            const columns = [];
+            
+            container.querySelectorAll('[id^="pivotCol_"]').forEach(div => {
+                const fieldSelect = div.querySelector('select:nth-of-type(1)');
+                const aggSelect = div.querySelector('select:nth-of-type(2)');
+                const formatInput = div.querySelector('input[type="text"]');
+                const field = fieldSelect.value;
+                const agg = aggSelect.value;
+                const format = formatInput ? formatInput.value.trim() : '';
+                
+                if (field) {
+                    columns.push({ 
+                        field, 
+                        agg, 
+                        format,
+                        label: format ? `${field} (${agg.toUpperCase()})${format}` : `${field} (${agg.toUpperCase()})`
+                    });
+                }
+            });
+            
+            return columns;
+        }
+        
+        function addAllPivotColumns() {
+            const container = document.getElementById('pivotColumnsContainer');
+            container.innerHTML = '';
+            
+            CATEGORICAL_FIELDS.forEach(field => {
+                const div = addPivotColumnSelect(field);
+                const fieldSelect = div.querySelector('select:nth-of-type(1)');
+                fieldSelect.value = field;
+            });
+            
+            updatePivotTable();
+        }
+
+        // ===== 工具函數 =====
+        function downloadScreenshot(sectionId, filename) {
+            const element = document.getElementById(sectionId);
+            html2canvas(element, {
+                backgroundColor: '#ffffff',
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${filename}-${Date.now()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        function exportChartCSV(chartType) {
+            if (chartType === 'crossBar') {
+                const yField = document.getElementById('crossBarYAxis').value;
+                const colorField = document.getElementById('crossBarColorBy').value;
+                
+                let csv = `${yField},${colorField},筆數\n`;
+                
+                filteredData.forEach(row => {
+                    csv += `"${row[yField] || ''}","${row[colorField] || ''}",1\n`;
+                });
+                
+                downloadCSV(csv, 'cross-bar-data.csv');
+            }
+        }
+
+        function exportPivotTableCSV() {
+            const table = document.querySelector('#pivotTableContainer table');
+            if (!table) return;
+            
+            let csv = '';
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('th, td');
+                const rowData = Array.from(cells).map(cell => `"${cell.textContent}"`).join(',');
+                csv += rowData + '\n';
+            });
+            
+            downloadCSV(csv, 'pivot-table.csv');
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+    </script>
+</body>
+</html>
