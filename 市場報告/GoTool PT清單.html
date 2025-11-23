@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GoTool 產品分析儀表板</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
@@ -41,28 +43,6 @@
         }
         
         /* 篩選器樣式 */
-        .filter-dropdown summary {
-            cursor: pointer; padding: 0.5rem 1rem; border: 1px solid #d1d5db;
-            border-radius: 0.375rem; background-color: white;
-            transition: background-color 0.2s, border-color 0.2s;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
-        .filter-dropdown summary:hover { background-color: #f9fafb; }
-        .filter-dropdown[open] summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-        .filter-dropdown .filter-panel {
-            max-height: 300px; overflow-y: auto; border: 1px solid #d1d5db; border-top: none;
-            padding: 0.75rem; background-color: white; z-index: 10; position: absolute;
-            width: 100%; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem;
-        }
-        .filter-dropdown { position: relative; }
-        
-        .multi-select-box {
-            border: 1px solid #d1d5db; border-radius: 0.375rem;
-            padding: 0.5rem; max-height: 200px; overflow-y: auto;
-            background-color: white;
-        }
-        .multi-select-box label { display: block; margin-bottom: 0.25rem; cursor: pointer; }
-        
         .filter-active {
             background-color: #fefce8 !important;
             border-color: #fde047 !important;
@@ -156,15 +136,180 @@
         /* 圖例樣式 */
         .legend-item { cursor: pointer; transition: opacity 0.2s; }
         .legend-item-hidden { opacity: 0.5; text-decoration: line-through; }
+        
+        /* 設定選單樣式 */
+        .settings-tab {
+            transition: all 0.2s;
+        }
+        .settings-tab:hover {
+            background-color: #f3f4f6;
+        }
+        .settings-tab.active {
+            background-color: transparent;
+        }
+        
+        /* 滑桿樣式 */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #1d4ed8;
+            transform: scale(1.1);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+            background: #1d4ed8;
+            transform: scale(1.1);
+        }
+        
+        /* 設定按鈕樣式（參考附件樣式） */
+        #settingsBtn {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 40;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background-color: #ffffff;
+            color: #2563eb; /* blue-600 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #settingsBtn:hover {
+            background-color: #eff6ff; /* blue-50 */
+        }
+        #settingsBtn svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+
+    <!-- 設定按鈕（固定在右上角） -->
+    <button id="settingsBtn" title="設定">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+    </button>
 
     <div class="w-full p-4 md:p-8">
         <header class="text-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-blue-800">GoTool 產品分析儀表板</h1>
             <p class="text-gray-600 mt-2">電動工具產品數據分析</p>
         </header>
+        
+        <!-- 設定選單 -->
+        <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 flex justify-between items-center">
+                    <h2 class="text-xl font-bold">顯示設定</h2>
+                    <button id="closeSettings" class="hover:bg-blue-800 rounded p-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="overflow-y-auto max-h-[calc(90vh-80px)]">
+                    <!-- 分頁 -->
+                    <div class="border-b border-gray-200">
+                        <nav class="flex" role="tablist">
+                            <button class="settings-tab active px-6 py-3 font-medium border-b-2 border-blue-600 text-blue-600" data-tab="font">
+                                <i class="fas fa-text-height mr-2"></i>字體設定
+                            </button>
+                            <button class="settings-tab px-6 py-3 font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="layout">
+                                <i class="fas fa-th-large mr-2"></i>版面設定
+                            </button>
+                        </nav>
+                    </div>
+                    
+                    <!-- 字體設定分頁 -->
+                    <div id="fontTab" class="settings-content p-6 space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4 text-gray-800">全域字體大小</h3>
+                            <div class="flex items-center gap-4">
+                                <label class="text-sm text-gray-600 w-24">基礎大小:</label>
+                                <input type="range" id="baseFontSizeSlider" min="10" max="20" value="14" step="1" class="flex-1">
+                                <span id="baseFontSizeValue" class="text-sm text-gray-600 w-12 text-right">14px</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">調整所有文字的基礎大小</p>
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-800">圖表標籤字體</h3>
+                            <div class="flex items-center gap-4">
+                                <label class="text-sm text-gray-600 w-24">標籤大小:</label>
+                                <input type="range" id="chartLabelSizeSlider" min="8" max="16" value="11" step="1" class="flex-1">
+                                <span id="chartLabelSizeValue" class="text-sm text-gray-600 w-12 text-right">11px</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">調整圖表軸標籤和刻度的字體大小</p>
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-800">Y軸字體</h3>
+                            <div class="flex items-center gap-4">
+                                <label class="text-sm text-gray-600 w-24">Y軸字體:</label>
+                                <input type="range" id="yAxisFontSizeSlider" min="8" max="16" value="11" step="1" class="flex-1">
+                                <span id="yAxisFontSizeValue" class="text-sm text-gray-600 w-12 text-right">11px</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">調整散點圖Y軸標籤的字體大小</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 版面設定分頁 -->
+                    <div id="layoutTab" class="settings-content p-6 space-y-6 hidden">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4 text-gray-800">Y軸寬度</h3>
+                            <div class="flex items-center gap-4">
+                                <label class="text-sm text-gray-600 w-24">Y軸寬度:</label>
+                                <input type="range" id="yAxisWidthSlider" min="60" max="120" value="80" step="10" class="flex-1">
+                                <span id="yAxisWidthValue" class="text-sm text-gray-600 w-12 text-right">80px</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">調整散點圖Y軸的顯示寬度</p>
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-800">圖表高度</h3>
+                            <div class="flex items-center gap-4">
+                                <label class="text-sm text-gray-600 w-24">高度:</label>
+                                <input type="range" id="chartHeightSlider" min="500" max="1000" value="730" step="50" class="flex-1">
+                                <span id="chartHeightValue" class="text-sm text-gray-600 w-12 text-right">730px</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">調整散點圖的顯示高度</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- 載入中 -->
         <div id="loading" class="text-center p-8">
@@ -186,16 +331,9 @@
                 <div class="bg-white p-4 rounded-lg shadow-lg">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-bold text-gray-800">篩選條件 <span id="filterCount" class="text-sm text-blue-600 font-normal"></span></h3>
-                        <div class="flex items-center gap-4">
-                            <div class="flex items-center gap-2">
-                                <label for="fontSizeSlider" class="text-xs text-gray-600 whitespace-nowrap">字體大小:</label>
-                                <input type="range" id="fontSizeSlider" min="10" max="20" value="14" step="1" class="w-24">
-                                <span id="fontSizeValue" class="text-xs text-gray-600 w-8">14px</span>
-                            </div>
-                            <button id="clearAllFilters" class="text-xs bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600">
-                                清除全部
-                            </button>
-                        </div>
+                        <button id="clearAllFilters" class="text-xs bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600">
+                            清除全部
+                        </button>
                     </div>
                     <div id="filtersContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         <!-- 動態生成篩選器 -->
@@ -261,15 +399,15 @@
                                 </div>
                             </div>
                             <div id="scatterLegend" class="flex flex-wrap gap-x-4 gap-y-1 mb-4"></div>
-                            <div style="position: relative; padding-top: 100px;">
+                            <div style="position: relative;">
                                 <!-- Y軸固定區域 -->
-                                <div id="yAxisContainer" style="position: absolute; left: 16px; top: 100px; width: 60px; height: 730px; background: white; z-index: 100; pointer-events: none; border-right: 2px solid #e5e7eb; box-shadow: 2px 0 4px rgba(0,0,0,0.05);">
-                                    <canvas id="yAxisCanvas" width="60" height="730" style="display: block;"></canvas>
+                                <div id="yAxisContainer" style="position: absolute; left: 16px; top: 0; width: 60px; height: 730px; background: white; z-index: 100; pointer-events: none; border-right: 2px solid #e5e7eb; box-shadow: 2px 0 4px rgba(0,0,0,0.05);">
+                                    <canvas id="yAxisCanvas" width="80" height="730" style="display: block;"></canvas>
                                 </div>
                                 <div id="scatterChartWrapper" class="border border-gray-200 rounded" style="max-width: 100%; position: relative; overflow-x: auto; overflow-y: hidden;">
-                                    <div id="scatterChartContainer" class="chart-container" style="min-width: 100%; height: 730px; transition: min-width 0.3s; position: relative; padding-left: 60px;">
+                                    <div id="scatterChartContainer" class="chart-container" style="min-width: 100%; height: 730px; transition: min-width 0.3s; position: relative; padding-left: 80px;">
                                         <canvas id="scatterChart" style="display: block;"></canvas>
-                                        <div id="scatterImageContainer" style="position: absolute; top: 0; left: 60px; width: calc(100% - 60px); height: 100%; pointer-events: none;"></div>
+                                        <div id="scatterImageContainer" style="position: absolute; top: 0; left: 80px; width: calc(100% - 80px); height: 100%; pointer-events: none;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -412,8 +550,9 @@
         ];
 
         // 分類欄位定義
-        const CATEGORICAL_FIELDS = ['品牌', '機型', '伏特', '鋸片尺寸', '電源分類', '英文分類', '中文名稱', '產品分類', '加工材質'];
-        const NUMERIC_FIELDS = ['售價', '原價', '伏特', '鋸片尺寸'];
+        // 欄位清單（自動偵測）
+        let CATEGORICAL_FIELDS = [];
+        let NUMERIC_FIELDS = [];
         
         // 全局變數
         let rawData = [];
@@ -443,8 +582,13 @@
                 rawData = processData(data);
                 filteredData = [...rawData];
                 
+                // 自動偵測欄位類型
+                detectFields();
+                
                 console.log('原始資料筆數:', rawData.length);
                 console.log('前3筆資料樣本:', rawData.slice(0, 3));
+                console.log('偵測到的分類欄位:', CATEGORICAL_FIELDS);
+                console.log('偵測到的數值欄位:', NUMERIC_FIELDS);
                 
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
@@ -460,6 +604,47 @@
             }
         }
 
+        function detectFields() {
+            if (rawData.length === 0) return;
+            
+            // 取得所有欄位名稱，排除結尾有"x"的欄位
+            const allFields = Object.keys(rawData[0]).filter(field => {
+                return !field.endsWith('x'); // 排除結尾有"x"的欄位
+            });
+            
+            const categoricalFields = [];
+            const numericFields = [];
+            
+            allFields.forEach(field => {
+                // 檢查前100筆資料（或全部資料如果少於100筆）
+                const sampleSize = Math.min(100, rawData.length);
+                let numericCount = 0;
+                let validCount = 0;
+                
+                for (let i = 0; i < sampleSize; i++) {
+                    const value = rawData[i][field];
+                    if (value !== null && value !== undefined && value !== '') {
+                        validCount++;
+                        // 嘗試轉換為數字（排除純數字字串如"12V"）
+                        const numValue = parseFloat(String(value).replace(/[^0-9.\-]/g, ''));
+                        if (!isNaN(numValue) && String(value).match(/^[0-9.\-]+$/)) {
+                            numericCount++;
+                        }
+                    }
+                }
+                
+                // 如果80%以上的有效值都是純數字，判定為數值欄位
+                if (validCount > 0 && numericCount / validCount >= 0.8) {
+                    numericFields.push(field);
+                } else {
+                    categoricalFields.push(field);
+                }
+            });
+            
+            CATEGORICAL_FIELDS = categoricalFields;
+            NUMERIC_FIELDS = numericFields;
+        }
+        
         function processData(data) {
             return data.map(row => {
                 const processed = {...row};
@@ -599,11 +784,148 @@
                 renderProductImages();
             });
             
-            // 監聽水平滾動，確保Y軸覆蓋層在正確位置
-            const scatterWrapper = document.querySelector('#scatterChartWrapper > div');
-            if (scatterWrapper) {
-                scatterWrapper.addEventListener('scroll', () => {
-                    // Y軸覆蓋層會自動保持在固定位置，不需要額外處理
+            // 設定按鈕和選單
+            const settingsBtn = document.getElementById('settingsBtn');
+            const settingsModal = document.getElementById('settingsModal');
+            const closeSettings = document.getElementById('closeSettings');
+            
+            settingsBtn.addEventListener('click', () => {
+                settingsModal.classList.remove('hidden');
+            });
+            
+            closeSettings.addEventListener('click', () => {
+                settingsModal.classList.add('hidden');
+            });
+            
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.classList.add('hidden');
+                }
+            });
+            
+            // 分頁切換
+            document.querySelectorAll('.settings-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.dataset.tab;
+                    
+                    // 更新分頁按鈕狀態
+                    document.querySelectorAll('.settings-tab').forEach(t => {
+                        t.classList.remove('active', 'border-blue-600', 'text-blue-600');
+                        t.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    tab.classList.add('active', 'border-blue-600', 'text-blue-600');
+                    tab.classList.remove('border-transparent', 'text-gray-500');
+                    
+                    // 切換內容
+                    document.querySelectorAll('.settings-content').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    document.getElementById(targetTab + 'Tab').classList.remove('hidden');
+                });
+            });
+            
+            // 基礎字體大小控制
+            const baseFontSizeSlider = document.getElementById('baseFontSizeSlider');
+            const baseFontSizeValue = document.getElementById('baseFontSizeValue');
+            if (baseFontSizeSlider && baseFontSizeValue) {
+                baseFontSizeSlider.addEventListener('input', (e) => {
+                    const size = e.target.value;
+                    baseFontSizeValue.textContent = size + 'px';
+                    document.documentElement.style.setProperty('--base-font-size', size + 'px');
+                });
+            }
+            
+            // 圖表標籤字體大小控制
+            const chartLabelSizeSlider = document.getElementById('chartLabelSizeSlider');
+            const chartLabelSizeValue = document.getElementById('chartLabelSizeValue');
+            if (chartLabelSizeSlider && chartLabelSizeValue) {
+                chartLabelSizeSlider.addEventListener('input', (e) => {
+                    const size = e.target.value;
+                    chartLabelSizeValue.textContent = size + 'px';
+                    // 重新渲染所有圖表以應用新字體大小
+                    updateAllCharts();
+                });
+            }
+            
+            // Y軸字體大小控制
+            const yAxisFontSizeSlider = document.getElementById('yAxisFontSizeSlider');
+            const yAxisFontSizeValue = document.getElementById('yAxisFontSizeValue');
+            if (yAxisFontSizeSlider && yAxisFontSizeValue) {
+                yAxisFontSizeSlider.addEventListener('input', (e) => {
+                    const size = e.target.value;
+                    yAxisFontSizeValue.textContent = size + 'px';
+                    // 重新渲染散點圖以應用新Y軸字體大小
+                    updateScatterChart();
+                });
+            }
+            
+            // Y軸寬度控制
+            const yAxisWidthSlider = document.getElementById('yAxisWidthSlider');
+            const yAxisWidthValue = document.getElementById('yAxisWidthValue');
+            if (yAxisWidthSlider && yAxisWidthValue) {
+                yAxisWidthSlider.addEventListener('input', (e) => {
+                    const width = e.target.value;
+                    yAxisWidthValue.textContent = width + 'px';
+                    
+                    // 更新Y軸canvas寬度
+                    const yAxisCanvas = document.getElementById('yAxisCanvas');
+                    if (yAxisCanvas) {
+                        yAxisCanvas.width = parseInt(width);
+                    }
+                    
+                    // 更新容器padding
+                    const container = document.getElementById('scatterChartContainer');
+                    if (container) {
+                        container.style.paddingLeft = width + 'px';
+                    }
+                    
+                    // 更新圖片容器位置
+                    const imgContainer = document.getElementById('scatterImageContainer');
+                    if (imgContainer) {
+                        imgContainer.style.left = width + 'px';
+                        imgContainer.style.width = `calc(100% - ${width}px)`;
+                    }
+                    
+                    // 重新渲染散點圖
+                    updateScatterChart();
+                });
+            }
+            
+            // 圖表高度控制
+            const chartHeightSlider = document.getElementById('chartHeightSlider');
+            const chartHeightValue = document.getElementById('chartHeightValue');
+            if (chartHeightSlider && chartHeightValue) {
+                chartHeightSlider.addEventListener('input', (e) => {
+                    const height = e.target.value;
+                    chartHeightValue.textContent = height + 'px';
+                    
+                    // 更新Y軸容器高度（關鍵！這是白色區塊）
+                    const yAxisContainer = document.getElementById('yAxisContainer');
+                    if (yAxisContainer) {
+                        yAxisContainer.style.height = height + 'px';
+                    }
+                    
+                    // 更新Y軸canvas高度
+                    const yAxisCanvas = document.getElementById('yAxisCanvas');
+                    if (yAxisCanvas) {
+                        yAxisCanvas.height = parseInt(height);
+                        yAxisCanvas.style.height = height + 'px';
+                    }
+                    
+                    // 更新容器高度
+                    const container = document.getElementById('scatterChartContainer');
+                    if (container) {
+                        container.style.height = height + 'px';
+                    }
+                    
+                    // 更新圖片容器高度
+                    const imgContainer = document.getElementById('scatterImageContainer');
+                    if (imgContainer) {
+                        imgContainer.style.height = height + 'px';
+                    }
+                    
+                    // 重新渲染散點圖
+                    updateScatterChart();
                 });
             }
             
@@ -637,23 +959,8 @@
             }
             
             // 字體大小控制
-            const fontSizeSlider = document.getElementById('fontSizeSlider');
-            const fontSizeValue = document.getElementById('fontSizeValue');
-            if (fontSizeSlider && fontSizeValue) {
-                fontSizeSlider.addEventListener('input', (e) => {
-                    const size = e.target.value;
-                    fontSizeValue.textContent = size + 'px';
-                    document.documentElement.style.setProperty('--base-font-size', size + 'px');
-                    
-                    // 更新所有圖表以適應新字體大小
-                    updateScatterChart();
-                    updateCrossBarChart();
-                    updatePivotTable();
-                });
-                
-                // 設定初始字體大小
-                document.documentElement.style.setProperty('--base-font-size', '14px');
-            }
+            // 設定初始字體大小
+            document.documentElement.style.setProperty('--base-font-size', '14px');
             
             // CSV 匯出
             document.getElementById('crossBar-export-csv').addEventListener('click', () => exportChartCSV('crossBar'));
@@ -665,7 +972,23 @@
             const filtersContainer = document.getElementById('filtersContainer');
             
             CATEGORICAL_FIELDS.forEach(field => {
-                const uniqueValues = [...new Set(filteredData.map(d => d[field]).filter(v => v))].sort();
+                // 收集所有值，如果含有逗號分隔則拆分
+                const allValues = new Set();
+                filteredData.forEach(d => {
+                    const value = d[field];
+                    if (value) {
+                        // 如果包含逗號，則拆分成多個選項
+                        if (String(value).includes(',')) {
+                            String(value).split(',').forEach(v => {
+                                const trimmed = v.trim();
+                                if (trimmed) allValues.add(trimmed);
+                            });
+                        } else {
+                            allValues.add(value);
+                        }
+                    }
+                });
+                const uniqueValues = [...allValues].sort();
                 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'space-y-2';
@@ -676,7 +999,7 @@
                 
                 const selectContainer = document.createElement('div');
                 selectContainer.className = 'relative';
-                selectContainer.style.zIndex = '10';
+                selectContainer.style.zIndex = '10'; // 預設 z-index
                 
                 const summary = document.createElement('button');
                 summary.type = 'button';
@@ -685,8 +1008,9 @@
                 summary.dataset.field = field;
                 
                 const panel = document.createElement('div');
-                panel.className = 'filter-panel hidden absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto';
+                panel.className = 'filter-panel hidden absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto';
                 panel.style.minWidth = '200px';
+                panel.style.zIndex = '1001'; // 面板固定高 z-index
                 panel.dataset.field = field;
                 
                 // 阻止面板內的點擊事件冒泡到document
@@ -761,19 +1085,26 @@
                     e.preventDefault();
                     e.stopPropagation();
                     const isOpen = !panel.classList.contains('hidden');
-                    // 關閉所有其他下拉選單
+                    // 關閉所有其他下拉選單並重置 z-index
                     document.querySelectorAll('[data-field]').forEach(container => {
                         if (container.tagName === 'DIV' && container.classList.contains('relative')) {
                             const otherPanel = container.querySelector('.filter-panel');
                             if (otherPanel && otherPanel !== panel) {
                                 otherPanel.classList.add('hidden');
                             }
+                            // 重置其他容器的 z-index
+                            if (container !== selectContainer) {
+                                container.style.zIndex = '10';
+                            }
                         }
                     });
                     if (!isOpen) {
                         panel.classList.remove('hidden');
+                        // 打開時讓當前容器擁有最高的 z-index
+                        selectContainer.style.zIndex = '1000';
                     } else {
                         panel.classList.add('hidden');
+                        selectContainer.style.zIndex = '10';
                     }
                 });
                 
@@ -826,7 +1157,23 @@
             filteredData = rawData.filter(row => {
                 return CATEGORICAL_FIELDS.every(field => {
                     const value = row[field];
-                    return !value || filterSelections[field].includes(value);
+                    if (!value) return true;
+                    
+                    const selectedValues = filterSelections[field];
+                    if (!selectedValues || selectedValues.length === 0) return true;
+                    
+                    // 包含匹配：檢查是否有任何選中的值包含在欄位值中
+                    const valueStr = String(value);
+                    return selectedValues.some(selectedValue => {
+                        // 支援完全匹配和部分匹配
+                        if (valueStr === selectedValue) return true;
+                        // 如果欄位值包含逗號，拆分後檢查
+                        if (valueStr.includes(',')) {
+                            const parts = valueStr.split(',').map(v => v.trim());
+                            return parts.includes(selectedValue);
+                        }
+                        return false;
+                    });
                 });
             });
             
@@ -905,7 +1252,7 @@
         }
 
         function clearAllFilters() {
-            document.querySelectorAll('.filter-dropdown input[type="checkbox"]').forEach(cb => {
+            document.querySelectorAll('.filter-panel input[type="checkbox"]').forEach(cb => {
                 cb.checked = true;
             });
             
@@ -964,9 +1311,14 @@
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: xField },
+                            title: { 
+                                display: true, 
+                                text: xField,
+                                font: { size: parseInt(document.getElementById('chartLabelSizeSlider')?.value || 11) }
+                            },
                             position: 'bottom',
                             ticks: {
+                                font: { size: parseInt(document.getElementById('chartLabelSizeSlider')?.value || 11) },
                                 callback: function(value, index, ticks) {
                                     // 使用原始價格值來顯示刻度
                                     const originalValue = xAxisMapping.find(m => m.displayStart <= value && value < m.displayEnd);
@@ -1040,8 +1392,11 @@
             const yScale = chart.scales.y;
             const ticks = yScale.ticks;
             
+            // 讀取Y軸字體大小設定
+            const yAxisFontSize = parseInt(document.getElementById('yAxisFontSizeSlider')?.value || 11);
+            
             ctx.fillStyle = '#666';
-            ctx.font = '11px Arial';
+            ctx.font = `${yAxisFontSize}px Arial`;
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
             
@@ -1052,22 +1407,25 @@
                 // 繪製刻度線
                 ctx.strokeStyle = '#e5e7eb';
                 ctx.beginPath();
-                ctx.moveTo(50, y);
-                ctx.lineTo(60, y);
+                const xStart = yAxisCanvas.width - 30;
+                const xEnd = yAxisCanvas.width - 20;
+                ctx.moveTo(xStart, y);
+                ctx.lineTo(xEnd, y);
                 ctx.stroke();
                 
                 // 繪製標籤文字
-                ctx.fillText(label, 48, y);
+                ctx.fillText(label, xStart - 2, y);
             });
             
             // 繪製Y軸標題
             ctx.save();
             ctx.translate(15, yAxisCanvas.height / 2);
             ctx.rotate(-Math.PI / 2);
-            ctx.font = 'bold 12px Arial';
+            ctx.font = `bold ${yAxisFontSize + 1}px Arial`;
             ctx.fillStyle = '#333';
             ctx.textAlign = 'center';
-            ctx.fillText(chart.options.scales.y.title.text, 0, 0);
+            const yTitle = chart.options.scales.y.title?.text || '';
+            if (yTitle) ctx.fillText(yTitle, 0, 0);
             ctx.restore();
         }
 
@@ -1086,7 +1444,7 @@
             datasets.forEach((dataset, datasetIndex) => {
                 dataset.data.forEach((point, pointIndex) => {
                     const product = point.product;
-                    if (!product['圖片連結']) return;
+                    if (!product['圖片連結x']) return;
                     
                     const meta = chart.getDatasetMeta(datasetIndex);
                     const element = meta.data[pointIndex];
@@ -1096,7 +1454,7 @@
                         const y = element.y;
                         
                         const img = document.createElement('img');
-                        img.src = product['圖片連結'];
+                        img.src = product['圖片連結x'];
                         img.className = 'product-image-preview';
                         img.style.left = (x - 60) + 'px'; // 減去左側padding
                         img.style.top = y + 'px'; // Y軸位置已包含top padding
@@ -1305,28 +1663,28 @@
                 </div>
                 <div class="tab-content active" data-tab="info">
                     <div class="info-row"><span class="info-label">品牌:</span><span class="info-value">${product['品牌'] || '-'}</span></div>
-                    <div class="info-row"><span class="info-label">機型:</span><span class="info-value">${product['機型'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">機型:</span><span class="info-value">${product['機型x'] || '-'}</span></div>
                     <div class="info-row"><span class="info-label">伏特:</span><span class="info-value">${formatValue(product['伏特'])}</span></div>
                     <div class="info-row"><span class="info-label">鋸片尺寸:</span><span class="info-value">${formatValue(product['鋸片尺寸'])}</span></div>
                     <div class="info-row"><span class="info-label">電源分類:</span><span class="info-value">${product['電源分類'] || '-'}</span></div>
                     <div class="info-row"><span class="info-label">英文分類:</span><span class="info-value">${product['英文分類'] || '-'}</span></div>
-                    <div class="info-row"><span class="info-label">中文名稱:</span><span class="info-value">${product['中文名稱'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">中文分類:</span><span class="info-value">${product['中文分類'] || '-'}</span></div>
                     <div class="info-row"><span class="info-label">產品分類:</span><span class="info-value">${product['產品分類'] || '-'}</span></div>
                     <div class="info-row"><span class="info-label">加工材質:</span><span class="info-value">${product['加工材質'] || '-'}</span></div>
-                    <div class="info-row"><span class="info-label">ARTIKEL:</span><span class="info-value">${product['ARTIKEL'] || '-'}</span></div>
+                    <div class="info-row"><span class="info-label">ARTIKEL:</span><span class="info-value">${product['ARTIKELx'] || '-'}</span></div>
                     <div class="info-row"><span class="info-label">售價:</span><span class="info-value">$${formatValue(product['售價'])}</span></div>
                     <div class="info-row"><span class="info-label">原價:</span><span class="info-value">$${formatValue(product['原價'])}</span></div>
-                    ${product['產品連結'] ? `<div class="info-row"><span class="info-label">產品連結:</span><span class="info-value"><a href="${product['產品連結']}" target="_blank" class="text-blue-600 hover:underline">查看產品頁面</a></span></div>` : ''}
-                    ${product['圖片連結'] ? `<img src="${product['圖片連結']}" class="tooltip-image" onerror="this.style.display='none'"/>` : ''}
+                    ${product['產品連結x'] ? `<div class="info-row"><span class="info-label">產品連結:</span><span class="info-value"><a href="${product['產品連結x']}" target="_blank" class="text-blue-600 hover:underline">查看產品頁面</a></span></div>` : ''}
+                    ${product['圖片連結x'] ? `<img src="${product['圖片連結x']}" class="tooltip-image" onerror="this.style.display='none'"/>` : ''}
                 </div>
                 <div class="tab-content" data-tab="features">
-                    <pre style="white-space:pre-wrap;font-size:0.875rem;">${product['特徵'] || '無資料'}</pre>
+                    <pre style="white-space:pre-wrap;font-size:0.875rem;">${product['特徵x'] || '無資料'}</pre>
                 </div>
                 <div class="tab-content" data-tab="specs">
-                    <pre style="white-space:pre-wrap;font-size:0.875rem;">${product['規格'] || '無資料'}</pre>
+                    <pre style="white-space:pre-wrap;font-size:0.875rem;">${product['規格x'] || '無資料'}</pre>
                 </div>
                 <div class="tab-content" data-tab="contents">
-                    <pre style="white-space:pre-wrap;font-size:0.875rem;">${product['內容物'] || '無資料'}</pre>
+                    <pre style="white-space:pre-wrap;font-size:0.875rem;">${product['內容物x'] || '無資料'}</pre>
                 </div>
             `;
             
@@ -1369,7 +1727,10 @@
                         legend: { display: false },
                         datalabels: {
                             color: '#fff',
-                            font: { weight: 'bold', size: 10 },
+                            font: { 
+                                weight: 'bold', 
+                                size: parseInt(document.getElementById('chartLabelSizeSlider')?.value || 11) 
+                            },
                             formatter: (value, context) => {
                                 // 空白行不顯示標籤
                                 const label = context.chart.data.labels[context.dataIndex];
@@ -1385,12 +1746,20 @@
                     scales: {
                         x: {
                             stacked: colorField !== 'none',
-                            title: { display: true, text: valueType === 'percent' ? '百分比 (%)' : '筆數' },
+                            title: { 
+                                display: true, 
+                                text: valueType === 'percent' ? '百分比 (%)' : '筆數',
+                                font: { size: parseInt(document.getElementById('chartLabelSizeSlider')?.value || 11) }
+                            },
+                            ticks: {
+                                font: { size: parseInt(document.getElementById('chartLabelSizeSlider')?.value || 11) }
+                            },
                             max: valueType === 'percent' ? 100 : undefined
                         },
                         y: {
                             stacked: colorField !== 'none',
                             ticks: {
+                                font: { size: parseInt(document.getElementById('chartLabelSizeSlider')?.value || 11) },
                                 callback: function(value, index, ticks) {
                                     const label = this.getLabelForValue(value);
                                     // 空白行顯示為空
