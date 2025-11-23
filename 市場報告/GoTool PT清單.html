@@ -532,7 +532,7 @@
                             <i class="fas fa-chevron-down ml-2 text-sm transition-transform" id="filterToggleIcon"></i>
                         </span>
                     </summary>
-                    <div class="p-4 border-t">
+                    <div class="p-4 border-t max-h-[600px] overflow-y-auto">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-base font-semibold text-gray-700">篩選條件 <span id="filterCount" class="text-sm text-blue-600 font-normal"></span></h3>
                             <button id="clearAllFilters" class="text-xs bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600">
@@ -1001,9 +1001,11 @@
             CATEGORICAL_FIELDS.forEach(field => {
                 // 收集所有值，如果含有逗號分隔則拆分
                 const allValues = new Set();
+                let hasEmptyValue = false;
+                
                 filteredData.forEach(d => {
                     const value = d[field];
-                    if (value) {
+                    if (value !== null && value !== undefined && value !== '') {
                         // 如果包含逗號，則拆分成多個選項
                         if (String(value).includes(',')) {
                             String(value).split(',').forEach(v => {
@@ -1013,9 +1015,17 @@
                         } else {
                             allValues.add(value);
                         }
+                    } else {
+                        // 記錄有空值
+                        hasEmptyValue = true;
                     }
                 });
+                
                 const uniqueValues = [...allValues].sort();
+                // 如果有空值，加到最前面
+                if (hasEmptyValue) {
+                    uniqueValues.unshift('(空白)');
+                }
                 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'space-y-2';
@@ -1184,14 +1194,29 @@
             filteredData = rawData.filter(row => {
                 return CATEGORICAL_FIELDS.every(field => {
                     const value = row[field];
-                    if (!value) return true;
-                    
                     const selectedValues = filterSelections[field];
+                    
                     if (!selectedValues || selectedValues.length === 0) return true;
+                    
+                    // 檢查是否為空值
+                    const isEmpty = !value || value === null || value === undefined || value === '';
+                    
+                    // 如果選中了 "(空白)" 且當前值為空，則通過篩選
+                    if (isEmpty && selectedValues.includes('(空白)')) {
+                        return true;
+                    }
+                    
+                    // 如果值為空但沒選中 "(空白)"，則不通過篩選
+                    if (isEmpty) {
+                        return false;
+                    }
                     
                     // 包含匹配：檢查是否有任何選中的值包含在欄位值中
                     const valueStr = String(value);
                     return selectedValues.some(selectedValue => {
+                        // 跳過 "(空白)" 選項，因為已經在上面處理過了
+                        if (selectedValue === '(空白)') return false;
+                        
                         // 支援完全匹配和部分匹配
                         if (valueStr === selectedValue) return true;
                         // 如果欄位值包含逗號，拆分後檢查
@@ -1284,7 +1309,22 @@
             });
             
             CATEGORICAL_FIELDS.forEach(field => {
-                filterSelections[field] = [...new Set(rawData.map(d => d[field]).filter(v => v))];
+                const allValues = new Set();
+                let hasEmptyValue = false;
+                
+                rawData.forEach(d => {
+                    const value = d[field];
+                    if (value !== null && value !== undefined && value !== '') {
+                        allValues.add(value);
+                    } else {
+                        hasEmptyValue = true;
+                    }
+                });
+                
+                filterSelections[field] = [...allValues];
+                if (hasEmptyValue) {
+                    filterSelections[field].unshift('(空白)');
+                }
             });
             
             // 清除暫時篩選
