@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>貓咪大戰人類 - 完整版</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React 18 (UMD) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (for JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+    <!-- Firebase SDK (Compat version for local file execution) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .animate-bounce-small { animation: bounce-small 1s infinite; }
+        @keyframes bounce-small {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(0); }
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Effects */
+        .card-selected {
+            box-shadow: 0 0 15px 2px rgba(250, 204, 21, 0.8);
+            transform: translateY(-8px) scale(1.05);
+            border-color: #facc15;
+        }
+        .avatar-selected {
+            box-shadow: 0 0 0 4px #facc15, 0 0 15px rgba(250, 204, 21, 0.5);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 overflow-hidden select-none">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- 設定區 (請將此處改為您的 GitHub Pages 網址) ---
+        const ASSET_BASE_URL = "https://raw.githubusercontent.com/user/repo/main/assets"; 
+
+        const CAT_AVATARS_LIST = ['c_avatar_1.png', 'c_avatar_2.png', 'c_avatar_3.png', 'c_avatar_4.png', 'c_avatar_5.png'];
+        const HUMAN_AVATARS_LIST = ['h_avatar_1.png', 'h_avatar_2.png', 'h_avatar_3.png', 'h_avatar_4.png', 'h_avatar_5.png'];
+
+        // --- Firebase Initialization (Compat) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDyB_rJ37rHW1uwpQNASlWc53AjsPwh2EE",
+            authDomain: "business-model-canvas-3da74.firebaseapp.com",
+            projectId: "business-model-canvas-3da74",
+            storageBucket: "business-model-canvas-3da74.firebasestorage.app",
+            messagingSenderId: "922978479250",
+            appId: "1:922978479250:web:adf9165fc5d7f0f3a68a4b",
+            measurementId: "G-WG6FKMSLC7"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appId = firebaseConfig.projectId;
+
+        // --- Game Data Definitions ---
+        const CAT_SKILLS = [
+            { id: 'c_eye', type: 'skill', value: 0, name: '無辜大眼', description: '對手數值 -2', effect: 'debuff_2' },
+            { id: 'c_liquid', type: 'skill', value: 0, name: '液體身軀', description: '若對手較大則平手', effect: 'force_draw_if_lose' },
+            { id: 'c_slap', type: 'skill', value: 0, name: '貓貓拳', description: '取消對手技能', effect: 'cancel_opp_skill' },
+            { id: 'c_zoomies', type: 'skill', value: 0, name: '跑酷', description: '交換雙方數字牌', effect: 'swap_numbers' },
+            { id: 'c_hiss', type: 'skill', value: 0, name: '炸毛', description: '對手數值 -1', effect: 'debuff_1' },
+            { id: 'c_sleep', type: 'skill', value: 0, name: '裝睡', description: '本局無效(+1)', effect: 'buff_1' },
+            { id: 'c_bite', type: 'skill', value: 0, name: '咬咬', description: '對手數值 -1', effect: 'debuff_1' },
+            { id: 'c_scratch', type: 'skill', value: 0, name: '抓抓', description: '對手數值 -2', effect: 'debuff_2' },
+        ];
+
+        const HUMAN_SKILLS = [
+            { id: 'h_can', type: 'skill', value: 0, name: '開罐罐', description: '對手數字變為 1', effect: 'force_1' },
+            { id: 'h_vacuum', type: 'skill', value: 0, name: '吸塵器', description: '自己數值 +2', effect: 'buff_2' },
+            { id: 'h_laser', type: 'skill', value: 0, name: '紅點點', description: '取消對手技能', effect: 'cancel_opp_skill' },
+            { id: 'h_hug', type: 'skill', value: 0, name: '窒息擁抱', description: '若出5，額外+1', effect: 'buff_1_if_5' },
+            { id: 'h_treat', type: 'skill', value: 0, name: '零食賄賂', description: '自己數值 +1', effect: 'buff_1' },
+            { id: 'h_spray', type: 'skill', value: 0, name: '噴水瓶', description: '對手數值 -1', effect: 'debuff_1' },
+            { id: 'h_toy', type: 'skill', value: 0, name: '逗貓棒', description: '對手數字變為 2', effect: 'force_2' },
+            { id: 'h_box', type: 'skill', value: 0, name: '紙箱陷阱', description: '自己數值 +2', effect: 'buff_2' },
+        ];
+
+        const BONUS_SKILL = { id: 'bonus_plus2', type: 'skill', value: 0, name: '挑戰獎勵', description: '數值 +2', effect: 'buff_2', isSpecial: true };
+
+        const INITIAL_PLAYER_STATE = (role) => ({
+            id: '', name: '', role, score: 0, avatar: '',
+            handNumbers: [1, 2, 3, 4, 5], 
+            handSkills: [], 
+            poolSkills: [], 
+            selectedDeck: [], 
+            isPrepReady: false,
+            selectedNumber: null, selectedSkill: null,
+            isReady: false, hasUsedChallenge: false,
+        });
+
+        const INITIAL_GAME_STATE = {
+            status: 'preparation', 
+            phase: 'selection', winner: null,
+            currentMatch: 1, currentRound: 1,
+            cat: INITIAL_PLAYER_STATE('cat'),
+            human: INITIAL_PLAYER_STATE('human'),
+            supportVotes: {}, 
+            roundHistory: [],
+            challenge: { active: false, question: '', answer: 0, winner: null },
+        };
+
+        // --- Utils ---
+        const generateMathQuestion = () => {
+            const a = Math.floor(Math.random() * 20) + 1;
+            const b = Math.floor(Math.random() * 20) + 1;
+            const op = Math.random() > 0.5 ? '+' : '-';
+            if (op === '-' && a < b) return { q: `${b} - ${a} = ?`, a: b - a };
+            return { q: `${a} ${op} ${b} = ?`, a: op === '+' ? a + b : a - b };
+        };
+
+        const getRandomSkills = (pool, count) => {
+            const shuffled = [...pool].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        };
+
+        // --- Icons ---
+        const IconZap = ({ className, size }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size||24} height={size||24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>);
+        const IconFlag = ({ className, size }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size||24} height={size||24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>);
+        const IconTrophy = ({ className, size }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size||24} height={size||24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>);
+
+        // --- Components ---
+        const GameCard = ({ card, isFaceUp, isSelected, onClick, isBig, isDisabled }) => {
+            const imageUrl = card.type === 'skill' ? `${ASSET_BASE_URL}/${card.id}.png` : null;
+            const sizeClass = isBig ? "w-32 h-48 md:w-40 md:h-60" : "w-24 h-36 md:w-28 md:h-44";
+
+            return (
+                <div 
+                    onClick={isDisabled ? null : onClick}
+                    className={`
+                        relative ${sizeClass} rounded-xl border-4 transition-all duration-200 flex-shrink-0 group overflow-hidden
+                        ${isDisabled ? 'opacity-40 cursor-not-allowed border-slate-700 grayscale' : 'cursor-pointer'}
+                        ${isSelected ? 'card-selected border-yellow-400 z-10' : 'border-slate-600 hover:border-slate-400'}
+                        ${!isFaceUp ? 'bg-gradient-to-br from-indigo-900 to-slate-900' : 'bg-white'}
+                    `}
+                >
+                    {isFaceUp ? (
+                        imageUrl ? (
+                            <div className="w-full h-full relative">
+                                <img src={imageUrl} alt={card.name} className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                                <div className="absolute bottom-0 w-full bg-black/70 text-white p-1 text-center">
+                                    <div className="text-xs font-bold truncate">{card.name}</div>
+                                    <div className="text-[10px] leading-tight opacity-80 scale-90">{card.description}</div>
+                                </div>
+                                {card.isSpecial && <div className="absolute top-0 right-0 bg-yellow-500 text-white text-xs px-1 font-bold">+2</div>}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col h-full p-2 items-center justify-between">
+                                {card.type === 'number' ? (
+                                    <span className="text-6xl font-black text-slate-800 mt-4">{card.value}</span>
+                                ) : (
+                                    <div className="flex flex-col items-center w-full mt-2">
+                                        <span className="text-sm font-bold text-center mb-1 text-slate-900">{card.name}</span>
+                                        <div className="text-xs text-slate-600 text-center leading-tight px-1">{card.description}</div>
+                                        {card.isSpecial && <span className="text-xs text-yellow-600 font-bold mt-1">+2</span>}
+                                    </div>
+                                )}
+                                {card.type === 'number' && <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">WILLPOWER</div>}
+                                {card.type === 'skill' && <IconZap size={24} className={card.isSpecial ? "text-yellow-500" : "text-purple-500"} />}
+                            </div>
+                        )
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+                            <div className="text-4xl text-white">?</div>
+                        </div>
+                    )}
+                    {isSelected && <div className="absolute top-2 right-2 bg-yellow-400 text-black rounded-full p-1"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg></div>}
+                </div>
+            );
+        };
+
+        const Avatar = ({ src, size = "w-16 h-16", isSelected, onClick }) => (
+            <div 
+                onClick={onClick}
+                className={`${size} rounded-full border-4 bg-slate-800 overflow-hidden flex-shrink-0 relative cursor-pointer transition-all duration-200
+                ${isSelected ? 'avatar-selected border-yellow-400' : 'border-slate-500 hover:border-slate-300 opacity-80 hover:opacity-100'}
+                `}
+            >
+                <img src={src.startsWith('http') ? src : `${ASSET_BASE_URL}/${src}`} className="w-full h-full object-cover" onError={(e) => e.target.src = `https://placehold.co/100x100/333/FFF?text=Avatar`} />
+            </div>
+        );
+
+        const SupportBar = ({ votes }) => {
+            const catVotes = Object.values(votes || {}).filter(v => v === 'cat').length;
+            const humanVotes = Object.values(votes || {}).filter(v => v === 'human').length;
+            const total = catVotes + humanVotes;
+            const catPercent = total === 0 ? 50 : (catVotes / total) * 100;
+            const humanPercent = total === 0 ? 50 : (humanVotes / total) * 100;
+
+            return (
+                <div className="w-full h-8 bg-slate-800 flex relative font-bold text-xs shadow-md">
+                    <div className="bg-gradient-to-r from-pink-600 to-purple-700 h-full flex items-center pl-4 transition-all duration-500 relative overflow-hidden" style={{ width: `${catPercent}%` }}>
+                        <span className="z-10 text-white whitespace-nowrap">🐱 貓咪軍團 {catVotes}</span>
+                        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')]"></div>
+                    </div>
+                    <div className="bg-gradient-to-l from-blue-600 to-cyan-700 h-full flex items-center justify-end pr-4 transition-all duration-500 relative overflow-hidden" style={{ width: `${humanPercent}%` }}>
+                        <span className="z-10 text-white whitespace-nowrap">{humanVotes} 人類聯盟 🧑</span>
+                        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')]"></div>
+                    </div>
+                    <div className="absolute left-1/2 top-0 bottom-0 w-8 -ml-4 bg-slate-900 transform -skew-x-12 border-l-2 border-r-2 border-slate-700 flex items-center justify-center z-20">
+                        <span className="text-[10px] text-slate-400">VS</span>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
+        function CatVsHumanGame() {
+            const [user, setUser] = useState(null);
+            const [role, setRole] = useState('spectator');
+            const [gameState, setGameState] = useState(null);
+            const [inputName, setInputName] = useState('');
+            const [isInGame, setIsInGame] = useState(false);
+            const [challengeAnswer, setChallengeAnswer] = useState('');
+            const [tempAvatar, setTempAvatar] = useState(null); 
+            const [tempDeck, setTempDeck] = useState([]);
+            const [loadingError, setLoadingError] = useState(''); 
+            
+            // Collection: artifacts -> public -> data -> gameroom
+            const GAME_COLLECTION_PATH = ['artifacts', appId, 'public', 'data'];
+            const DOC_ID = 'gameroom';
+            
+            const prevStatusRef = useRef('preparation');
+
+            // Auth
+            useEffect(() => {
+                auth.signInAnonymously().catch(e => setLoadingError("登入失敗: " + e.message));
+                const unsubscribe = auth.onAuthStateChanged((u) => {
+                    setUser(u);
+                    if(!u) setLoadingError("正在登入...");
+                });
+                return () => unsubscribe();
+            }, []);
+
+            // Game Sync
+            useEffect(() => {
+                if (!user || !isInGame) return;
+                
+                // Use db.collection().doc() style for Compat SDK
+                const roomRef = db.collection('artifacts').doc(appId)
+                                  .collection('public').doc('data')
+                                  .collection(DOC_ID).doc('match_1');
+
+                const unsub = roomRef.onSnapshot((docSnap) => {
+                    if (docSnap.exists) {
+                        const data = docSnap.data();
+                        if (data.status === 'finished' && prevStatusRef.current === 'playing') {
+                            confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500', '#FF4500'] });
+                        }
+                        prevStatusRef.current = data.status;
+                        setGameState(data);
+                    } else {
+                        roomRef.set(INITIAL_GAME_STATE);
+                    }
+                }, (error) => {
+                    console.error("Sync Error", error);
+                    setLoadingError("讀取戰局失敗: " + error.message);
+                });
+                return () => unsub();
+            }, [user, isInGame]);
+
+            // Actions
+            const handleJoinGame = () => {
+                if (!inputName) return;
+                const nameLower = inputName.toLowerCase().trim();
+                let targetRole = 'spectator';
+                if (nameLower === 'cat') targetRole = 'cat';
+                else if (nameLower === 'human') targetRole = 'human';
+                joinGame(targetRole);
+            };
+
+            const joinGame = async (targetRole) => {
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                
+                try {
+                    await db.runTransaction(async (transaction) => {
+                        const sfDoc = await transaction.get(roomRef);
+                        let data = INITIAL_GAME_STATE;
+                        if (sfDoc.exists) data = sfDoc.data();
+                        else transaction.set(roomRef, INITIAL_GAME_STATE);
+
+                        if (targetRole !== 'spectator') {
+                            const currentOwnerId = data[targetRole].id;
+                            if (currentOwnerId && currentOwnerId !== user.uid) {
+                                throw new Error(`抱歉，${targetRole === 'cat' ? '貓咪' : '人類'} 角色已有人扮演！`);
+                            }
+                            transaction.update(roomRef, {
+                                [`${targetRole}.id`]: user.uid,
+                                [`${targetRole}.name`]: inputName,
+                                [`${targetRole}.isPrepReady`]: false 
+                            });
+                        }
+                    });
+                    setRole(targetRole);
+                    setIsInGame(true);
+                } catch (e) {
+                    alert(e.message);
+                }
+            };
+
+            const resetRoom = async () => {
+                if (confirm('確定要強制重置房間嗎？')) {
+                    const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                    await roomRef.set(INITIAL_GAME_STATE);
+                }
+            };
+
+            const castVote = async (supportTeam) => {
+                if (!gameState || !user) return;
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                await roomRef.update({ [`supportVotes.${user.uid}`]: supportTeam });
+            };
+
+            // Prep Phase
+            const toggleSkillSelection = (skill) => {
+                if (tempDeck.some(s => s.id === skill.id)) {
+                    setTempDeck(tempDeck.filter(s => s.id !== skill.id));
+                } else {
+                    if (tempDeck.length < 4) setTempDeck([...tempDeck, skill]);
+                }
+            };
+
+            const confirmPreparation = async () => {
+                if (!tempAvatar || tempDeck.length !== 4) {
+                    alert("請選擇 1 個頭像並挑選 4 張技能卡！");
+                    return;
+                }
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                await roomRef.update({
+                    [`${role}.avatar`]: tempAvatar,
+                    [`${role}.selectedDeck`]: tempDeck,
+                    [`${role}.handSkills`]: tempDeck,
+                    [`${role}.isPrepReady`]: true
+                });
+            };
+
+            // Auto Start
+            useEffect(() => {
+                if (gameState?.status === 'preparation' && gameState.cat.isPrepReady && gameState.human.isPrepReady) {
+                    // Use update if doc exists
+                    const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                    roomRef.update({ status: 'playing' });
+                }
+            }, [gameState?.cat.isPrepReady, gameState?.human.isPrepReady, gameState?.status]);
+
+            // Playing Actions
+            const selectCard = async (type, value) => {
+                if (!gameState || role === 'spectator' || gameState.phase !== 'selection') return;
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                if (type === 'number') {
+                    await roomRef.update({ [`${role}.selectedNumber`]: value });
+                } else {
+                    const currentSkill = gameState[role].selectedSkill;
+                    const newVal = (currentSkill?.id === value.id) ? null : value;
+                    await roomRef.update({ [`${role}.selectedSkill`]: newVal });
+                }
+            };
+
+            const confirmSelection = async () => {
+                if (!gameState || role === 'spectator') return;
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                await roomRef.update({ [`${role}.isReady`]: true });
+            };
+
+            // Calculate Results Effect
+            useEffect(() => {
+                if (!gameState || !user || gameState.status !== 'playing') return;
+                const isCalculator = (gameState.cat.id === user.uid) || (!gameState.cat.id && gameState.human.id === user.uid);
+                if (isCalculator && gameState.phase === 'selection' && gameState.cat.isReady && gameState.human.isReady) {
+                    calculateRoundResult();
+                }
+            }, [gameState?.cat.isReady, gameState?.human.isReady, gameState?.phase, gameState?.status]);
+
+            const calculateRoundResult = async () => {
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                const catNum = gameState.cat.selectedNumber || 0;
+                const humNum = gameState.human.selectedNumber || 0;
+                const catSkill = gameState.cat.selectedSkill;
+                const humSkill = gameState.human.selectedSkill;
+                
+                // Logic ...
+                let finalCat = catNum, finalHum = humNum;
+                let catSkillActive = !!catSkill, humSkillActive = !!humSkill;
+                if (humSkill?.effect === 'cancel_opp_skill') catSkillActive = false;
+                if (catSkill?.effect === 'cancel_opp_skill') humSkillActive = false;
+                if (catSkillActive && catSkill?.effect === 'swap_numbers') { const t = finalCat; finalCat = finalHum; finalHum = t; }
+                if (humSkillActive && humSkill?.effect === 'force_1') finalCat = 1;
+                if (humSkillActive && humSkill?.effect === 'force_2') finalCat = 2;
+                if (catSkillActive) {
+                    if (catSkill.effect === 'debuff_1') finalHum -= 1;
+                    if (catSkill.effect === 'debuff_2') finalHum -= 2;
+                    if (catSkill.effect === 'buff_1') finalCat += 1;
+                }
+                if (humSkillActive) {
+                    if (humSkill.effect === 'buff_1') finalHum += 1;
+                    if (humSkill.effect === 'buff_2') finalHum += 2;
+                    if (humSkill.effect === 'debuff_1') finalCat -= 1;
+                    if (humSkill.effect === 'buff_1_if_5' && humNum === 5) finalHum += 1;
+                }
+                finalCat = Math.max(0, finalCat); finalHum = Math.max(0, finalHum);
+                let winner = 'draw';
+                if (catSkillActive && catSkill.effect === 'force_draw_if_lose' && finalHum > finalCat) winner = 'draw';
+                else {
+                    if (finalCat > finalHum) winner = 'cat';
+                    else if (finalHum > finalCat) winner = 'human';
+                }
+                const points = gameState.currentRound === 3 ? 1.5 : 1.0;
+                const newHistory = [...gameState.roundHistory, { match: gameState.currentMatch, round: gameState.currentRound, winner, catVal: finalCat, humanVal: finalHum }];
+                const newCatHandNumbers = gameState.cat.handNumbers.filter(n => n !== catNum);
+                const newHumHandNumbers = gameState.human.handNumbers.filter(n => n !== humNum);
+                const newCatHandSkills = gameState.cat.handSkills.filter(s => s.id !== catSkill?.id);
+                const newHumHandSkills = gameState.human.handSkills.filter(s => s.id !== humSkill?.id);
+                let catScoreAdd = winner === 'cat' ? points : 0;
+                let humScoreAdd = winner === 'human' ? points : 0;
+                
+                await roomRef.update({
+                    phase: 'revealed',
+                    'cat.score': gameState.cat.score + catScoreAdd,
+                    'human.score': gameState.human.score + humScoreAdd,
+                    'cat.handNumbers': newCatHandNumbers, 'human.handNumbers': newHumHandNumbers,
+                    'cat.handSkills': newCatHandSkills, 'human.handSkills': newHumHandSkills,
+                    roundHistory: newHistory
+                });
+            };
+
+            const nextRound = async () => {
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                let nextRound = gameState.currentRound + 1;
+                let nextMatch = gameState.currentMatch;
+                if (nextRound > 3) { nextRound = 1; nextMatch += 1; }
+                if (nextMatch > 3) { 
+                    const finalCatScore = gameState.cat.score;
+                    const finalHumanScore = gameState.human.score;
+                    let winner = 'draw';
+                    if (finalCatScore > finalHumanScore) winner = 'cat';
+                    else if (finalHumanScore > finalCatScore) winner = 'human';
+                    await roomRef.update({ status: 'finished', winner }); 
+                    return; 
+                }
+                let updateData = {
+                    phase: 'selection', currentMatch: nextMatch, currentRound: nextRound,
+                    'cat.selectedNumber': null, 'cat.selectedSkill': null, 'cat.isReady': false,
+                    'human.selectedNumber': null, 'human.selectedSkill': null, 'human.isReady': false,
+                };
+                if (nextRound === 1) {
+                    updateData['cat.handNumbers'] = [1, 2, 3, 4, 5];
+                    updateData['human.handNumbers'] = [1, 2, 3, 4, 5];
+                }
+                await roomRef.update(updateData);
+            };
+
+            const surrender = async () => {
+                if (!gameState || role === 'spectator') return;
+                if (confirm('確定要投降嗎？')) {
+                    const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                    const winnerRole = role === 'cat' ? 'human' : 'cat';
+                    await roomRef.update({ status: 'finished', winner: winnerRole });
+                }
+            };
+
+            const startChallenge = async () => {
+                if (!gameState || role === 'spectator' || gameState.phase !== 'selection') return;
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                const { q, a } = generateMathQuestion();
+                await roomRef.update({
+                    phase: 'challenge', [`${role}.hasUsedChallenge`]: true,
+                    challenge: { active: true, question: q, answer: a, winner: null }
+                });
+            };
+
+            const submitChallengeAnswer = async () => {
+                if (!gameState?.challenge.active || gameState.challenge.winner) return;
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(DOC_ID).doc('match_1');
+                if (parseInt(challengeAnswer) === gameState.challenge.answer) {
+                    await db.runTransaction(async (transaction) => {
+                        const sfDoc = await transaction.get(roomRef);
+                        const data = sfDoc.data();
+                        if (data.challenge.winner) return;
+                        const currentSkills = data[role].handSkills || [];
+                        transaction.update(roomRef, { 'challenge.winner': role, [`${role}.handSkills`]: [...currentSkills, BONUS_SKILL], phase: 'selection' });
+                    });
+                    setChallengeAnswer('');
+                } else { alert("Wrong answer!"); }
+            };
+
+            // --- VIEW: Login ---
+            if (!isInGame) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-700 via-slate-900 to-black">
+                        <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl max-w-lg w-full text-slate-100 border border-slate-700 relative">
+                            <h1 className="text-4xl font-black text-center mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">貓咪大戰人類</h1>
+                            <p className="text-center text-slate-400 mb-8 tracking-wider uppercase text-sm">League of Cards</p>
+                            
+                            <div className="mb-6 space-y-4">
+                                <div>
+                                    <label className="block text-sm text-slate-400 mb-1">您的暱稱</label>
+                                    <input type="text" className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-lg focus:ring-2 focus:ring-yellow-500 outline-none" placeholder="輸入名字..." value={inputName} onChange={(e) => setInputName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleJoinGame()} />
+                                    <p className="text-xs text-slate-500 mt-2 text-center">
+                                        輸入 <span className="text-yellow-400 font-bold">Cat</span> 扮演貓咪<br/>
+                                        輸入 <span className="text-yellow-400 font-bold">Human</span> 扮演人類<br/>
+                                        其他名字將成為觀眾
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button onClick={handleJoinGame} disabled={!inputName} className="w-full bg-gradient-to-br from-indigo-600 to-blue-600 hover:scale-105 transition-all p-4 rounded-xl flex flex-col items-center gap-2 font-bold disabled:opacity-50 disabled:scale-100 shadow-lg">
+                                <span className="text-xl">加入戰局</span>
+                            </button>
+                            
+                            <button onClick={resetRoom} className="absolute -bottom-10 left-0 right-0 text-xs text-slate-500 hover:text-red-500 underline">重置房間 (Debug)</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // --- VIEW: Loading ---
+            if (!gameState) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center text-white bg-slate-900">
+                        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-500 border-solid mb-4"></div>
+                        <div className="text-xl">載入戰局中...</div>
+                        {loadingError && <div className="text-red-400 mt-4 text-sm">{loadingError}</div>}
+                        <button onClick={()=>location.reload()} className="mt-8 underline text-slate-500 text-xs">重新整理</button>
+                    </div>
+                );
+            }
+
+            // --- Spectator Voting Panel (Always visible if haven't voted and isInGame) ---
+            const SpectatorVotePanel = () => {
+                if (role !== 'spectator') return null;
+                const myVote = gameState.supportVotes?.[user.uid];
+                if (myVote) return (
+                    <div className="fixed bottom-4 right-4 bg-slate-800 p-3 rounded-lg border border-slate-600 shadow-xl z-50 text-xs">
+                        你支持: <span className={myVote === 'cat' ? 'text-pink-400' : 'text-blue-400'}>{myVote === 'cat' ? '貓咪' : '人類'}</span>
+                        <button onClick={()=>castVote(myVote === 'cat' ? 'human' : 'cat')} className="ml-2 underline text-slate-500">更換</button>
+                    </div>
+                );
+
+                return (
+                    <div className="fixed bottom-0 left-0 right-0 bg-black/80 p-6 z-50 flex flex-col items-center backdrop-blur-md border-t border-yellow-500 animate-bounce-small">
+                        <h3 className="text-xl font-bold text-yellow-400 mb-4">觀眾請選擇支持陣營！</h3>
+                        <div className="flex gap-8">
+                            <button onClick={() => castVote('cat')} className="px-8 py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl font-black text-xl hover:scale-105 transition-transform shadow-lg border-2 border-pink-400">支持貓咪 🐱</button>
+                            <button onClick={() => castVote('human')} className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl font-black text-xl hover:scale-105 transition-transform shadow-lg border-2 border-blue-400">支持人類 🧑</button>
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- VIEW: Preparation ---
+            if (gameState.status === 'preparation') {
+                const myState = gameState[role];
+                const isMyReady = myState?.isPrepReady;
+                const avatars = role === 'cat' ? CAT_AVATARS_LIST : HUMAN_AVATARS_LIST;
+                const skillsPool = role === 'cat' ? CAT_SKILLS : HUMAN_SKILLS;
+
+                return (
+                    <div className="min-h-screen flex flex-col bg-slate-900">
+                        <SupportBar votes={gameState.supportVotes} />
+                        <SpectatorVotePanel />
+                        
+                        <div className="flex-1 p-6 flex flex-col items-center max-w-6xl mx-auto w-full">
+                            <h2 className="text-3xl font-black text-yellow-400 mb-2 uppercase tracking-widest">備戰室</h2>
+                            <p className="text-slate-400 mb-8">
+                                {role === 'spectator' ? '等待選手準備中...' : '選擇你的化身並組建牌組'}
+                            </p>
+
+                            <div className="flex gap-12 mb-8 w-full justify-center">
+                                <div className={`flex flex-col items-center transition-all ${gameState.cat.isPrepReady ? 'opacity-100 scale-110' : 'opacity-50'}`}>
+                                    <div className="w-20 h-20 rounded-full border-4 border-pink-500 bg-slate-800 flex items-center justify-center overflow-hidden">
+                                        {gameState.cat.avatar ? <img src={`${ASSET_BASE_URL}/${gameState.cat.avatar}`} className="w-full h-full object-cover"/> : <span className="text-2xl">🐱</span>}
+                                    </div>
+                                    <span className="font-bold mt-2 text-pink-400">{gameState.cat.name || '等待加入'}</span>
+                                    <span className="text-xs text-green-400">{gameState.cat.isPrepReady ? '已就緒' : '準備中...'}</span>
+                                </div>
+                                <div className="text-4xl font-black text-slate-700 flex items-center">VS</div>
+                                <div className={`flex flex-col items-center transition-all ${gameState.human.isPrepReady ? 'opacity-100 scale-110' : 'opacity-50'}`}>
+                                    <div className="w-20 h-20 rounded-full border-4 border-blue-500 bg-slate-800 flex items-center justify-center overflow-hidden">
+                                        {gameState.human.avatar ? <img src={`${ASSET_BASE_URL}/${gameState.human.avatar}`} className="w-full h-full object-cover"/> : <span className="text-2xl">🧑</span>}
+                                    </div>
+                                    <span className="font-bold mt-2 text-blue-400">{gameState.human.name || '等待加入'}</span>
+                                    <span className="text-xs text-green-400">{gameState.human.isPrepReady ? '已就緒' : '準備中...'}</span>
+                                </div>
+                            </div>
+
+                            {role !== 'spectator' && !isMyReady && (
+                                <div className="w-full bg-slate-800/50 p-6 rounded-2xl border border-slate-700 animate-fade-in">
+                                    <div className="mb-8">
+                                        <h3 className="text-sm font-bold text-slate-400 uppercase mb-4">1. 選擇頭像</h3>
+                                        <div className="flex gap-4 overflow-x-auto pb-2">
+                                            {avatars.map(av => (
+                                                <Avatar key={av} src={av} size="w-20 h-20" isSelected={tempAvatar === av} onClick={() => setTempAvatar(av)} />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-8">
+                                        <h3 className="text-sm font-bold text-slate-400 uppercase mb-4">2. 選擇 4 張技能卡 ({tempDeck.length}/4)</h3>
+                                        <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+                                            {skillsPool.map(skill => {
+                                                const selected = tempDeck.some(s => s.id === skill.id);
+                                                return (
+                                                    <div key={skill.id} onClick={() => toggleSkillSelection(skill)} 
+                                                        className={`relative cursor-pointer rounded-lg border-2 overflow-hidden transition-all h-24 bg-slate-700
+                                                            ${selected ? 'border-yellow-400 ring-2 ring-yellow-400/50 scale-105 z-10' : 'border-slate-600 opacity-70 hover:opacity-100'}
+                                                        `}>
+                                                        <img src={`${ASSET_BASE_URL}/${skill.id}.png`} className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                                                        <div className="absolute bottom-0 w-full bg-black/80 text-[10px] p-1 text-center truncate">{skill.name}</div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <button onClick={confirmPreparation} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 py-4 rounded-xl font-bold text-xl hover:scale-[1.01] transition-transform shadow-lg">
+                                        確認並鎖定 (LOCK IN)
+                                    </button>
+                                </div>
+                            )}
+
+                             {role !== 'spectator' && isMyReady && (
+                                <div className="mt-8 text-2xl font-bold text-green-400 animate-pulse">
+                                    已鎖定！等待對手...
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+
+            // --- VIEW: Finished ---
+            if (gameState.status === 'finished') {
+                const winnerRole = gameState.winner;
+                const winnerData = gameState[winnerRole];
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 animate-pulse"></div>
+                        <div className="z-10 text-center animate-bounce-small">
+                            <h1 className="text-6xl font-black text-yellow-400 mb-8 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">GAME OVER</h1>
+                            <div className="bg-slate-800 p-8 rounded-3xl border-4 border-yellow-500 shadow-2xl flex flex-col items-center relative">
+                                <div className="mb-4 relative">
+                                    <IconTrophy className="absolute -top-8 -right-8 text-yellow-400 rotate-12" size={64} />
+                                    <Avatar src={winnerData.avatar} size="w-32 h-32" isSelected={true} />
+                                </div>
+                                <h2 className="text-3xl font-bold mb-2 text-white">{winnerRole === 'cat' ? '貓咪獲勝!' : '人類獲勝!'}</h2>
+                                <p className="text-xl text-slate-400 mb-6">{winnerData.name} 稱霸了家裡</p>
+                                <button onClick={resetRoom} className="bg-white text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-slate-200 transition-colors">重新開始</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // --- VIEW: Playing ---
+            const myState = gameState[role === 'spectator' ? 'cat' : role]; 
+            const oppState = gameState[role === 'spectator' ? 'human' : (role === 'cat' ? 'human' : 'cat')];
+
+            return (
+                <div className="min-h-screen flex flex-col font-sans bg-slate-900">
+                    <SupportBar votes={gameState.supportVotes} />
+                    <SpectatorVotePanel />
+                    
+                    <div className="bg-slate-800 p-2 md:p-4 flex justify-between items-center shadow-lg z-20 border-b border-slate-700">
+                        <div className="flex items-center gap-4 md:gap-6">
+                            <div className="flex flex-col"><span className="text-[10px] text-slate-400 uppercase tracking-widest">Match</span><span className="font-bold text-xl md:text-2xl text-yellow-400 leading-none">{gameState.currentMatch}<span className="text-sm text-slate-500">/3</span></span></div>
+                            <div className="flex flex-col"><span className="text-[10px] text-slate-400 uppercase tracking-widest">Round</span><span className="font-bold text-xl md:text-2xl text-white leading-none">{gameState.currentRound}<span className="text-sm text-slate-500">/3</span></span></div>
+                        </div>
+                        <div className="flex flex-col items-center flex-1 mx-2">
+                            <div className="text-lg md:text-xl font-bold text-indigo-300 animate-pulse tracking-wide text-center truncate w-full">
+                                {gameState.phase === 'challenge' ? '⚠️ 突發挑戰！' : gameState.phase === 'revealed' ? '⚡ 結算時刻' : (gameState.cat.isReady && gameState.human.isReady) ? '⚔️ 準備開牌...' : '🤔 思考中...'}
+                            </div>
+                            {gameState.phase === 'revealed' && <button onClick={() => { if(role !== 'spectator') nextRound() }} className={`mt-1 px-6 py-1 bg-green-500 text-slate-900 font-bold rounded-full text-xs hover:bg-green-400 shadow-lg ${role === 'spectator' && 'opacity-0 pointer-events-none'}`}>下一局 &gt;</button>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                             {role !== 'spectator' && <button onClick={surrender} className="p-2 text-slate-500 hover:text-red-400 flex items-center gap-1 text-xs"><IconFlag size={14}/> <span className="hidden md:inline">投降</span></button>}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col relative overflow-hidden">
+                        
+                        <div className="flex-1 bg-gradient-to-b from-slate-800/50 to-transparent flex flex-col items-center justify-center relative p-2 md:p-4">
+                            <div className="absolute top-2 left-4 flex items-center gap-3 bg-slate-800/80 p-1 pr-3 rounded-full border border-slate-600">
+                                <Avatar src={oppState.avatar} size="w-10 h-10" />
+                                <div>
+                                    <div className="font-bold text-sm leading-tight">{oppState.name}</div>
+                                    <div className="text-[10px] text-yellow-400 font-mono">{oppState.score.toFixed(1)} 分</div>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 md:gap-6 items-center transform scale-90 md:scale-100">
+                                <div className={`transition-all duration-500 transform ${oppState.isReady ? 'scale-105' : 'opacity-70'}`}>
+                                    {gameState.phase === 'revealed' && oppState.selectedNumber 
+                                        ? <GameCard card={{type: 'number', value: oppState.selectedNumber}} isFaceUp={true} isBig={false} /> 
+                                        : oppState.isReady 
+                                            ? <GameCard card={{type: 'number', value: 0}} isFaceUp={false} isBig={false} /> 
+                                            : <div className="w-24 h-36 border-2 border-dashed border-slate-600 rounded-xl flex items-center justify-center text-slate-600 text-xs">Waiting</div>}
+                                </div>
+                                {oppState.selectedSkill && (
+                                    <div className="transform rotate-3">
+                                        {gameState.phase === 'revealed' 
+                                            ? <GameCard card={oppState.selectedSkill} isFaceUp={true} isBig={false} /> 
+                                            : <GameCard card={{type: 'skill', value: 0}} isFaceUp={false} isBig={false} />}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="h-4 flex items-center justify-center gap-2 z-10 my-1">
+                            {[1, 2, 3].map(r => {
+                                const result = gameState.roundHistory.find(h => h.match === gameState.currentMatch && h.round === r);
+                                let color = "bg-slate-700";
+                                if (result) {
+                                    if (result.winner === (role === 'spectator' ? 'cat' : role)) color = "bg-green-500 shadow-[0_0_10px_#22c55e]";
+                                    else if (result.winner === 'draw') color = "bg-yellow-500";
+                                    else color = "bg-red-500";
+                                } else if (r === gameState.currentRound) color = "bg-blue-500 animate-pulse";
+                                return <div key={r} className={`w-3 h-3 rounded-full ${color} transition-colors`} />
+                            })}
+                        </div>
+
+                        <div className="flex-1 bg-gradient-to-t from-slate-800/80 to-transparent flex flex-col items-center justify-end relative pb-2 md:pb-4">
+                            
+                            {role !== 'spectator' ? (
+                                <div className="flex gap-6 mb-4 items-end justify-center min-h-[160px] transform scale-90 md:scale-100">
+                                    <div className="relative">
+                                        <div className={`transition-all duration-300 ${myState.selectedNumber ? 'transform scale-100' : 'opacity-50 scale-95'}`}>
+                                            {myState.selectedNumber 
+                                                ? <GameCard card={{type: 'number', value: myState.selectedNumber}} isFaceUp={true} isSelected={false} isBig={true} onClick={() => !myState.isReady && selectCard('number', 0)} /> 
+                                                : <div className="w-32 h-48 border-2 border-dashed border-slate-500 rounded-xl flex items-center justify-center text-slate-500">數字</div>}
+                                        </div>
+                                    </div>
+                                    <div className="relative">
+                                        <div className={`transition-all duration-300 ${myState.selectedSkill ? 'transform scale-100' : 'opacity-50 scale-95'}`}>
+                                            {myState.selectedSkill 
+                                                ? <GameCard card={myState.selectedSkill} isFaceUp={true} isSelected={false} isBig={true} onClick={() => !myState.isReady && selectCard('skill', myState.selectedSkill)} /> 
+                                                : <div className="w-32 h-48 border-2 border-dashed border-slate-500 rounded-xl flex items-center justify-center text-slate-500 text-xs">技能(選填)</div>}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="h-48 flex items-center justify-center text-slate-500">觀戰視角：僅顯示結果</div>
+                            )}
+
+                            <div className="flex items-center gap-4 mb-2 w-full px-4 md:px-8">
+                                <div className="flex items-center gap-3 bg-slate-800 p-1 pr-3 rounded-full border border-slate-600 mr-auto">
+                                    <Avatar src={myState.avatar} size="w-10 h-10" />
+                                    <div>
+                                        <div className="font-bold text-sm leading-tight">{role === 'spectator' ? '(貓咪視角)' : (myState.name || '你')}</div>
+                                        <div className="text-xs text-yellow-400 font-mono">{myState.score.toFixed(1)} 分</div>
+                                    </div>
+                                </div>
+
+                                {role !== 'spectator' && gameState.phase === 'selection' && (
+                                    <button disabled={!myState.selectedNumber || myState.isReady} onClick={confirmSelection} className={`px-8 md:px-12 py-3 rounded-2xl font-black text-lg shadow-xl transition-all ${!myState.selectedNumber || myState.isReady ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-slate-900 hover:scale-105 hover:shadow-yellow-500/30'}`}>{myState.isReady ? '等待中...' : '出牌'}</button>
+                                )}
+
+                                {role !== 'spectator' && !myState.hasUsedChallenge && gameState.phase === 'selection' && (
+                                    <button onClick={startChallenge} className="ml-auto bg-red-600 hover:bg-red-500 text-white text-[10px] md:text-xs px-3 py-2 rounded-full shadow-lg animate-pulse font-bold">挑戰 (+2)</button>
+                                )}
+                            </div>
+
+                            {role !== 'spectator' && (
+                                <div className="w-full overflow-x-auto pb-2 px-2 hide-scrollbar">
+                                    <div className="flex gap-2 min-w-max mx-auto justify-center px-2 transform scale-90 md:scale-100 origin-bottom">
+                                        {myState.handNumbers.map((num) => <GameCard key={`n-${num}`} card={{type: 'number', value: num}} isFaceUp={true} isSelected={myState.selectedNumber === num} isBig={true} onClick={() => !myState.isReady && selectCard('number', num)} />)}
+                                        <div className="w-[1px] bg-slate-700 mx-2"></div>
+                                        {myState.handSkills.map((skill, idx) => <GameCard key={`s-${skill.id}-${idx}`} card={skill} isFaceUp={true} isSelected={myState.selectedSkill?.id === skill.id} isBig={true} onClick={() => !myState.isReady && selectCard('skill', skill)} />)}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {gameState.phase === 'challenge' && (
+                            <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center backdrop-blur-sm">
+                                <div className="bg-slate-800 p-8 rounded-3xl border-4 border-yellow-500 text-center animate-bounce-small shadow-2xl max-w-md w-full mx-4">
+                                    <h2 className="text-3xl font-black text-yellow-400 mb-4 tracking-tighter">⚡ SPEED MATH</h2>
+                                    <p className="text-6xl text-white mb-8 font-mono font-bold tracking-widest">{gameState.challenge.question}</p>
+                                    {role !== 'spectator' && !gameState.challenge.winner ? (
+                                        <div className="flex gap-2">
+                                            <input type="number" className="bg-slate-700 text-white p-4 rounded-xl text-3xl w-full text-center font-bold focus:ring-4 ring-yellow-500 outline-none" value={challengeAnswer} onChange={e => setChallengeAnswer(e.target.value)} autoFocus placeholder="?" />
+                                            <button onClick={submitChallengeAnswer} className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 px-8 rounded-xl font-black text-xl">GO</button>
+                                        </div>
+                                    ) : <div className="text-2xl font-bold text-green-400">{gameState.challenge.winner === 'cat' ? '貓咪' : '人類'} 搶答成功!</div>}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<CatVsHumanGame />);
+    </script>
+</body>
+</html>
