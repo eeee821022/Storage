@@ -30,15 +30,21 @@
         }
 
         /* BMC Grid Layout */
+        :root {
+            --bmc-column-width: 150px;
+        }
+        
         .bmc-grid {
             display: grid;
-            grid-template-columns: repeat(10, 1fr);
+            grid-template-columns: repeat(10, var(--bmc-column-width));
             grid-template-rows: repeat(3, minmax(180px, auto));
             gap: 0.5rem;
             background-color: #cbd5e1;
             border: 0.5rem solid #cbd5e1;
             border-radius: 0.5rem;
             align-items: stretch;
+            width: fit-content;
+            margin: 0 auto;
         }
 
         @media (max-width: 1024px) {
@@ -118,37 +124,103 @@
         .action-button {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             vertical-align: middle;
             background-color: #ffffff;
-            color: #374151; /* text-gray-700 */
-            font-size: 0.875rem; /* 14px */
-            font-weight: 500; /* medium */
-            padding: 0.5rem 1rem; /* 8px 16px */
-            border-radius: 0.5rem; /* 8px */
-            border: 1px solid #d1d5db; /* border-gray-300 */
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            color: #334155; /* text-slate-700 */
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #cbd5e1; /* border-slate-300 */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             transition: all 0.2s ease-in-out;
             cursor: pointer;
         }
         .action-button:hover {
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            border-color: #9ca3af; /* border-gray-400 */
+            border-color: #94a3b8; /* border-slate-400 */
         }
         .action-button svg {
-            width: 1.25rem; /* 20px */
-            height: 1.25rem; /* 20px */
-            margin-right: 0.5rem; /* 8px */
-            color: #6b7280; /* text-gray-500 */
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+            color: #64748b; /* text-slate-500 */
+        }
+        
+        .primary-button {
+            background-color: #3b82f6; /* bg-blue-600 */
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+        .primary-button:hover {
+            background-color: #2563eb; /* bg-blue-700 */
+            border-color: #2563eb;
+        }
+        .primary-button svg {
+            color: #ffffff;
+        }
+        
+        .success-button {
+            background-color: #10b981; /* bg-green-600 */
+            color: #ffffff;
+            border-color: #10b981;
+        }
+        .success-button:hover {
+            background-color: #059669; /* bg-green-700 */
+            border-color: #059669;
+        }
+        .success-button svg {
+            color: #ffffff;
+        }
+        
+        .gradient-button {
+            background: linear-gradient(to right, #3b82f6, #9333ea);
+            color: #ffffff;
+            border: none;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to right, #2563eb, #7e22ce);
+        }
+        .gradient-button svg {
+            color: #ffffff;
+        }
+        
+        /* 設定模態框樣式 */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        .modal-backdrop.active {
+            display: flex;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            width: 100%;
+            max-width: 600px;
+            margin: 1rem;
         }
         
         .warning-button {
             background-color: #ef4444; /* bg-red-500 */
-            color: #ffffff; /* text-white */
+            color: #ffffff;
             border-color: #ef4444;
         }
         .warning-button:hover {
-            background-color: #dc2626; /* hover:bg-red-600 */
+            background-color: #dc2626; /* bg-red-600 */
             border-color: #dc2626;
+        }
+        .warning-button svg {
+            color: #ffffff;
         }
         .warning-button svg {
             color: #fef2f2; /* text-red-50 */
@@ -221,6 +293,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
         </svg>
     </button>
+    
+    <!-- Settings Button -->
+    <button onclick="toggleModal('settings-modal')" class="fixed top-6 right-20 z-50 p-3 bg-white rounded-full shadow-lg text-slate-600 hover:bg-slate-50 transition-colors border border-slate-100" title="設定">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+    </button>
 
     <!-- Right Sidebar (Source Text Panel) -->
     <div id="source-panel" class="fixed top-24 right-0 bottom-0 w-96 bg-white border-l border-slate-200 z-40 closed flex flex-col">
@@ -245,7 +325,7 @@
         </div>
     </div>
 
-    <div class="container mx-auto max-w-[1400px] p-4 md:p-8 pt-16" id="main-container">
+    <div class="w-full p-4 md:p-8 pt-16 flex flex-col items-center" id="main-container">
         
         <!-- Header -->
         <header class="text-center mb-8">
@@ -671,6 +751,80 @@
             
             const savedKey = localStorage.getItem('gemini_api_key');
             if (savedKey) document.getElementById('ai-key').value = savedKey;
+            
+            // 字體大小設定
+            setupFontSizeControl();
+            // 欄寬設定
+            setupColumnWidthControl();
+        }
+        
+        // 字體大小控制功能
+        function setupFontSizeControl() {
+            const slider = document.getElementById('font-size-slider');
+            const valueDisplay = document.getElementById('font-size-value');
+            
+            // 載入已儲存的字體大小
+            const savedSize = localStorage.getItem('bmc_font_size') || '25';
+            slider.value = savedSize;
+            valueDisplay.textContent = savedSize + 'px';
+            applyFontSize(savedSize);
+            
+            // 監聽滑桿變化
+            slider.addEventListener('input', (e) => {
+                const size = e.target.value;
+                valueDisplay.textContent = size + 'px';
+                localStorage.setItem('bmc_font_size', size);
+                applyFontSize(size);
+            });
+        }
+        
+        // 應用字體大小到畫布
+        function applyFontSize(size) {
+            const fontSize = parseInt(size);
+            
+            // 更新所有 textarea 的字體大小
+            document.querySelectorAll('.bmc-textarea').forEach(textarea => {
+                textarea.style.fontSize = fontSize + 'px';
+                // 重新計算高度
+                autoResize(textarea);
+            });
+            
+            // 更新標題的字體大小（稍小一些）
+            document.querySelectorAll('.bmc-cell h3').forEach(title => {
+                title.style.fontSize = (fontSize - 2) + 'px';
+            });
+            
+            console.log('✅ 字體大小已應用:', fontSize + 'px');
+        }
+        
+        // 欄寬控制功能
+        function setupColumnWidthControl() {
+            const slider = document.getElementById('column-width-slider');
+            const valueDisplay = document.getElementById('column-width-value');
+            
+            // 載入儲存的欄寬
+            const savedWidth = localStorage.getItem('bmc_column_width') || '150';
+            slider.value = savedWidth;
+            valueDisplay.textContent = savedWidth + 'px';
+            applyColumnWidth(savedWidth);
+            
+            // 監聽滑桿變化
+            slider.addEventListener('input', (e) => {
+                const width = e.target.value;
+                valueDisplay.textContent = width + 'px';
+                localStorage.setItem('bmc_column_width', width);
+                applyColumnWidth(width);
+            });
+        }
+        
+        // 應用欄寬到畫布
+        function applyColumnWidth(width) {
+            const widthPx = parseInt(width);
+            
+            // 更新 CSS 變數來控制所有欄位寬度
+            document.documentElement.style.setProperty('--bmc-column-width', widthPx + 'px');
+            
+            console.log('✅ 欄寬已應用:', widthPx + 'px');
         }
 
         function setColor(color) {
@@ -904,7 +1058,9 @@
 
         function toggleModal(id) {
             const modal = document.getElementById(id);
-            modal.classList.toggle('active');
+            if (modal) {
+                modal.classList.toggle('active');
+            }
         }
 
         function copyLink() {
@@ -969,14 +1125,117 @@
             const btn = document.getElementById('screenshot-btn');
             const originalText = btn.innerHTML;
             btn.textContent = '截圖中...';
-            html2canvas(document.getElementById('canvas-area'), { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
-                const a = document.createElement('a');
-                a.href = canvas.toDataURL('image/png');
-                a.download = 'bmc-canvas.png';
-                a.click();
-                btn.innerHTML = originalText;
+            
+            // 暫時替換所有 textarea 為 div 以正確顯示換行
+            const textareas = document.querySelectorAll('.bmc-textarea');
+            const replacements = [];
+            
+            textareas.forEach(textarea => {
+                // 確保 textarea 高度是最新的
+                autoResize(textarea);
+                
+                const div = document.createElement('div');
+                div.className = 'bmc-textarea-snapshot';
+                
+                // 複製所有計算後的樣式
+                const computedStyle = window.getComputedStyle(textarea);
+                div.style.cssText = computedStyle.cssText;
+                
+                // 設定文字顯示相關屬性
+                div.style.whiteSpace = 'pre-wrap';
+                div.style.wordWrap = 'break-word';
+                div.style.wordBreak = 'break-word';
+                div.style.overflow = 'visible';
+                div.style.overflowWrap = 'break-word';
+                
+                // 使用 textarea 的實際高度（已經由 autoResize 計算）
+                div.style.height = textarea.style.height || computedStyle.height;
+                div.style.minHeight = computedStyle.minHeight;
+                
+                // 確保其他重要屬性
+                div.style.width = computedStyle.width;
+                div.style.padding = computedStyle.padding;
+                div.style.fontSize = computedStyle.fontSize;
+                div.style.lineHeight = computedStyle.lineHeight;
+                div.style.fontFamily = computedStyle.fontFamily;
+                div.style.color = computedStyle.color;
+                div.style.boxSizing = computedStyle.boxSizing;
+                
+                div.textContent = textarea.value;
+                
+                replacements.push({ textarea, div, parent: textarea.parentNode });
+                textarea.parentNode.replaceChild(div, textarea);
             });
+            
+            // 等待 DOM 更新後再截圖
+            setTimeout(() => {
+                html2canvas(document.getElementById('canvas-area'), { 
+                    scale: 2, 
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true
+                }).then(canvas => {
+                    // 還原所有 textarea
+                    replacements.forEach(({ textarea, div, parent }) => {
+                        parent.replaceChild(textarea, div);
+                    });
+                    
+                    const a = document.createElement('a');
+                    a.href = canvas.toDataURL('image/png');
+                    a.download = 'bmc-canvas.png';
+                    a.click();
+                    btn.innerHTML = originalText;
+                }).catch(error => {
+                    console.error('截圖失敗:', error);
+                    // 還原所有 textarea（即使失敗）
+                    replacements.forEach(({ textarea, div, parent }) => {
+                        parent.replaceChild(textarea, div);
+                    });
+                    btn.innerHTML = originalText;
+                    alert('截圖失敗，請重試');
+                });
+            }, 100);
         }
     </script>
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-backdrop" onclick="if(event.target === this) toggleModal('settings-modal')">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">設定</h2>
+                <button onclick="toggleModal('settings-modal')" class="text-slate-400 hover:text-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="font-size-slider" class="block text-sm font-medium text-slate-700 mb-2">字體大小</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="range" id="font-size-slider" min="15" max="35" value="25" step="1"
+                               class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        <span id="font-size-value" class="text-sm font-semibold text-slate-700 min-w-[3rem]">25px</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">
+                        調整商業模式畫布內容的字體大小（15-35px）
+                    </p>
+                </div>
+                
+                <div class="border-t border-slate-200 pt-4">
+                    <label for="column-width-slider" class="block text-sm font-medium text-slate-700 mb-2">欄寬</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="range" id="column-width-slider" min="75" max="225" value="150" step="5"
+                               class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        <span id="column-width-value" class="text-sm font-semibold text-slate-700 min-w-[4rem]">150px</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">
+                        調整商業模式畫布欄位的寬度（75-225px）
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
