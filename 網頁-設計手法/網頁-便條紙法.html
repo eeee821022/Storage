@@ -61,6 +61,32 @@
             stroke: #ef4444; /* red-500 選取狀態為紅色 */
             stroke-width: 3px;
         }
+        
+        /* 線條控制點 */
+        .connection-control-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #ffffff;
+            border: 2px solid #ef4444;
+            border-radius: 50%;
+            cursor: move;
+            z-index: 100;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+        }
+        
+        .connection-control-point:hover {
+            background-color: #ef4444;
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+        
+        .connection-control-line {
+            position: absolute;
+            border-top: 1px dashed #ef4444;
+            pointer-events: none;
+            z-index: 99;
+        }
 
         #temp-line {
             stroke: #3b82f6; /* blue-500 */
@@ -137,6 +163,76 @@
         .sticky-note.selected {
             box-shadow: 0 0 0 2px #3b82f6, 0 10px 20px rgba(0, 0, 0, 0.2);
             z-index: 40 !important;
+        }
+        
+        .note-header {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .note-title-text {
+            flex-grow: 1;
+            font-weight: 600;
+            font-size: 0.95rem;
+            outline: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        .note-title-text[contenteditable="true"] {
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+        
+        .collapse-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 0.5rem;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .sticky-note.collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+        
+        .note-content {
+            padding: 0.75rem;
+            font-size: var(--note-font-size, 0.875rem);
+            line-height: 1.4;
+            outline: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            overflow: hidden;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .note-content[contenteditable="true"] {
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+        
+        .sticky-note.collapsed {
+            min-height: auto;
+            height: auto;
+        }
+        
+        .sticky-note.collapsed .note-content {
+            display: none;
         }
         
         .editable {
@@ -892,6 +988,17 @@
                         </label>
                         <input type="range" id="card-height-slider" min="80" max="200" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                     </div>
+                    
+                    <!-- 關聯線樣式 -->
+                    <div class="space-y-2">
+                        <label for="connection-style-select" class="block text-sm font-medium text-gray-700">
+                            關聯線樣式
+                        </label>
+                        <select id="connection-style-select" class="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="round">折線（圓角）</option>
+                            <option value="cubic">三次貝茲曲線（預設）</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -991,6 +1098,9 @@
                         isFirebaseReady = true;
                         console.log("Firebase Auth Ready:", user.uid);
                         
+                        // 更新狀態燈號為未連線
+                        updateCollabStatus('disconnected');
+                        
                         // Check URL for session
                         const urlParams = new URLSearchParams(window.location.search);
                         const session = urlParams.get('session');
@@ -1009,6 +1119,11 @@
             const collabButton = document.getElementById('collab-btn');
             // [NEW] 取得狀態燈號
             const collabStatusIndicator = collabButton ? collabButton.querySelector('.status-indicator') : null;
+            
+            // 初始化狀態燈號
+            if (collabStatusIndicator) {
+                collabStatusIndicator.classList.add('status-disconnected');
+            }
             
             const collabModal = document.getElementById('collab-modal');
             const collabModalOverlay = document.getElementById('collab-modal-overlay');
@@ -1285,6 +1400,7 @@
             const fontSizeValue = document.getElementById('font-size-value');
             const cardHeightSlider = document.getElementById('card-height-slider');
             const cardHeightValue = document.getElementById('card-height-value');
+            const connectionStyleSelect = document.getElementById('connection-style-select');
 
             let selectedNotes = [];
             let isDraggingNote = false;
@@ -1321,6 +1437,7 @@
             // [NEW] 設定的狀態變數
             let currentFontSize = 14;
             let currentMinHeight = 100;
+            let currentConnectionStyle = 'cubic';
             
             // [NEW] 智慧對齊線 (Req 2)
             const snapLineV = document.getElementById('snap-line-v');
@@ -1477,12 +1594,47 @@
             });
             
             document.addEventListener('keydown', (e) => {
-                if (document.activeElement.isContentEditable) return;
                 const isCtrl = e.ctrlKey || e.metaKey;
+                const key = e.key.toLowerCase();
+                
+                // Ctrl+L 切換摺疊/展開
+                if (isCtrl && key === 'l') {
+                    e.preventDefault();
+                    
+                    // 檢查是否有任何便條紙未摺疊
+                    const allNotes = Array.from(board.querySelectorAll('.sticky-note')).filter(note => 
+                        !note.classList.contains('group-container') && 
+                        !note.classList.contains('note-title') && 
+                        !note.classList.contains('text-node') &&
+                        !note.classList.contains('image-node') &&
+                        note.querySelector('.note-content')
+                    );
+                    
+                    const hasUncollapsed = allNotes.some(note => !note.classList.contains('collapsed'));
+                    
+                    if (hasUncollapsed) {
+                        // 如果有未摺疊的，全部摺疊
+                        allNotes.forEach(note => {
+                            note.classList.add('collapsed');
+                            updateConnectionsForNote(note);
+                        });
+                    } else {
+                        // 如果全部都已摺疊，全部展開
+                        allNotes.forEach(note => {
+                            note.classList.remove('collapsed');
+                            updateConnectionsForNote(note);
+                        });
+                    }
+                    
+                    saveState();
+                    return;
+                }
+                
+                if (document.activeElement.isContentEditable) return;
 
                 // [MODIFIED] 整合 Undo/Redo/Copy/Paste
                 if (isCtrl) {
-                    switch (e.key.toLowerCase()) {
+                    switch (key) {
                         case 'z':
                             e.preventDefault();
                             undo();
@@ -1684,46 +1836,141 @@
                         note.dataset.isTextNode = 'true';
                     }
 
-                    const editable = document.createElement('div');
-                    editable.className = 'editable';
-                    editable.contentEditable = false;
-                    note.appendChild(editable);
-                    
-                    if (isTitle) {
-                        note.classList.add('note-title');
-                    }
-                    
-                    if (isGroup) {
-                        note.classList.add('group-container');
-                        editable.innerHTML = content || '群組標題';
-                    } else {
-                        editable.innerHTML = content || (isTitle ? '標題' : (isTextNode ? '輸入文字' : '輸入文字...'));
-                    }
-
-                    note.addEventListener('dblclick', (e) => {
-                        if ((e.target === note || e.target === editable || editable.contains(e.target)) && !e.target.closest('.connector-node') && !e.target.closest('.resize-handle')) {
-                            editable.contentEditable = true;
-                            editable.focus();
-                            document.execCommand('selectAll', false, null);
-                        }
-                    });
-                    editable.addEventListener('blur', () => {
+                    // 舊的單一editable模式（用於群組、標題、文字節點）
+                    if (isGroup || isTitle || isTextNode) {
+                        const editable = document.createElement('div');
+                        editable.className = 'editable';
                         editable.contentEditable = false;
+                        note.appendChild(editable);
                         
-                        // [NEW] 如果是插入文字節點且內容為空，自動刪除
-                        if (note.dataset.isTextNode === 'true') {
-                            const text = editable.innerText.trim();
-                            if (text === '' || text === '輸入文字') {
-                                removeConnectionsForNote(note);
-                                note.remove();
-                                removeNoteFromSelection(note);
-                                saveState();
-                                return;
-                            }
+                        if (isTitle) {
+                            note.classList.add('note-title');
                         }
                         
-                        saveState();
-                    });
+                        if (isGroup) {
+                            note.classList.add('group-container');
+                            editable.innerHTML = content || '群組標題';
+                        } else {
+                            editable.innerHTML = content || (isTitle ? '標題' : (isTextNode ? '輸入文字' : '輸入文字...'));
+                        }
+
+                        note.addEventListener('dblclick', (e) => {
+                            if ((e.target === note || e.target === editable || editable.contains(e.target)) && !e.target.closest('.connector-node') && !e.target.closest('.resize-handle')) {
+                                editable.contentEditable = true;
+                                editable.focus();
+                                document.execCommand('selectAll', false, null);
+                            }
+                        });
+                        editable.addEventListener('blur', () => {
+                            editable.contentEditable = false;
+                            
+                            // [NEW] 如果是插入文字節點且內容為空，自動刪除
+                            if (note.dataset.isTextNode === 'true') {
+                                const text = editable.innerText.trim();
+                                if (text === '' || text === '輸入文字') {
+                                    removeConnectionsForNote(note);
+                                    note.remove();
+                                    removeNoteFromSelection(note);
+                                    saveState();
+                                    return;
+                                }
+                            }
+                            
+                            saveState();
+                        });
+                    } else {
+                        // 新的標題+內容模式（用於一般便條紙）
+                        const noteHeader = document.createElement('div');
+                        noteHeader.className = 'note-header';
+                        
+                        const collapseIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        collapseIcon.setAttribute('class', 'collapse-icon');
+                        collapseIcon.setAttribute('viewBox', '0 0 24 24');
+                        collapseIcon.setAttribute('fill', 'currentColor');
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', 'M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z');
+                        collapseIcon.appendChild(path);
+                        noteHeader.appendChild(collapseIcon);
+                        
+                        // 解析content來分離標題和內容
+                        let titleText = '便條紙標題';
+                        let contentText = '內容...';
+                        
+                        if (content && content.includes('|||')) {
+                            const parts = content.split('|||');
+                            titleText = parts[0] || '便條紙標題';
+                            contentText = parts[1] || '內容...';
+                        } else if (content) {
+                            contentText = content;
+                        }
+                        
+                        const noteTitleText = document.createElement('div');
+                        noteTitleText.className = 'note-title-text';
+                        noteTitleText.contentEditable = false;
+                        noteTitleText.innerHTML = titleText;
+                        noteHeader.appendChild(noteTitleText);
+                        
+                        note.appendChild(noteHeader);
+                        
+                        const noteContent = document.createElement('div');
+                        noteContent.className = 'note-content';
+                        noteContent.contentEditable = false;
+                        noteContent.innerHTML = contentText;
+                        note.appendChild(noteContent);
+                        
+                        // 點擊header摺疊/展開
+                        noteHeader.addEventListener('mousedown', (e) => {
+                            // 如果點擊的是標題文字，不處理摺疊
+                            if (e.target === noteTitleText || noteTitleText.contains(e.target)) return;
+                            
+                            // 記錄點擊位置
+                            const startX = e.clientX;
+                            const startY = e.clientY;
+                            
+                            // 監聽 mouseup，如果沒有拖曳則觸發摺疊
+                            const handleMouseUp = (upEvent) => {
+                                const deltaX = Math.abs(upEvent.clientX - startX);
+                                const deltaY = Math.abs(upEvent.clientY - startY);
+                                
+                                // 如果移動距離小於 5px，視為點擊
+                                if (deltaX < 5 && deltaY < 5) {
+                                    note.classList.toggle('collapsed');
+                                    updateConnectionsForNote(note);
+                                    saveState();
+                                }
+                                
+                                document.removeEventListener('mouseup', handleMouseUp);
+                            };
+                            
+                            document.addEventListener('mouseup', handleMouseUp);
+                        });
+                        
+                        // 雙擊標題編輯
+                        noteTitleText.addEventListener('dblclick', (e) => {
+                            e.stopPropagation();
+                            noteTitleText.contentEditable = true;
+                            noteTitleText.focus();
+                            document.execCommand('selectAll', false, null);
+                        });
+                        
+                        noteTitleText.addEventListener('blur', () => {
+                            noteTitleText.contentEditable = false;
+                            saveState();
+                        });
+                        
+                        // 雙擊內容編輯
+                        noteContent.addEventListener('dblclick', (e) => {
+                            e.stopPropagation();
+                            noteContent.contentEditable = true;
+                            noteContent.focus();
+                            document.execCommand('selectAll', false, null);
+                        });
+                        
+                        noteContent.addEventListener('blur', () => {
+                            noteContent.contentEditable = false;
+                            saveState();
+                        });
+                    }
                 }
 
                 if (isGroup || isImage) {
@@ -2479,18 +2726,35 @@
                 });
             }
             function getNearestNode(note, point) {
-                const positions = ['top', 'right', 'bottom', 'left'];
-                let minDistance = Infinity;
-                let nearestSide = 'top';
-                positions.forEach(side => {
-                    const nodePoint = getNodePosition(note, side);
-                    const distance = Math.pow(point.x - nodePoint.x, 2) + Math.pow(point.y - nodePoint.y, 2);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearestSide = side;
-                    }
-                });
-                return { side: nearestSide, distance: Math.sqrt(minDistance) };
+                const noteX = parseFloat(note.style.left);
+                const noteY = parseFloat(note.style.top);
+                const noteWidth = note.offsetWidth;
+                const noteHeight = note.offsetHeight;
+                const centerX = noteX + noteWidth / 2;
+                const centerY = noteY + noteHeight / 2;
+                
+                // 計算目標點相對於便條紙中心的方向
+                const dx = point.x - centerX;
+                const dy = point.y - centerY;
+                
+                // 根據角度決定最佳連接方向
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                let nearestSide;
+                
+                if (angle >= -45 && angle < 45) {
+                    nearestSide = 'right';
+                } else if (angle >= 45 && angle < 135) {
+                    nearestSide = 'bottom';
+                } else if (angle >= -135 && angle < -45) {
+                    nearestSide = 'top';
+                } else {
+                    nearestSide = 'left';
+                }
+                
+                const nodePoint = getNodePosition(note, nearestSide);
+                const distance = Math.sqrt(Math.pow(point.x - nodePoint.x, 2) + Math.pow(point.y - nodePoint.y, 2));
+                
+                return { side: nearestSide, distance: distance };
             }
             function onDrawingLine(e) {
                 if (!isDrawingLine || !tempLine) return;
@@ -2625,19 +2889,83 @@
 
                     const startPos = getNodePosition(fromEl, conn.fromSide);
                     const endPos = getNodePosition(toEl, conn.toSide);
-                    const offset = 50;
-                    let c1 = { ...startPos };
-                    let c2 = { ...endPos };
-                    if (conn.fromSide === 'top') c1.y -= offset;
-                    if (conn.fromSide === 'bottom') c1.y += offset;
-                    if (conn.fromSide === 'left') c1.x -= offset;
-                    if (conn.fromSide === 'right') c1.x += offset;
-                    if (conn.toSide === 'top') c2.y -= offset;
-                    if (conn.toSide === 'bottom') c2.y += offset;
-                    if (conn.toSide === 'left') c2.x -= offset;
-                    if (conn.toSide === 'right') c2.x += offset;
                     
-                    path.setAttribute('d', `M${startPos.x} ${startPos.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endPos.x} ${endPos.y}`);
+                    let pathData = '';
+                    
+                    if (currentConnectionStyle === 'round') {
+                        // 折線（圓角） - 根據方向決定折線方式
+                        const radius = 20;
+                        
+                        // 判斷主要是水平還是垂直連接
+                        const isHorizontal = (conn.fromSide === 'left' || conn.fromSide === 'right') && 
+                                            (conn.toSide === 'left' || conn.toSide === 'right');
+                        const isVertical = (conn.fromSide === 'top' || conn.fromSide === 'bottom') && 
+                                          (conn.toSide === 'top' || conn.toSide === 'bottom');
+                        
+                        if (isVertical) {
+                            // 垂直折線
+                            const midY = conn.controlY !== undefined ? conn.controlY : (startPos.y + endPos.y) / 2;
+                            const dx = endPos.x - startPos.x;
+                            pathData = `M${startPos.x} ${startPos.y} L${startPos.x} ${midY - radius} Q${startPos.x} ${midY} ${startPos.x + (dx > 0 ? radius : -radius)} ${midY} L${endPos.x - (dx > 0 ? radius : -radius)} ${midY} Q${endPos.x} ${midY} ${endPos.x} ${midY + radius} L${endPos.x} ${endPos.y}`;
+                        } else {
+                            // 水平折線
+                            const midX = conn.controlX !== undefined ? conn.controlX : (startPos.x + endPos.x) / 2;
+                            const dy = endPos.y - startPos.y;
+                            pathData = `M${startPos.x} ${startPos.y} L${midX - radius} ${startPos.y} Q${midX} ${startPos.y} ${midX} ${startPos.y + (dy > 0 ? radius : -radius)} L${midX} ${endPos.y - (dy > 0 ? radius : -radius)} Q${midX} ${endPos.y} ${midX + radius} ${endPos.y} L${endPos.x} ${endPos.y}`;
+                        }
+                    } else {
+                        // 三次貝茲曲線 - 根據連接方向計算控制點
+                        const dx = Math.abs(endPos.x - startPos.x);
+                        const dy = Math.abs(endPos.y - startPos.y);
+                        const offsetX = Math.max(dx * 0.5, 50);
+                        const offsetY = Math.max(dy * 0.5, 50);
+                        
+                        let c1x, c1y, c2x, c2y;
+                        
+                        if (conn.control1X !== undefined && conn.control1Y !== undefined) {
+                            c1x = conn.control1X;
+                            c1y = conn.control1Y;
+                        } else {
+                            // 根據起始方向設置第一個控制點
+                            if (conn.fromSide === 'right') {
+                                c1x = startPos.x + offsetX;
+                                c1y = startPos.y;
+                            } else if (conn.fromSide === 'left') {
+                                c1x = startPos.x - offsetX;
+                                c1y = startPos.y;
+                            } else if (conn.fromSide === 'bottom') {
+                                c1x = startPos.x;
+                                c1y = startPos.y + offsetY;
+                            } else { // top
+                                c1x = startPos.x;
+                                c1y = startPos.y - offsetY;
+                            }
+                        }
+                        
+                        if (conn.control2X !== undefined && conn.control2Y !== undefined) {
+                            c2x = conn.control2X;
+                            c2y = conn.control2Y;
+                        } else {
+                            // 根據結束方向設置第二個控制點
+                            if (conn.toSide === 'right') {
+                                c2x = endPos.x + offsetX;
+                                c2y = endPos.y;
+                            } else if (conn.toSide === 'left') {
+                                c2x = endPos.x - offsetX;
+                                c2y = endPos.y;
+                            } else if (conn.toSide === 'bottom') {
+                                c2x = endPos.x;
+                                c2y = endPos.y + offsetY;
+                            } else { // top
+                                c2x = endPos.x;
+                                c2y = endPos.y - offsetY;
+                            }
+                        }
+                        
+                        pathData = `M${startPos.x} ${startPos.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${endPos.x} ${endPos.y}`;
+                    }
+                    
+                    path.setAttribute('d', pathData);
                     boardSvg.appendChild(path);
                     
                     if (conn.label) {
@@ -2741,21 +3069,29 @@
                         if (!fromEl || !toEl) return;
                         const startPos = getNodePosition(fromEl, conn.fromSide);
                         const endPos = getNodePosition(toEl, conn.toSide);
-                        const offset = 50;
-                        let c1 = { ...startPos };
-                        let c2 = { ...endPos };
-                        if (conn.fromSide === 'top') c1.y -= offset;
-                        if (conn.fromSide === 'bottom') c1.y += offset;
-                        if (conn.fromSide === 'left') c1.x -= offset;
-                        if (conn.fromSide === 'right') c1.x += offset;
-                        if (conn.toSide === 'top') c2.y -= offset;
-                        if (conn.toSide === 'bottom') c2.y += offset;
-                        if (conn.toSide === 'left') c2.x -= offset;
-                        if (conn.toSide === 'right') c2.x += offset;
-                        path.setAttribute('d', `M${startPos.x} ${startPos.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endPos.x} ${endPos.y}`);
+                        
+                        let pathData = '';
+                        
+                        if (currentConnectionStyle === 'round') {
+                            // 折線（圓角） - 使用自訂控制點或預設中點
+                            const midX = conn.controlX !== undefined ? conn.controlX : (startPos.x + endPos.x) / 2;
+                            const radius = 20;
+                            const dy = endPos.y - startPos.y;
+                            pathData = `M${startPos.x} ${startPos.y} L${midX - radius} ${startPos.y} Q${midX} ${startPos.y} ${midX} ${startPos.y + (dy > 0 ? radius : -radius)} L${midX} ${endPos.y - (dy > 0 ? radius : -radius)} Q${midX} ${endPos.y} ${midX + radius} ${endPos.y} L${endPos.x} ${endPos.y}`;
+                        } else {
+                            // 三次貝茲曲線 - 使用自訂控制點或預設值
+                            const offset = Math.abs(endPos.x - startPos.x) * 0.5;
+                            let c1x = conn.control1X !== undefined ? conn.control1X : startPos.x + (conn.fromSide === 'right' ? offset : conn.fromSide === 'left' ? -offset : 0);
+                            let c1y = conn.control1Y !== undefined ? conn.control1Y : startPos.y + (conn.fromSide === 'bottom' ? offset : conn.fromSide === 'top' ? -offset : 0);
+                            let c2x = conn.control2X !== undefined ? conn.control2X : endPos.x + (conn.toSide === 'right' ? offset : conn.toSide === 'left' ? -offset : 0);
+                            let c2y = conn.control2Y !== undefined ? conn.control2Y : endPos.y + (conn.toSide === 'bottom' ? offset : conn.toSide === 'top' ? -offset : 0);
+                            pathData = `M${startPos.x} ${startPos.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${endPos.x} ${endPos.y}`;
+                        }
+                        
+                        path.setAttribute('d', pathData);
                         
                         if (conn.label) {
-                            drawConnectionLabel(conn, startPos, c1, c2, endPos);
+                            drawConnectionLabel(conn, startPos, null, null, endPos);
                         }
                     }
                 });
@@ -2777,6 +3113,7 @@
                 if (selectedConnection) {
                     const oldPath = boardSvg.querySelector(`[data-conn-id="${selectedConnection}"]`);
                     if (oldPath) oldPath.classList.remove('selected');
+                    hideConnectionControlPoints();
                 }
                 
                 // 清除選取的便利貼
@@ -2785,7 +3122,10 @@
                 // 選取新的關連線
                 selectedConnection = connId;
                 const path = boardSvg.querySelector(`[data-conn-id="${connId}"]`);
-                if (path) path.classList.add('selected');
+                if (path) {
+                    path.classList.add('selected');
+                    showConnectionControlPoints(connId);
+                }
             }
             
             // [NEW] 清除關連線選取
@@ -2793,8 +3133,135 @@
                 if (selectedConnection) {
                     const path = boardSvg.querySelector(`[data-conn-id="${selectedConnection}"]`);
                     if (path) path.classList.remove('selected');
+                    hideConnectionControlPoints();
                     selectedConnection = null;
                 }
+            }
+            
+            // [NEW] 顯示線條控制點
+            function showConnectionControlPoints(connId) {
+                const conn = connections.find(c => c.id === connId);
+                if (!conn) return;
+                
+                const fromEl = document.getElementById(conn.fromId);
+                const toEl = document.getElementById(conn.toId);
+                if (!fromEl || !toEl) return;
+                
+                const startPos = getNodePosition(fromEl, conn.fromSide);
+                const endPos = getNodePosition(toEl, conn.toSide);
+                
+                // 如果是折線樣式，顯示中點控制點
+                if (currentConnectionStyle === 'round') {
+                    const midX = conn.controlX !== undefined ? conn.controlX : (startPos.x + endPos.x) / 2;
+                    // Y軸固定在起點和終點的中間
+                    const midY = (startPos.y + endPos.y) / 2;
+                    
+                    // 創建控制點
+                    const controlPoint = document.createElement('div');
+                    controlPoint.className = 'connection-control-point';
+                    controlPoint.id = `control-${connId}`;
+                    controlPoint.style.left = midX + 'px';
+                    controlPoint.style.top = midY + 'px';
+                    
+                    // 控制點拖動（只能左右移動）
+                    controlPoint.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        let isDraggingControl = true;
+                        
+                        function onControlDrag(moveEvent) {
+                            if (!isDraggingControl) return;
+                            const { x } = getBoardCoordinates(moveEvent.clientX, moveEvent.clientY);
+                            
+                            // 只更新X座標，Y座標保持在中線上
+                            controlPoint.style.left = x + 'px';
+                            controlPoint.style.top = midY + 'px';
+                            
+                            conn.controlX = x;
+                            // 不儲存controlY，讓它始終保持在中間
+                            delete conn.controlY;
+                            
+                            drawConnections();
+                        }
+                        
+                        function onControlDragEnd() {
+                            isDraggingControl = false;
+                            document.removeEventListener('mousemove', onControlDrag);
+                            document.removeEventListener('mouseup', onControlDragEnd);
+                            saveState();
+                        }
+                        
+                        document.addEventListener('mousemove', onControlDrag);
+                        document.addEventListener('mouseup', onControlDragEnd);
+                    });
+                    
+                    board.appendChild(controlPoint);
+                } else if (currentConnectionStyle === 'cubic') {
+                    // 三次貝茲：顯示兩個控制點
+                    const offset = Math.abs(endPos.x - startPos.x) * 0.5;
+                    let c1x = conn.control1X !== undefined ? conn.control1X : startPos.x + (conn.fromSide === 'right' ? offset : conn.fromSide === 'left' ? -offset : 0);
+                    let c1y = conn.control1Y !== undefined ? conn.control1Y : startPos.y + (conn.fromSide === 'bottom' ? offset : conn.fromSide === 'top' ? -offset : 0);
+                    let c2x = conn.control2X !== undefined ? conn.control2X : endPos.x + (conn.toSide === 'right' ? offset : conn.toSide === 'left' ? -offset : 0);
+                    let c2y = conn.control2Y !== undefined ? conn.control2Y : endPos.y + (conn.toSide === 'bottom' ? offset : conn.toSide === 'top' ? -offset : 0);
+                    
+                    // 創建第一個控制點
+                    const cp1 = document.createElement('div');
+                    cp1.className = 'connection-control-point';
+                    cp1.id = `control1-${connId}`;
+                    cp1.style.left = c1x + 'px';
+                    cp1.style.top = c1y + 'px';
+                    cp1.style.borderColor = '#3b82f6';
+                    
+                    cp1.addEventListener('mousedown', (e) => createControlPointDragHandler(e, conn, 'control1', cp1));
+                    board.appendChild(cp1);
+                    
+                    // 創建第二個控制點
+                    const cp2 = document.createElement('div');
+                    cp2.className = 'connection-control-point';
+                    cp2.id = `control2-${connId}`;
+                    cp2.style.left = c2x + 'px';
+                    cp2.style.top = c2y + 'px';
+                    cp2.style.borderColor = '#10b981';
+                    
+                    cp2.addEventListener('mousedown', (e) => createControlPointDragHandler(e, conn, 'control2', cp2));
+                    board.appendChild(cp2);
+                }
+            }
+            
+            function createControlPointDragHandler(e, conn, controlType, controlPoint) {
+                e.stopPropagation();
+                let isDraggingControl = true;
+                
+                function onControlDrag(moveEvent) {
+                    if (!isDraggingControl) return;
+                    const { x, y } = getBoardCoordinates(moveEvent.clientX, moveEvent.clientY);
+                    controlPoint.style.left = x + 'px';
+                    controlPoint.style.top = y + 'px';
+                    
+                    if (controlType === 'control1') {
+                        conn.control1X = x;
+                        conn.control1Y = y;
+                    } else {
+                        conn.control2X = x;
+                        conn.control2Y = y;
+                    }
+                    
+                    drawConnections();
+                }
+                
+                function onControlDragEnd() {
+                    isDraggingControl = false;
+                    document.removeEventListener('mousemove', onControlDrag);
+                    document.removeEventListener('mouseup', onControlDragEnd);
+                    saveState();
+                }
+                
+                document.addEventListener('mousemove', onControlDrag);
+                document.addEventListener('mouseup', onControlDragEnd);
+            }
+            
+            // [NEW] 隱藏線條控制點
+            function hideConnectionControlPoints() {
+                board.querySelectorAll('.connection-control-point').forEach(cp => cp.remove());
             }
             
             // [NEW] 刪除選取的關連線
@@ -2811,6 +3278,9 @@
                 // 移除標籤
                 const labelEl = document.getElementById(`label_${selectedConnection}`);
                 if (labelEl) labelEl.remove();
+                
+                // 移除控制點
+                hideConnectionControlPoints();
                 
                 // 從連接陣列中移除
                 connections = connections.filter(c => c.id !== selectedConnection);
@@ -2836,20 +3306,33 @@
                 const notesState = [];
                 board.querySelectorAll('.sticky-note').forEach(note => {
                     const editable = note.querySelector('.editable');
+                    const noteTitle = note.querySelector('.note-title-text');
+                    const noteContent = note.querySelector('.note-content');
+                    
+                    let content = '';
+                    if (noteTitle && noteContent) {
+                        // 新格式：標題|||內容
+                        content = noteTitle.innerHTML + '|||' + noteContent.innerHTML;
+                    } else if (editable) {
+                        // 舊格式
+                        content = editable.innerHTML;
+                    }
+                    
                     notesState.push({
                         id: note.id,
                         x: parseFloat(note.style.left),
                         y: parseFloat(note.style.top),
                         isTitle: note.classList.contains('note-title'),
                         color: note.dataset.color,
-                        content: editable ? editable.innerHTML : '',
+                        content: content,
                         isGroup: note.classList.contains('group-container'),
                         width: note.style.width || null,
                         height: note.style.height || null,
                         isTextNode: note.dataset.isTextNode === 'true',
                         isImage: note.dataset.isImage === 'true',
                         imgSrc: note.dataset.imgSrc || '',
-                        rotation: parseFloat(note.dataset.rotation || 0)
+                        rotation: parseFloat(note.dataset.rotation || 0),
+                        collapsed: note.classList.contains('collapsed')
                     });
                 });
                 const currentState = {
@@ -2857,7 +3340,8 @@
                     connections: connections,
                     settings: {
                         fontSize: currentFontSize,
-                        minHeight: currentMinHeight
+                        minHeight: currentMinHeight,
+                        connectionStyle: currentConnectionStyle
                     }
                 };
                 if (historyPointer > -1 && JSON.stringify(history[historyPointer]) === JSON.stringify(currentState)) {
@@ -2884,10 +3368,13 @@
                 if (state.settings) {
                     currentFontSize = state.settings.fontSize || 14;
                     currentMinHeight = state.settings.minHeight || 100;
+                    currentConnectionStyle = state.settings.connectionStyle || 'cubic';
                 } else {
                     currentFontSize = 14;
                     currentMinHeight = 100;
+                    currentConnectionStyle = 'cubic';
                 }
+                connectionStyleSelect.value = currentConnectionStyle;
                 applySettings(); 
                 
                 if (state.notes) {
@@ -2907,7 +3394,10 @@
                             imgSrc: noteState.imgSrc,
                             rotation: noteState.rotation
                         };
-                        createNote(options, true);
+                        const restoredNote = createNote(options, true);
+                        if (noteState.collapsed && restoredNote) {
+                            restoredNote.classList.add('collapsed');
+                        }
                     });
                 }
                 connections = state.connections || [];
@@ -2935,25 +3425,98 @@
             
             // --- 頂部工具列功能 ---
             
-            addGroupBtn.addEventListener('click', () => {
-                const { x, y } = getBoardCoordinates(window.innerWidth / 2, window.innerHeight / 2);
-                createNote({ 
-                    x: x - 200, 
-                    y: y - 150,
-                    isGroup: true, 
-                    color: 'bg-gray-200' 
-                });
+            addGroupBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startDraggingFromButton('group', e);
             });
 
-            addTextBtn.addEventListener('click', () => {
-                const { x, y } = getBoardCoordinates(window.innerWidth / 2, window.innerHeight / 2);
-                createNote({ 
-                    x: x - 100, 
-                    y: y - 50,
-                    isTextNode: true,
-                });
+            addTextBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startDraggingFromButton('text', e);
             });
 
+            // 從按鈕拖曳元素到畫布
+            function startDraggingFromButton(type, startEvent) {
+                let dragPreview = null;
+                let isDragging = false;
+                let offsetX = 10;
+                let offsetY = 10;
+                
+                function onMouseMove(e) {
+                    if (!isDragging) {
+                        isDragging = true;
+                        
+                        // 創建拖曳預覽
+                        dragPreview = document.createElement('div');
+                        dragPreview.style.position = 'fixed';
+                        dragPreview.style.pointerEvents = 'none';
+                        dragPreview.style.zIndex = '10000';
+                        dragPreview.style.opacity = '0.7';
+                        dragPreview.style.padding = '1rem';
+                        dragPreview.style.borderRadius = '0.5rem';
+                        dragPreview.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+                        
+                        if (type === 'group') {
+                            dragPreview.style.width = '400px';
+                            dragPreview.style.height = '300px';
+                            dragPreview.style.backgroundColor = '#e5e7eb';
+                            dragPreview.innerHTML = '<div style="font-weight: 600; color: #6b7280;">群組標題</div>';
+                        } else if (type === 'text') {
+                            dragPreview.style.padding = '0.5rem 1rem';
+                            dragPreview.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                            dragPreview.style.color = 'white';
+                            dragPreview.style.fontSize = '0.875rem';
+                            dragPreview.innerHTML = '輸入文字';
+                        }
+                        
+                        document.body.appendChild(dragPreview);
+                    }
+                    
+                    if (dragPreview) {
+                        dragPreview.style.left = (e.clientX + offsetX) + 'px';
+                        dragPreview.style.top = (e.clientY + offsetY) + 'px';
+                    }
+                }
+                
+                function onMouseUp(e) {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    
+                    if (dragPreview) {
+                        dragPreview.remove();
+                    }
+                    
+                    // 如果有拖曳並且在畫布上放開
+                    if (isDragging) {
+                        const boardRect = boardContainer.getBoundingClientRect();
+                        if (e.clientX >= boardRect.left && e.clientX <= boardRect.right &&
+                            e.clientY >= boardRect.top && e.clientY <= boardRect.bottom) {
+                            
+                            // 使用與預覽相同的偏移量
+                            const { x, y } = getBoardCoordinates(e.clientX + offsetX, e.clientY + offsetY);
+                            
+                            if (type === 'group') {
+                                createNote({ 
+                                    x: x, 
+                                    y: y,
+                                    isGroup: true, 
+                                    color: 'bg-gray-200' 
+                                });
+                            } else if (type === 'text') {
+                                createNote({ 
+                                    x: x, 
+                                    y: y,
+                                    isTextNode: true,
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            }
+            
             clearBtn.addEventListener('click', () => {
                 clearModal.classList.remove('hidden');
             });
@@ -3098,14 +3661,23 @@
             cardHeightSlider.addEventListener('change', () => {
                 saveState();
             });
+            
+            // 線條樣式選擇器
+            connectionStyleSelect.addEventListener('change', (e) => {
+                currentConnectionStyle = e.target.value;
+                localStorage.setItem('affinity_connection_style', currentConnectionStyle);
+                drawConnections();
+            });
+            
+            // 讀取儲存的線條樣式
+            const savedConnectionStyle = localStorage.getItem('affinity_connection_style');
+            if (savedConnectionStyle) {
+                currentConnectionStyle = savedConnectionStyle;
+                connectionStyleSelect.value = savedConnectionStyle;
+            }
 
             applySettings();
-
             saveState(); 
-        });
-    </script>
-</body>
-</html>
         });
     </script>
 </body>
