@@ -871,6 +871,13 @@
     <!-- 修正：將所有操作按鈕放入同一個容器，以便統一管理排版 -->
     <div class="top-right-buttons">
         <!-- AI 功能按鈕 -->
+        <button id="screenshot-button" class="icon-button" title="📸 截圖詞雲">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+            </svg>
+        </button>
+
         <button id="ai-insight-button" class="icon-button" title="✨ AI 洞察報告">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
@@ -1277,6 +1284,7 @@
             let maskScale = 100;
 
             const fileInput = document.getElementById('file-input');
+            const screenshotButton = document.getElementById('screenshot-button');
             const uploadButton = document.getElementById('upload-button');
             const settingsButton = document.getElementById('settings-button');
             const helpButton = document.getElementById('help-button');
@@ -1575,7 +1583,16 @@
             }
 
             // Theme colors & translations
-            const themeColorMap = new Map([['工作與職業','#2E8B57'],['時間與效率','#FF4500'],['家庭與親密關係','#8A2BE2'],['消費與習慣','#F0E68C'],['金融與投資','#B22222'],['健康與管理','#00FFFF'],['學習與知識','#5F9EA0'],['通勤與出行','#DDA0DD'],['嗜好與休閒','#FFD700'],['科技與電子產品','#4682B4'],['其他/背景特徵','#C0C0C0']]);
+            // [修改] 改為動態配色，不再綁定特定文字
+            const themeColorMap = new Map(); 
+            // 這裡定義一組通用的色盤 (你可以隨意增加喜歡的色碼)
+            const colorPalette = [
+                '#2E8B57', '#FF4500', '#8A2BE2', '#F9C74F', '#B22222', 
+                '#43AA8B', '#577590', '#F94144', '#90BE6D', '#F3722C', 
+                '#277DA1', '#5F9EA0', '#DDA0DD', '#FFD700', '#4682B4',
+                '#FF1493', '#1E90FF', '#32CD32', '#FF8C00', '#4B0082'
+            ];
+
             const themeMap = new Map([['Learning & Knowledge','學習與知識'],['Consumption & Habits','消費與習慣'],['Finance & Investment','金融與投資'],['Work & Career','工作與職業'],['Family & Intimacy','家庭與親密關係'],['Time & Efficiency','時間與效率'],['Technology & Gadgets','科技與電子產品'],['Health & Management','健康與管理'],['Hobbies & Leisure','嗜好與休閒'],['Other/Background Trait','其他/背景特徵'],['Commute & Mobility','通勤與出行']]);
             const emotionMap = new Map([['Desire','渴望'],['Satisfaction','滿足'],['Habitual','習慣'],['Neutral','平常'],['Tension/Stress','緊張'],['Achievement','成就'],['Empathy','共情'],['Joy','喜悅'],['Forced/Obligated','被迫'],['Disappointment','失望'],['Suppression','壓抑'],['Helplessness','無奈'],['Other','其他'],['Other/Undefined','其他/無法定義']]);
 
@@ -1679,6 +1696,54 @@
                 });
             }
 
+            // 截圖功能
+            function screenshotWordCloud() {
+                if (!canvas) {
+                    alert('請先載入資料並生成詞雲！');
+                    return;
+                }
+                
+                try {
+                    // 創建一個臨時 canvas 來處理遮色片
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = canvas.width;
+                    tempCanvas.height = canvas.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    // 如果有遮色片，需要特殊處理
+                    if (window.wordcloudMaskImage) {
+                        // 先繪製白色背景
+                        tempCtx.fillStyle = '#ffffff';
+                        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        
+                        // 繪製原始詞雲
+                        tempCtx.drawImage(canvas, 0, 0);
+                        
+                        // 應用遮色片
+                        tempCtx.globalCompositeOperation = 'destination-in';
+                        tempCtx.drawImage(window.wordcloudMaskImage, 0, 0, tempCanvas.width, tempCanvas.height);
+                    } else {
+                        // 沒有遮色片，直接複製
+                        tempCtx.drawImage(canvas, 0, 0);
+                    }
+                    
+                    // 轉換為圖片並下載
+                    tempCanvas.toBlob(function(blob) {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                        link.download = `詞雲_${timestamp}.png`;
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    }, 'image/png');
+                } catch (err) {
+                    console.error('截圖失敗:', err);
+                    alert('截圖失敗，請稍後再試');
+                }
+            }
+            
+            if (screenshotButton) screenshotButton.addEventListener('click', screenshotWordCloud);
             if (uploadButton && fileInput) uploadButton.addEventListener('click', ()=> fileInput.click());
             if (fileInput) fileInput.addEventListener('change', handleFileUpload);
             if (settingsButton && settingsModal) settingsButton.addEventListener('click', ()=> settingsModal.classList.remove('hidden'));
@@ -1806,6 +1871,18 @@
                         if (row['關鍵字2']) masterData.push({keyword: row['關鍵字2'].trim(), weight: weight, theme: themeCn, emotions: emotionsCnList, event: event});
                     });
                     
+                    // [新增] 自動依序分配顏色給每一個獨特的主題
+                    themeColorMap.clear(); // 清空舊的對應
+                    const sortedThemes = Array.from(uniqueThemes).sort(); // 排序主題確保每次順序一致
+                    console.log('🎨 偵測到的主題數量:', sortedThemes.length);
+                    console.log('🎨 主題列表:', sortedThemes);
+                    sortedThemes.forEach((theme, index) => {
+                        // 使用取餘數 (%) 運算，如果主題數量超過色盤數量，會循環使用顏色
+                        const color = colorPalette[index % colorPalette.length];
+                        themeColorMap.set(theme, color);
+                        console.log(`🎨 主題 "${theme}" → 顏色 ${color}`);
+                    });
+
                     if (masterData.length === 0) {
                         showError('無有效的關鍵字資料');
                         return;
