@@ -1,0 +1,64 @@
+{
+    "views": [
+        {
+            "name": "平視 (Eye Level)",
+            "value": "eye level shot"
+        },
+        {
+            "name": "低角度 (Low Angle)",
+            "value": "low angle shot"
+        },
+        {
+            "name": "高角度 (High Angle)",
+            "value": "high angle shot"
+        },
+        {
+            "name": "鳥瞰 (Bird's Eye)",
+            "value": "bird's eye view"
+        },
+        {
+            "name": "蟲視 (Worm's Eye)",
+            "value": "worm's eye view"
+        }
+    ],
+    "lightings": [
+        {
+            "name": "黃金時刻 (Golden Hour)",
+            "value": "golden hour lighting, warm soft light"
+        },
+        {
+            "name": "攝影棚光 (Studio)",
+            "value": "studio lighting, softbox, professional"
+        },
+        {
+            "name": "電影光 (Cinematic)",
+            "value": "cinematic lighting, dramatic shadows"
+        },
+        {
+            "name": "霓虹光 (Neon)",
+            "value": "neon lighting, cyberpunk atmosphere"
+        },
+        {
+            "name": "自然光 (Natural)",
+            "value": "natural lighting, soft daylight"
+        }
+    ],
+    "lenses": [
+        {
+            "name": "廣角 (Wide 24mm)",
+            "value": "wide angle lens, 24mm"
+        },
+        {
+            "name": "人像 (Portrait 85mm)",
+            "value": "portrait lens, 85mm, bokeh"
+        },
+        {
+            "name": "微距 (Macro)",
+            "value": "macro lens, extreme close-up"
+        },
+        {
+            "name": "魚眼 (Fisheye)",
+            "value": "fisheye lens, distorted"
+        }
+    ]
+}
