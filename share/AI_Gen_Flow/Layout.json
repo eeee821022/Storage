@@ -1,0 +1,42 @@
+{
+    "ratios": [
+        {
+            "name": "1:1 (Square)",
+            "value": "1:1 aspect ratio"
+        },
+        {
+            "name": "16:9 (Landscape)",
+            "value": "16:9 aspect ratio"
+        },
+        {
+            "name": "9:16 (Portrait)",
+            "value": "9:16 aspect ratio"
+        },
+        {
+            "name": "21:9 (Cinematic)",
+            "value": "21:9 aspect ratio"
+        }
+    ],
+    "compositions": [
+        {
+            "name": "極簡留白 (Minimalist)",
+            "value": "minimalist composition, negative space, clean lines"
+        },
+        {
+            "name": "平鋪擺拍 (Knolling)",
+            "value": "knolling photography, flat lay, organized items"
+        },
+        {
+            "name": "等角視圖 (Isometric)",
+            "value": "isometric view, 3d render style"
+        },
+        {
+            "name": "漫畫分鏡 (Comic Panel)",
+            "value": "comic book panel, sequential art"
+        },
+        {
+            "name": "對稱構圖 (Symmetrical)",
+            "value": "symmetrical composition, centered"
+        }
+    ]
+}
