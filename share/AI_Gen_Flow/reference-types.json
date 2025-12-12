@@ -1,0 +1,27 @@
+{
+    "types": [
+        {
+            "value": "style",
+            "label": "風格參考 (Style)",
+            "description": "Use this image's artistic style"
+        },
+        {
+            "value": "character",
+            "label": "角色參考 (Character)",
+            "description": "Use this character's appearance"
+        },
+        {
+            "value": "composition",
+            "label": "構圖參考 (Composition)",
+            "description": "Follow this image's layout"
+        },
+        {
+            "value": "content",
+            "label": "內容參考 (Content)",
+            "description": "Reference the content/subject"
+        }
+    ],
+    "default_weight": 1.0,
+    "max_images": 3,
+    "weight_step": 0.1
+}

@@ -1,0 +1,14 @@
+{
+    "trigger_node": {
+        "default_count": 4,
+        "max_count": 8,
+        "min_count": 1
+    },
+    "reference_node": {
+        "max_images": 3,
+        "default_weight": 1.0
+    },
+    "instruction_node": {
+        "default_mode": "precise"
+    }
+}
