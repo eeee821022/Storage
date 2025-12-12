@@ -1198,6 +1198,23 @@ Native American English：
                 color: 'border-green-500',
                 content: '<textarea class="w-full h-32 bg-slate-900 text-slate-200 text-sm p-3 rounded border border-slate-600 resize-none focus:outline-none focus:border-blue-500 leading-relaxed" placeholder="輸入提示詞..."></textarea>'
             },
+            'pose_node': {
+                title: '骨架姿勢 (Pose)',
+                inputs: [],
+                outputs: [{ id: 'pose_out', label: 'Pose Data' }],
+                color: 'border-purple-500',
+                content: `
+                    <div class="flex flex-col gap-2 items-center">
+                        <div class="w-full h-32 bg-slate-900 rounded border border-slate-600 flex items-center justify-center overflow-hidden relative group">
+                            <!-- 預覽圖 -->
+                            <canvas width="150" height="150" class="pose-preview-canvas w-full h-full object-contain"></canvas>
+                            <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer transition-opacity" onclick="SkeletonEditor.open(this.closest('.node'))">
+                                <span class="text-white text-xs font-bold px-3 py-1 bg-purple-600 rounded">編輯姿勢</span>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-slate-400 w-full text-center">點擊圖片開啟編輯器</div>
+                    </div>`
+            },
             'negative_prompt_node': {
                 title: '負面提示 (Negative)',
                 inputs: [],
@@ -1325,24 +1342,7 @@ Native American English：
                         </button>
                     </div>`
             },
-            'pose_node': {
-                title: '人物骨骼 (Pose Reference)',
-                inputs: [],
-                outputs: [{ id: 'pose_out', label: 'Pose' }],
-                color: 'border-pink-500',
-                content: `
-                    <div class="flex flex-col gap-2 p-2">
-                        <div class="w-full bg-slate-900 rounded border border-slate-700 p-2 flex flex-col items-center justify-center relative min-h-[100px] hover:border-pink-500 transition-colors">
-                            <input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleImageUpload(this)">
-                            <div class="placeholder flex flex-col items-center text-slate-500 pointer-events-none">
-                                <svg class="w-8 h-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
-                                <span class="text-[10px]">Upload Skeleton/Pose</span>
-                            </div>
-                            <img src="" class="hidden w-full h-auto rounded max-h-[200px] object-contain pointer-events-none">
-                        </div>
-                        <div class="text-[10px] text-pink-400 mt-1">※ 此圖片將作為強制骨架參考</div>
-                    </div>`
-            },
+
             'generator_node': {
                 title: '生成核心',
                 inputs: [
@@ -2430,8 +2430,10 @@ Native American English：
 
         async function callGeminiText(systemPrompt, userJson) {
             const fullPrompt = systemPrompt + "\n\nUser Configuration (JSON):\n" + JSON.stringify(userJson, null, 2);
+
             // Updated to use the correct model for the environment
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`;
+            if (apiKey) url += `?key=${apiKey}`;
 
             try {
                 const response = await fetch(url, {
@@ -2460,7 +2462,9 @@ Native American English：
 
             try {
                 if (isImagen) {
-                    const url = `${baseUrl}/${modelId}:predict?key=${apiKey}`;
+                    let url = `${baseUrl}/${modelId}:predict`;
+                    if (apiKey) url += `?key=${apiKey}`;
+
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2478,7 +2482,8 @@ Native American English：
                     if (!b64) throw new Error("No image data returned");
                     return `data:image/png;base64,${b64}`;
                 } else {
-                    const url = `${baseUrl}/${modelId}:generateContent?key=${apiKey}`;
+                    let url = `${baseUrl}/${modelId}:generateContent`;
+                    if (apiKey) url += `?key=${apiKey}`;
 
                     // Construct parts
                     const parts = [{ text: prompt }];
@@ -2868,19 +2873,40 @@ Native American English:
                 return textarea ? textarea.value : '';
             });
 
-            // 2.8 Pose (New)
+            // 2.8 Pose (New & Old Support)
             const poseConns = getConnectedNodes('pose_in');
             if (poseConns.length > 0) {
                 const node = poseConns[0].node;
-                const img = node.querySelector('img');
-                if (img && !img.classList.contains('hidden')) {
-                    // Add to images array as a special type
-                    if (!inputs.images) inputs.images = [];
-                    inputs.images.push({
-                        type: 'pose_reference',
-                        src: img.src,
-                        prompt: 'Reference Pose: Use this skeleton/pose image to control the character\'s posture EXACTLY.'
-                    });
+
+                // Case A: Skeleton Editor Node (Canvas)
+                const canvas = node.querySelector('.pose-preview-canvas');
+                if (canvas) {
+                    // Check if content exists (not just empty transparent canvas)
+                    // Simple check: dataset.skeleton must exist if confirmed
+                    if (node.dataset.skeleton) {
+                        if (!inputs.images) inputs.images = [];
+                        // Get image from canvas directly
+                        // Note: The preview canvas in node is 150x150, but we want the high-res one?
+                        // Actually, capturing the node canvas is fine for reference.
+                        inputs.images.push({
+                            type: 'pose_reference',
+                            src: canvas.toDataURL(),
+                            prompt: 'Reference Pose: Use this skeleton image to control the character posture.'
+                        });
+                        inputs.skeleton_json = node.dataset.skeleton; // Save raw data too
+                    }
+                }
+                // Case B: Legacy Image Upload (Img tag)
+                else {
+                    const img = node.querySelector('img');
+                    if (img && !img.classList.contains('hidden')) {
+                        if (!inputs.images) inputs.images = [];
+                        inputs.images.push({
+                            type: 'pose_reference',
+                            src: img.src,
+                            prompt: 'Reference Pose: Use this skeleton/pose image to control the character\'s posture EXACTLY.'
+                        });
+                    }
                 }
             }
 
@@ -3313,6 +3339,585 @@ Native American English:
         loadAllConfigs();
 
     </script>
-</body>
+
+    <!-- ╔══════════════════════════════════════════════════════════╗ -->
+    <!-- ║               SKELETON EDITOR MODULE                      ║ -->
+    <!-- ╚══════════════════════════════════════════════════════════╝ -->
+
+    <style>
+        /* Skeleton Editor Specific Styles */
+        #skel-editor-modal {
+            font-family: 'Inter', sans-serif;
+        }
+
+        #pose-canvas {
+            background-color: #0d121b;
+            cursor: grab;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        #pose-canvas.grabbing {
+            cursor: grabbing;
+        }
+
+        /* Custom range slider thumb */
+        .skel-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #60a5fa;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+
+    <!-- Skeleton Editor Modal -->
+    <div id="skel-editor-modal" class="fixed inset-0 z-[9999] hidden bg-black/90 flex flex-col">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 bg-slate-800 border-b border-slate-700">
+            <div>
+                <h2 class="text-xl font-bold text-white">2D 骨架編輯器</h2>
+                <p class="text-xs text-slate-400">點擊線段選取刪除，點擊端點拖曳 (Shift+Click 可多選)</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="SkeletonEditor.close()"
+                    class="px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-600">取消</button>
+                <button onclick="SkeletonEditor.confirm()"
+                    class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">確認使用</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Sidebar Controls -->
+            <div class="w-80 bg-slate-900 border-r border-slate-700 p-4 flex flex-col gap-4 overflow-y-auto">
+
+                <!-- Background Image Control -->
+                <div class="p-3 bg-slate-800 rounded border border-slate-700">
+                    <h3 class="text-sm font-bold text-slate-300 mb-2">底圖參照</h3>
+                    <input type="file" id="skel-bg-input" accept="image/*"
+                        class="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:bg-slate-700 file:text-white mb-2" />
+
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-slate-400">顯示底圖</span>
+                        <input type="checkbox" id="skel-bg-toggle" class="toggle toggle-sm" disabled>
+                    </div>
+
+                    <div class="space-y-2 opacity-50" id="skel-bg-controls">
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-slate-500">縮放 (<span
+                                    id="skel-bg-scale-val">1.0</span>)</label>
+                            <input type="range" id="skel-bg-scale" min="0.1" max="3.0" step="0.01" value="1.0"
+                                class="skel-range w-full h-1 bg-slate-700 rounded-lg appearance-none" disabled>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-slate-500">X 偏移</label>
+                            <input type="range" id="skel-bg-dx" min="-500" max="500" step="5" value="0"
+                                class="skel-range w-full h-1 bg-slate-700 rounded-lg appearance-none" disabled>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-slate-500">Y 偏移</label>
+                            <input type="range" id="skel-bg-dy" min="-500" max="500" step="5" value="0"
+                                class="skel-range w-full h-1 bg-slate-700 rounded-lg appearance-none" disabled>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-slate-500">透明度</label>
+                            <input type="range" id="skel-bg-opacity" min="0.1" max="1" step="0.1" value="0.5"
+                                class="skel-range w-full h-1 bg-slate-700 rounded-lg appearance-none" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tools -->
+                <div class="flex flex-col gap-2">
+                    <button id="skel-add-btn"
+                        class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm transition-colors">
+                        🖊️ 新增線段 (畫筆)
+                    </button>
+                    <button id="skel-del-btn"
+                        class="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors">
+                        🗑️ 刪除選取 (Delete)
+                    </button>
+                    <button id="skel-reset-btn"
+                        class="w-full py-2 bg-slate-600 hover:bg-slate-500 text-white rounded text-sm transition-colors">
+                        ↺ 重置骨架
+                    </button>
+                </div>
+
+                <div class="mt-auto text-[10px] text-slate-500">
+                    <p>Tip: 點擊空白處可取消選取。</p>
+                    <p>Tip: 拖曳端點靠近另一點會自動吸附。</p>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="flex-1 bg-black relative overflow-hidden flex items-center justify-center p-4">
+                <canvas id="pose-canvas" class="rounded border border-slate-700 max-w-full max-h-full"></canvas>
+
+                <!-- Status Message -->
+                <div id="skel-status"
+                    class="absolute top-4 left-4 px-3 py-1 bg-black/70 text-yellow-400 text-xs rounded opacity-0 transition-opacity pointer-events-none">
+                    Ready
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Inject Point -->
+    <script>
+        // ╔══════════════════════════════════════════════════════════╗
+        // ║               SKELETON EDITOR LOGIC                      ║
+        // ╚══════════════════════════════════════════════════════════╝
+
+        window.SkeletonEditor = (function () {
+            // Private Variables
+            let modal, canvas, ctx;
+            let currentNode = null;
+            let width, height;
+
+            // State
+            let joints = [];
+            let nextJointId = 0;
+            let selectedJointId = null;
+            let selectedBoneId = null;
+
+            // Interaction
+            let isDragging = false;
+            let dragOffsetX = 0, dragOffsetY = 0;
+            let isAddingMode = false;
+            let startJointId = null;
+            let tempJoint = null; // CAD mode preview
+
+            // Background Image
+            let bgImage = new Image();
+            let bgState = {
+                loaded: false,
+                visible: false,
+                scale: 1.0,
+                dx: 0, dy: 0,
+                opacity: 0.5
+            };
+
+            // Default Skeleton
+            const INITIAL_SKELETON = [
+                { id: 0, x: 400, y: 150, parentId: null, name: 'Root' },
+                { id: 1, x: 400, y: 250, parentId: 0, name: 'Pelvis' },
+                { id: 2, x: 400, y: 350, parentId: 1, name: 'Chest' },
+                { id: 3, x: 400, y: 50, parentId: 2, name: 'Head' },
+                { id: 4, x: 300, y: 350, parentId: 2, name: 'LShoulder' },
+                { id: 5, x: 200, y: 300, parentId: 4, name: 'LElbow' },
+                { id: 6, x: 100, y: 300, parentId: 5, name: 'LHand' },
+                { id: 7, x: 500, y: 350, parentId: 2, name: 'RShoulder' },
+                { id: 8, x: 600, y: 300, parentId: 7, name: 'RElbow' },
+                { id: 9, x: 700, y: 300, parentId: 8, name: 'RHand' },
+                { id: 10, x: 350, y: 450, parentId: 1, name: 'LHip' },
+                { id: 11, x: 300, y: 550, parentId: 10, name: 'LKnee' },
+                { id: 12, x: 250, y: 550, parentId: 11, name: 'LFoot' },
+                { id: 13, x: 450, y: 450, parentId: 1, name: 'RHip' },
+                { id: 14, x: 500, y: 550, parentId: 13, name: 'RKnee' },
+                { id: 15, x: 550, y: 550, parentId: 14, name: 'RFoot' },
+            ];
+
+            function init() {
+                modal = document.getElementById('skel-editor-modal');
+                canvas = document.getElementById('pose-canvas');
+                ctx = canvas.getContext('2d');
+
+                // Initialize events
+                setupEvents();
+
+                // Load default skeleton if empty
+                if (joints.length === 0) resetSkeleton();
+
+                console.log('💀 Skeleton Editor Initialized');
+            }
+
+            function setupEvents() {
+                // Resize
+                window.addEventListener('resize', resizeCanvas);
+
+                // Mouse / Touch
+                canvas.addEventListener('mousedown', handleDown);
+                canvas.addEventListener('mousemove', handleMove);
+                window.addEventListener('mouseup', handleUp);
+
+                canvas.addEventListener('touchstart', e => {
+                    e.preventDefault();
+                    const t = e.touches[0];
+                    handleDown({ clientX: t.clientX, clientY: t.clientY });
+                }, { passive: false });
+
+                canvas.addEventListener('touchmove', e => {
+                    e.preventDefault();
+                    const t = e.touches[0];
+                    handleMove({ clientX: t.clientX, clientY: t.clientY });
+                }, { passive: false });
+
+                window.addEventListener('touchend', handleUp);
+
+                // Tools
+                document.getElementById('skel-add-btn').onclick = toggleAddMode;
+                document.getElementById('skel-del-btn').onclick = deleteSelected;
+                document.getElementById('skel-reset-btn').onclick = resetSkeleton;
+
+                // Background Controls
+                setupBgControls();
+            }
+
+            function setupBgControls() {
+                const input = document.getElementById('skel-bg-input');
+                const toggle = document.getElementById('skel-bg-toggle');
+
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        bgImage.onload = () => {
+                            bgState.loaded = true;
+                            bgState.visible = true;
+                            toggle.disabled = false;
+                            toggle.checked = true;
+                            enableBgSliders(true);
+                            draw();
+                        };
+                        bgImage.src = evt.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                };
+
+                toggle.onchange = (e) => {
+                    bgState.visible = e.target.checked;
+                    enableBgSliders(e.target.checked);
+                    draw();
+                };
+
+                // Sliders
+                ['scale', 'dx', 'dy', 'opacity'].forEach(key => {
+                    const el = document.getElementById(`skel-bg-${key}`);
+                    el.oninput = (e) => {
+                        bgState[key] = parseFloat(e.target.value);
+                        if (key === 'scale') document.getElementById('skel-bg-scale-val').textContent = bgState[key];
+                        draw();
+                    };
+                });
+            }
+
+            function enableBgSliders(enabled) {
+                const div = document.getElementById('skel-bg-controls');
+                div.style.opacity = enabled ? '1' : '0.5';
+                div.querySelectorAll('input').forEach(el => el.disabled = !enabled);
+            }
+
+            function resizeCanvas() {
+                if (!canvas) return;
+                const rect = canvas.parentElement.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                width = canvas.width;
+                height = canvas.height;
+                draw();
+            }
+
+            // --- Logic ---
+
+            function resetSkeleton() {
+                nextJointId = 16;
+                joints = JSON.parse(JSON.stringify(INITIAL_SKELETON)).map(j => ({ ...j, id: j.id.toString(), parentId: j.parentId?.toString() || null }));
+                draw();
+            }
+
+            function getJointAt(x, y) {
+                const radius = 15;
+                for (let i = joints.length - 1; i >= 0; i--) {
+                    const dx = joints[i].x - x;
+                    const dy = joints[i].y - y;
+                    if (dx * dx + dy * dy < radius * radius) return joints[i];
+                }
+                return null;
+            }
+
+            function getBoneAt(x, y) {
+                // Simple distance to segment check
+                for (const j of joints) {
+                    if (!j.parentId) continue;
+                    const p = joints.find(p => p.id === j.parentId);
+                    if (!p) continue;
+
+                    const dist = distToSegment(x, y, p.x, p.y, j.x, j.y);
+                    if (dist < 8) return j.id; // Return child node ID as bone ID
+                }
+                return null;
+            }
+
+            function distToSegment(x, y, x1, y1, x2, y2) {
+                const A = x - x1;
+                const B = y - y1;
+                const C = x2 - x1;
+                const D = y2 - y1;
+                const dot = A * C + B * D;
+                const len_sq = C * C + D * D;
+                let param = -1;
+                if (len_sq !== 0) param = dot / len_sq;
+                let xx, yy;
+                if (param < 0) { xx = x1; yy = y1; }
+                else if (param > 1) { xx = x2; yy = y2; }
+                else { xx = x1 + param * C; yy = y1 + param * D; }
+                const dx = x - xx;
+                const dy = y - yy;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            function handleDown(e) {
+                if (modal.classList.contains('hidden')) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const joint = getJointAt(x, y);
+                const boneId = getBoneAt(x, y);
+
+                if (isAddingMode) {
+                    if (joint) {
+                        startJointId = joint.id;
+                    } else {
+                        // Create new root
+                        const newId = (nextJointId++).toString();
+                        joints.push({ id: newId, x, y, parentId: null, name: 'Joint' + newId });
+                        startJointId = newId;
+                    }
+                    selectedJointId = null;
+                    selectedBoneId = null;
+                } else {
+                    if (joint) {
+                        isDragging = true;
+                        selectedJointId = joint.id;
+                        selectedBoneId = null;
+                        dragOffsetX = x - joint.x;
+                        dragOffsetY = y - joint.y;
+                        canvas.classList.add('grabbing');
+                    } else if (boneId) {
+                        selectedBoneId = boneId;
+                        selectedJointId = null;
+                    } else {
+                        selectedJointId = null;
+                        selectedBoneId = null;
+                    }
+                }
+                draw();
+            }
+
+            function handleMove(e) {
+                if (modal.classList.contains('hidden')) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const x = Math.max(0, Math.min(width, e.clientX - rect.left));
+                const y = Math.max(0, Math.min(height, e.clientY - rect.top));
+
+                if (isAddingMode && startJointId) {
+                    const snap = getJointAt(x, y);
+                    tempJoint = snap ? { x: snap.x, y: snap.y } : { x, y };
+                    draw();
+                    return;
+                }
+
+                if (isDragging && selectedJointId) {
+                    const j = joints.find(j => j.id === selectedJointId);
+                    if (j) {
+                        j.x = x - dragOffsetX;
+                        j.y = y - dragOffsetY;
+                        draw();
+                    }
+                }
+            }
+
+            function handleUp() {
+                if (modal.classList.contains('hidden')) return;
+
+                if (isAddingMode && startJointId && tempJoint) {
+                    // Create bone logic (simplified from original)
+                    const newId = (nextJointId++).toString();
+                    // Check if snap to existing
+                    const snap = getJointAt(tempJoint.x, tempJoint.y);
+
+                    if (snap && snap.id !== startJointId) {
+                        // Connect to existing node logic
+                        // For simplicity in this integration, we just create a NEW node at that position
+                        // A full graph implementation would be too large for this single file merge
+                        joints.push({
+                            id: newId,
+                            x: snap.x,
+                            y: snap.y,
+                            parentId: startJointId,
+                            name: 'Joint' + newId
+                        });
+                    } else {
+                        joints.push({
+                            id: newId,
+                            x: tempJoint.x,
+                            y: tempJoint.y,
+                            parentId: startJointId,
+                            name: 'Joint' + newId
+                        });
+                    }
+
+                    startJointId = null;
+                    tempJoint = null;
+                    draw();
+                }
+                isDragging = false;
+                canvas.classList.remove('grabbing');
+            }
+
+            function deleteSelected() {
+                if (selectedBoneId) {
+                    deleteSubtree(selectedBoneId);
+                    selectedBoneId = null;
+                } else if (selectedJointId) {
+                    deleteSubtree(selectedJointId);
+                    selectedJointId = null;
+                }
+                draw();
+            }
+
+            function deleteSubtree(id) {
+                // Delete node and all children
+                const toDel = [id];
+                let changed = true;
+                while (changed) {
+                    changed = false;
+                    for (const j of joints) {
+                        if (j.parentId && toDel.includes(j.parentId) && !toDel.includes(j.id)) {
+                            toDel.push(j.id);
+                            changed = true;
+                        }
+                    }
+                }
+                joints = joints.filter(j => !toDel.includes(j.id));
+            }
+
+            function toggleAddMode() {
+                isAddingMode = !isAddingMode;
+                const btn = document.getElementById('skel-add-btn');
+                if (isAddingMode) {
+                    btn.classList.add('bg-red-600');
+                    btn.classList.remove('bg-indigo-600');
+                    btn.textContent = '❌ 停止新增';
+                } else {
+                    btn.classList.remove('bg-red-600');
+                    btn.classList.add('bg-indigo-600');
+                    btn.textContent = '🖊️ 新增線段 (畫筆)';
+                }
+            }
+
+            function draw() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+
+                // 1. Background
+                if (bgState.visible && bgState.loaded) {
+                    ctx.save();
+                    ctx.globalAlpha = bgState.opacity;
+                    const w = bgImage.width * bgState.scale;
+                    const h = bgImage.height * bgState.scale;
+                    const x = (width - w) / 2 + bgState.dx;
+                    const y = (height - h) / 2 + bgState.dy;
+                    ctx.drawImage(bgImage, x, y, w, h);
+                    ctx.restore();
+                }
+
+                // 2. Bones
+                ctx.lineWidth = 4;
+                for (const j of joints) {
+                    if (j.parentId) {
+                        const p = joints.find(p => p.id === j.parentId);
+                        if (p) {
+                            ctx.strokeStyle = (j.id === selectedBoneId) ? '#ffffff' : '#60a5fa';
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(j.x, j.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                // 3. Temp Bone
+                if (isAddingMode && startJointId && tempJoint) {
+                    const start = joints.find(j => j.id === startJointId);
+                    if (start) {
+                        ctx.strokeStyle = '#fcd34d';
+                        ctx.beginPath();
+                        ctx.moveTo(start.x, start.y);
+                        ctx.lineTo(tempJoint.x, tempJoint.y);
+                        ctx.stroke();
+                    }
+                }
+
+                // 4. Joints
+                for (const j of joints) {
+                    const isSel = (j.id === selectedJointId);
+                    ctx.fillStyle = isSel ? '#10b981' : '#34d399';
+                    if (isAddingMode && isSel) ctx.fillStyle = '#ef4444';
+
+                    const size = (j.name === 'Head') ? (isSel ? 10 : 8) : (isSel ? 6 : 4);
+
+                    ctx.beginPath();
+                    ctx.arc(j.x, j.y, size * (j.name === 'Head' ? 2.5 : 1.5), 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+
+            // Public API
+            return {
+                init: init,
+                open: function (node) {
+                    currentNode = node;
+                    modal.classList.remove('hidden');
+                    // Helper to delay resize until modal is visible
+                    requestAnimationFrame(() => resizeCanvas());
+                },
+                close: function () {
+                    modal.classList.add('hidden');
+                },
+                confirm: function () {
+                    if (!currentNode) return;
+
+                    // Generate Preview Image
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const img = currentNode.querySelector('.pose-preview-canvas');
+
+                    if (img) {
+                        const nCtx = img.getContext('2d');
+                        nCtx.clearRect(0, 0, 150, 150);
+
+                        const pImg = new Image();
+                        pImg.onload = () => {
+                            // Centered fit
+                            const scale = Math.min(150 / pImg.width, 150 / pImg.height);
+                            const x = (150 - pImg.width * scale) / 2;
+                            const y = (150 - pImg.height * scale) / 2;
+                            nCtx.drawImage(pImg, x, y, pImg.width * scale, pImg.height * scale);
+                        };
+                        pImg.src = dataUrl;
+                    }
+
+                    // Store data in node (hidden)
+                    currentNode.dataset.skeleton = JSON.stringify(joints);
+
+                    this.close();
+                }
+            };
+        })();
+
+        // Initialize on Load
+        setTimeout(() => {
+            if (window.SkeletonEditor) window.SkeletonEditor.init();
+        }, 500);
+    </script>
 
 </html>
