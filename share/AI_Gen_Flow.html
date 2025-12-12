@@ -1,0 +1,4087 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Gen Flow - 節點式生成工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Inter 字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- 載入 Three.js 相關庫 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            overflow: hidden;
+            background-color: #1e293b;
+            /* slate-800 */
+            color: #f8fafc;
+            /* slate-50 */
+        }
+
+        /* 畫布區域 */
+        #board-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            cursor: grab;
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        #board {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: 0 0;
+        }
+
+        #board-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: visible;
+        }
+
+        /* 連線樣式 */
+        .connection-path {
+            fill: none;
+            stroke: #64748b;
+            /* slate-500 */
+            stroke-width: 2px;
+            pointer-events: stroke;
+            cursor: pointer;
+            transition: stroke 0.2s, stroke-width 0.2s;
+        }
+
+        .connection-path:hover {
+            stroke: #3b82f6;
+            /* blue-500 */
+            stroke-width: 3px;
+        }
+
+        .connection-path.selected {
+            stroke: #ef4444;
+            /* red-500 */
+            stroke-width: 3px;
+        }
+
+        /* 節點樣式 */
+        .node {
+            position: absolute;
+            background-color: #64748b;
+            /* slate-500 (Gutter Color) */
+            border: 2px solid #ef4444;
+            /* Unified Red Border */
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 450px;
+            /* Fixed width to prevent content overflow expansion */
+            /* min-width: 400px; */
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            user-select: none;
+            transition: box-shadow 0.2s, border-color 0.2s;
+            padding-bottom: 0.5rem;
+            /* Bottom gutter */
+        }
+
+        .node.selected {
+            border-color: #3b82f6;
+            /* blue-500 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+            z-index: 20;
+        }
+
+        .node-header {
+            padding: 0.5rem 1rem;
+            background-color: #1e293b;
+            /* slate-800 */
+            border-bottom: 1px solid #475569;
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+            margin-bottom: 0.5rem;
+            /* Space between header and body */
+        }
+
+        .node-header:active {
+            cursor: grabbing;
+        }
+
+        .node-body {
+            padding: 0.75rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background-color: #0f172a;
+            /* slate-900 (Content Dark Box) */
+            margin: 0 4.5rem;
+            /* Increased Gutters for labels */
+            border-radius: 0.25rem;
+            border: 1px solid #334155;
+        }
+
+        /* 端點 (Sockets) */
+        .socket {
+            width: 12px;
+            height: 12px;
+            background-color: #cbd5e1;
+            /* slate-300 */
+            border: 2px solid #475569;
+            /* slate-600 */
+            border-radius: 50%;
+            position: absolute;
+            cursor: crosshair;
+            transition: background-color 0.2s, transform 0.2s;
+            z-index: 15;
+        }
+
+        .socket:hover {
+            background-color: #3b82f6;
+            /* blue-500 */
+            transform: scale(1.2);
+            border-color: white;
+        }
+
+        .socket.connected {
+            background-color: #3b82f6;
+        }
+
+        .socket-input {
+            left: -6px;
+            /* On the edge */
+        }
+
+        .socket-output {
+            right: -6px;
+            /* On the edge */
+        }
+
+        .socket-label {
+            font-size: 0.7rem;
+            color: #f8fafc;
+            /* slate-50 */
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+            /* Wrapping logic */
+            white-space: normal;
+            width: 60px;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+        }
+
+        .socket-input .socket-label {
+            left: 16px;
+            /* Inside Left Gutter */
+            text-align: left;
+        }
+
+        .socket-output .socket-label {
+            right: 16px;
+            /* Inside Right Gutter */
+            text-align: right;
+            justify-content: flex-end;
+        }
+
+        /* 側邊欄 */
+        #sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 260px;
+            background-color: #0f172a;
+            /* slate-900 */
+            border-right: 1px solid #334155;
+            z-index: 50;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        #sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-item {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background-color: #334155;
+        }
+
+        .sidebar-item:active {
+            cursor: grabbing;
+        }
+
+        /* 頂部工具列 */
+        #top-bar {
+            position: fixed;
+            top: 1rem;
+            left: 280px;
+            /* Sidebar width + gap */
+            right: 1rem;
+            height: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            /* Let clicks pass through to canvas */
+            z-index: 40;
+            transition: left 0.3s ease;
+        }
+
+        #sidebar.collapsed~#top-bar {
+            left: 1rem;
+        }
+
+        .toolbar-group {
+            pointer-events: auto;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 0.25rem;
+            display: flex;
+            gap: 0.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            /* blue-600 */
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            background-color: #334155;
+        }
+
+        /* 拖曳中的連線 */
+        #temp-connection {
+            fill: none;
+            stroke: #94a3b8;
+            stroke-width: 2px;
+            stroke-dasharray: 5, 5;
+            pointer-events: none;
+        }
+
+
+
+        /* 側邊欄切換按鈕 */
+        #toggle-sidebar-btn {
+            position: absolute;
+            top: 1rem;
+            left: 100%;
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-left: none;
+            border-radius: 0 0.375rem 0.375rem 0;
+            padding: 0.5rem 0.25rem;
+            cursor: pointer;
+            color: #94a3b8;
+        }
+
+        #toggle-sidebar-btn:hover {
+            color: white;
+        }
+
+        /* 右側結果視窗切換按鈕 */
+        #toggle-result-btn {
+            position: fixed;
+            top: 1rem;
+            right: 0;
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-right: none;
+            border-radius: 0.375rem 0 0 0.375rem;
+            padding: 0.5rem 0.25rem;
+            cursor: pointer;
+            color: #94a3b8;
+            z-index: 45;
+            /* Below sidebar (50) but above others */
+            transition: right 0.3s ease;
+        }
+
+        #toggle-result-btn:hover {
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 側邊欄 -->
+    <div id="sidebar">
+        <div class="text-lg font-bold text-white mb-4 px-2">節點工具箱</div>
+
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 mb-2">資源</div>
+        <div class="sidebar-item" draggable="true" data-type="reference_node">
+            <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            參考素材
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="image_node">
+            <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            圖片輸入
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="3d_node">
+            <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            3D 預覽 (GLB)
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="pose_node">
+            <svg class="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+            人物骨骼 (Pose)
+        </div>
+
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 mb-2 mt-4">參數</div>
+        <div class="sidebar-item" draggable="true" data-type="prompt_node">
+            <svg class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            AI Prompt
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="negative_prompt_node">
+            <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            負面提示
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="style_node">
+            <svg class="w-5 h-5 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            風格設定
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="layout_node">
+            <svg class="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+            版面設定
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="camera_node">
+            <svg class="w-5 h-5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            鏡頭設定
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="paint_node">
+            <svg class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            智能繪圖
+        </div>
+
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 mb-2 mt-4">生成</div>
+        <div class="sidebar-item" draggable="true" data-type="model_node">
+            <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            模型選擇
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="trigger_node">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            啟動按鈕 (Start)
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="generator_node">
+            <svg class="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547" />
+            </svg>
+            生成核心
+        </div>
+        <div class="sidebar-item" draggable="true" data-type="instruction_node">
+            <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            AI 指令建構 (轉譯)
+        </div>
+
+        <button id="toggle-sidebar-btn">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- 頂部工具列 -->
+    <div id="top-bar">
+        <div class="toolbar-group">
+            <button class="btn btn-secondary" id="clear-btn">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                清空畫布
+            </button>
+            <input type="file" id="import-input" accept="application/json" class="hidden">
+            <button class="btn btn-secondary" id="import-btn">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                匯入
+            </button>
+            <button class="btn btn-secondary" id="export-btn">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                匯出
+            </button>
+        </div>
+    </div>
+
+    <!-- 結果視窗 (Sidebar) -->
+    <div id="result-sidebar"
+        class="fixed right-0 top-0 bottom-0 w-96 bg-slate-900 border-l border-slate-700 z-50 flex flex-col transition-transform duration-300 transform translate-x-full shadow-2xl">
+        <!-- Resizer handle -->
+        <div id="sidebar-resizer"
+            class="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-blue-500 z-50 bg-transparent"></div>
+
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-700 bg-slate-800">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                    生成控制台
+                </h2>
+                <button id="close-sidebar-btn"
+                    class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Progress Section -->
+            <div id="progress-section" class="flex flex-col gap-1 hidden w-full">
+                <div class="flex justify-between text-xs text-slate-400 mb-1">
+                    <span id="progress-status">Ready</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="w-full bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                    <div id="progress-bar" class="bg-blue-500 h-full rounded-full transition-all duration-300"
+                        style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Scrollable -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+
+            <!-- Stage 1 -->
+            <div class="stage-block">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-bold text-blue-400 flex items-center gap-2">
+                        <span
+                            class="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-xs">1</span>
+                        階段一:概念探索
+                    </h3>
+
+                </div>
+                <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700 space-y-4">
+                    <div class="hidden">
+                        <div class="flex items-center justify-between text-xs text-slate-300 mb-2">
+                            <span>變化程度 (Chaos)</span>
+                            <span id="chaos-value" class="font-mono text-blue-400">10</span>
+                        </div>
+                        <input type="range" id="chaos-slider" min="0" max="100" value="10"
+                            class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <span>微調細節</span>
+                            <span>探索新方向</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Drafts Grid -->
+                <div id="drafts-grid" class="grid grid-cols-2 gap-2 mt-4 min-h-[100px]">
+                    <!-- Placeholders will be injected here -->
+                    <div
+                        class="aspect-square bg-slate-800/50 rounded border border-slate-700 border-dashed flex items-center justify-center text-slate-600 text-xs">
+                        等待生成...
+                    </div>
+                    <div
+                        class="aspect-square bg-slate-800/50 rounded border border-slate-700 border-dashed flex items-center justify-center text-slate-600 text-xs">
+                        等待生成...
+                    </div>
+                    <div
+                        class="aspect-square bg-slate-800/50 rounded border border-slate-700 border-dashed flex items-center justify-center text-slate-600 text-xs">
+                        等待生成...
+                    </div>
+                    <div
+                        class="aspect-square bg-slate-800/50 rounded border border-slate-700 border-dashed flex items-center justify-center text-slate-600 text-xs">
+                        等待生成...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 2 (Hidden by default) -->
+            <div id="stage-2-block"
+                class="stage-block hidden opacity-50 pointer-events-none transition-all duration-300">
+                <div class="flex items-center justify-between mb-3 mt-6 pt-6 border-t border-slate-800">
+                    <h3 class="text-sm font-bold text-purple-400 flex items-center gap-2">
+                        <span
+                            class="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center text-xs">2</span>
+                        階段二:品質強化
+                    </h3>
+                    <span class="text-[10px] text-slate-500 font-mono">Seed: <span id="selected-seed"
+                            class="text-slate-300">---</span></span>
+                </div>
+
+                <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700 space-y-3 relative overflow-hidden">
+                    <!-- Selected Image Preview (Small) -->
+                    <div class="flex gap-3 mb-3">
+                        <div class="w-16 h-16 bg-black rounded border border-slate-600 flex-shrink-0 overflow-hidden">
+                            <img id="stage-2-preview" class="w-full h-full object-cover opacity-50">
+                        </div>
+                        <div class="flex-1 text-xs text-slate-400 flex items-center">
+                            已鎖定種子碼，現在您可以選擇升級畫質以獲得最終成品。
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button
+                            class="btn-upscale bg-slate-700 hover:bg-slate-600 text-white text-xs py-2.5 rounded border border-slate-600 transition-colors flex flex-col items-center justify-center gap-1"
+                            data-quality="2k">
+                            <span class="font-bold">標準成品 (2K)</span>
+                            <span class="text-[9px] text-slate-400">適合網頁/社群</span>
+                        </button>
+                        <button
+                            class="btn-upscale bg-slate-700 hover:bg-slate-600 text-white text-xs py-2.5 rounded border border-slate-600 transition-colors relative overflow-hidden flex flex-col items-center justify-center gap-1 group"
+                            data-quality="4k">
+                            <span class="font-bold text-yellow-400 group-hover:text-yellow-300">專業級 (4K)</span>
+                            <span class="text-[9px] text-slate-400">適合印刷/展示</span>
+                            <div
+                                class="absolute top-0 right-0 bg-yellow-500 text-black text-[8px] px-1 font-bold rounded-bl">
+                                $$</div>
+                        </button>
+                    </div>
+                    <label
+                        class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer p-2 hover:bg-slate-700/50 rounded transition-colors">
+                        <input type="checkbox"
+                            class="rounded bg-slate-900 border-slate-600 text-blue-500 focus:ring-0 focus:ring-offset-0">
+                        <span>啟用 AI 畫質增強 (Upscaler) <span class="text-yellow-500 text-[10px] ml-1">+$</span></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- JSON Debug (Collapsed) -->
+            <details class="mt-8 border-t border-slate-800 pt-4">
+                <summary
+                    class="text-[10px] text-slate-600 cursor-pointer hover:text-slate-400 uppercase tracking-wider font-bold select-none">
+                    Debug Info</summary>
+                <pre id="json-debug"
+                    class="text-[10px] text-slate-500 font-mono mt-2 overflow-x-auto bg-black/30 p-2 rounded"></pre>
+            </details>
+        </div>
+    </div>
+
+    <!-- 右側切換按鈕 -->
+    <button id="toggle-result-btn">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+    </button>
+
+    <!-- 主畫布 -->
+    <div id="board-container">
+        <div id="board">
+            <svg id="board-svg">
+                <path id="temp-connection" d="" />
+            </svg>
+            <!-- 節點將被動態加入這裡 -->
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="fixed inset-0 z-[100] hidden bg-black/90 flex items-center justify-center p-4"
+        onclick="closeImageModal()">
+        <div class="relative max-w-full max-h-full flex flex-col items-center" onclick="event.stopPropagation()">
+            <img id="modal-image"
+                class="max-w-full max-h-[85vh] object-contain rounded shadow-2xl border border-slate-700" src="">
+
+            <div class="flex gap-4 mt-4">
+                <button
+                    class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded flex items-center gap-2 transition-colors border border-slate-600"
+                    onclick="downloadModalImage()">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    下載
+                </button>
+                <button
+                    class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded flex items-center gap-2 transition-colors border border-slate-600"
+                    onclick="copyModalImage()">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    複製
+                </button>
+                <button
+                    class="bg-red-900/80 hover:bg-red-800 text-white px-4 py-2 rounded flex items-center gap-2 transition-colors border border-red-700"
+                    onclick="closeImageModal()">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+        // --- 外部設定載入系統 (GitHub Hot-Reload) ---
+        const GITHUB_CONFIG_BASE = 'https://raw.githubusercontent.com/eeee821022/Storage/main/share/AI_Gen_Flow/';
+
+        // 外部設定快取
+        let externalConfigs = {
+            prompts: null,
+            models: null,
+            referenceTypes: null,
+            defaults: null
+        };
+
+        // 內建預設值 (當 GitHub 載入失敗時使用)
+        const FALLBACK_PROMPTS = {
+            precise: `You are an expert AI Prompt Engineer fluent in Native American English and Traditional Chinese.
+User has provided a JSON configuration for image generation.
+
+**YOUR TASK:**
+Generate a high-quality image generation prompt following the **Nano Banana Guide** principles:
+1.  **Describe the scene, don't just list keywords.** (Writing must be narrative).
+2.  **Photorealistic**: Specify camera angles (e.g. low angle), lighting (e.g. golden hour), textures, and lens details.
+3.  **Stylized**: Be explicit about art style (e.g. sticker, thick lines) and background (e.g. transparent).
+4.  **Integrate Images**: If "images" field exists with "prompt" or "intent", you MUST incorporate those descriptions into the narrative.
+    *   **CRITICAL**: If there is an image labeled "type": "pose_reference", you MUST describe the character's pose in extreme detail to match that image.
+
+**OUTPUT FORMAT (STRICT):**
+You must strictly follow this format with no markdown code blocks:
+
+Native American English：
+{The high-quality English prompt constructed based on the JSON and Guide.}
+繁體中文：
+{Direct translation of the above English prompt into Traditional Chinese.}`,
+            simple: `You are a direct translator. 
+Your task is to assemble the user's structured JSON configuration into a single, grammatical English sentence.
+- Do NOT add creative flair, flowery language, or extra adjectives.
+- Simply combine the prompts, styles, and negative prompts into a concise description.
+
+# Output Format (Strict)
+Native American English：
+{English translation}
+繁體中文：
+{Traditional Chinese direct translation}`
+        };
+
+        const FALLBACK_MODELS = {
+            available_models: [
+                { id: "imagen-4.0-generate-001", name: "Imagen 4 (Text to Image)", type: "text2img" },
+                { id: "gemini-2.5-flash-image-preview", name: "Gemini 2.5 Flash (Image to Image)", type: "img2img" }
+            ],
+            translation_model: "gemini-2.5-flash-preview-09-2025",
+            api_base_url: "https://generativelanguage.googleapis.com/v1beta/models"
+        };
+
+        const FALLBACK_REF_TYPES = {
+            types: [
+                { value: "style", label: "風格參考 (Style)" },
+                { value: "character", label: "角色參考 (Character)" },
+                { value: "composition", label: "構圖參考 (Composition)" },
+                { value: "content", label: "內容參考 (Content)" }
+            ]
+        };
+
+        async function loadExternalConfigs() {
+            const configFiles = [
+                { key: 'prompts', file: 'prompts.json', fallback: FALLBACK_PROMPTS },
+                { key: 'models', file: 'models.json', fallback: FALLBACK_MODELS },
+                { key: 'referenceTypes', file: 'reference-types.json', fallback: FALLBACK_REF_TYPES },
+                { key: 'defaults', file: 'defaults.json', fallback: {} }
+            ];
+
+            const results = await Promise.allSettled(
+                configFiles.map(cfg =>
+                    fetch(GITHUB_CONFIG_BASE + cfg.file)
+                        .then(r => r.ok ? r.json() : Promise.reject('Failed'))
+                        .then(data => ({ key: cfg.key, data }))
+                        .catch(() => ({ key: cfg.key, data: cfg.fallback }))
+                )
+            );
+
+            results.forEach(result => {
+                if (result.status === 'fulfilled') {
+                    externalConfigs[result.value.key] = result.value.data;
+                }
+            });
+
+            console.log('✅ External configs loaded:', Object.keys(externalConfigs).filter(k => externalConfigs[k]));
+
+            // 載入完成後更新需要動態填充的節點
+            updateDynamicNodeOptions();
+        }
+
+        function updateDynamicNodeOptions() {
+            // 這個函數會在設定載入後被呼叫，用來更新已存在節點的選項
+            // 目前主要用於新建立的節點
+        }
+
+        // 啟動時載入外部設定
+        loadExternalConfigs();
+
+        // --- 狀態變數 ---
+        let scale = 1;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let panStartX = 0;
+        let panStartY = 0;
+        let isSpacePressed = false;
+
+        let nodes = [];
+        let connections = [];
+        let nextNodeId = 1;
+
+        let isDraggingNode = false;
+        let draggedNode = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        let isDrawingConnection = false;
+        let connectionStartSocket = null;
+        let tempConnectionPath = document.getElementById('temp-connection');
+
+        let selectedNode = null;
+        let selectedConnection = null;
+        let clipboardNodeData = null;
+
+        const board = document.getElementById('board');
+        const boardContainer = document.getElementById('board-container');
+        const boardSvg = document.getElementById('board-svg');
+
+        // --- 畫布操作 (Pan/Zoom) ---
+
+        function updateBoardTransform() {
+            board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        }
+
+        function getBoardCoordinates(clientX, clientY) {
+            const rect = boardContainer.getBoundingClientRect();
+            return {
+                x: (clientX - rect.left - panX) / scale,
+                y: (clientY - rect.top - panY) / scale
+            };
+        }
+
+        // 清除選取
+        function clearSelection() {
+            if (selectedNode) {
+                selectedNode.classList.remove('selected');
+                selectedNode = null;
+            }
+            if (selectedConnection) {
+                selectedConnection.element.classList.remove('selected');
+                selectedConnection = null;
+            }
+        }
+
+        boardContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = boardContainer.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const mouseXInWorld = (mouseX - panX) / scale;
+            const mouseYInWorld = (mouseY - panY) / scale;
+
+            const delta = -e.deltaY * 0.001;
+            scale = Math.max(0.1, Math.min(3, scale + delta));
+
+            panX = mouseX - mouseXInWorld * scale;
+            panY = mouseY - mouseYInWorld * scale;
+
+            updateBoardTransform();
+        }, { passive: false });
+
+        boardContainer.addEventListener('mousedown', (e) => {
+            // 如果點擊的是畫布背景，清除選取
+            if (e.target === boardContainer || e.target === board || e.target === boardSvg) {
+                clearSelection();
+            }
+
+            if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
+                isPanning = true;
+                panStartX = e.clientX - panX;
+                panStartY = e.clientY - panY;
+                boardContainer.style.cursor = 'grabbing';
+                e.preventDefault(); // Prevent text selection
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                panX = e.clientX - panStartX;
+                panY = e.clientY - panStartY;
+                updateBoardTransform();
+            } else if (isDraggingNode && draggedNode) {
+                const { x, y } = getBoardCoordinates(e.clientX, e.clientY);
+                draggedNode.style.left = `${x - dragOffsetX}px`;
+                draggedNode.style.top = `${y - dragOffsetY}px`;
+                updateConnections();
+            } else if (isDrawingConnection) {
+                const { x, y } = getBoardCoordinates(e.clientX, e.clientY);
+                const startRect = connectionStartSocket.getBoundingClientRect();
+                const startX = (startRect.left + startRect.width / 2 - boardContainer.getBoundingClientRect().left - panX) / scale;
+                const startY = (startRect.top + startRect.height / 2 - boardContainer.getBoundingClientRect().top - panY) / scale;
+
+                drawBezier(tempConnectionPath, startX, startY, x, y);
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (isPanning) {
+                isPanning = false;
+                boardContainer.style.cursor = isSpacePressed ? 'grab' : 'default';
+            }
+            if (isDraggingNode) {
+                isDraggingNode = false;
+                draggedNode = null;
+            }
+            if (isDrawingConnection) {
+                isDrawingConnection = false;
+                tempConnectionPath.setAttribute('d', '');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            // 刪除功能
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+                if (selectedNode) {
+                    deleteNode(selectedNode);
+                    selectedNode = null;
+                }
+                if (selectedConnection) {
+                    deleteConnection(selectedConnection.id);
+                    selectedConnection = null;
+                }
+            }
+
+            // 複製功能 (Ctrl+C)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+                if (selectedNode) {
+                    const type = selectedNode.dataset.type;
+                    clipboardNodeData = { type };
+                }
+            }
+
+            // 貼上功能 (Ctrl+V)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+                if (clipboardNodeData) {
+                    const { x, y } = selectedNode ?
+                        { x: parseFloat(selectedNode.style.left) + 20, y: parseFloat(selectedNode.style.top) + 20 } :
+                        getBoardCoordinates(window.innerWidth / 2, window.innerHeight / 2);
+
+                    createNode(clipboardNodeData.type, x, y);
+                }
+            }
+
+            if (e.code === 'Space' && !isSpacePressed) {
+                isSpacePressed = true;
+                if (!isPanning) boardContainer.style.cursor = 'grab';
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                isSpacePressed = false;
+                if (!isPanning) boardContainer.style.cursor = 'default';
+            }
+        });
+
+        // --- 節點系統 ---
+
+        const nodeDefinitions = {
+            'model_node': {
+                title: '模型選擇',
+                inputs: [],
+                outputs: [{ id: 'model_out', label: 'Model' }],
+                color: 'border-red-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <div class="text-xs text-slate-400">Model:</div>
+                        <select class="model-select w-full bg-slate-900 text-slate-200 text-sm p-2 rounded border border-slate-600 focus:border-blue-500 outline-none">
+                            <option value="imagen-4.0-generate-001">Imagen 4 (Text to Image)</option>
+                            <option value="gemini-2.5-flash-image-preview">Gemini 2.5 Flash (Image to Image)</option>
+                        </select>
+                        <div class="text-xs text-green-400 mt-1 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                            Canvas Environment Ready
+                        </div>
+                    </div>`,
+                onInit: (node) => {
+                    // 動態填充模型選項 (從 GitHub 載入)
+                    const select = node.querySelector('.model-select');
+                    if (select && externalConfigs.models?.available_models) {
+                        select.innerHTML = externalConfigs.models.available_models
+                            .map(m => `<option value="${m.id}">${m.name}</option>`)
+                            .join('');
+                    }
+                }
+            },
+            'layout_node': {
+                title: '構圖與版面 (Composition)',
+                inputs: [{ id: 'ref_in', label: 'Ref' }],
+                outputs: [{ id: 'layout_out', label: 'Layout' }],
+                color: 'border-orange-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-400">比例:</span>
+                            <select class="bg-slate-900 text-slate-200 text-xs p-1 rounded border border-slate-600 w-32" onchange="updateLayoutPrompt(this)">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-400">構圖:</span>
+                            <select class="bg-slate-900 text-slate-200 text-xs p-1 rounded border border-slate-600 w-32" onchange="updateLayoutPrompt(this)">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="relative mt-1">
+                            <div class="text-xs text-slate-400 mb-1">Prompt:</div>
+                            <textarea class="prompt-preview w-full h-16 bg-slate-900 text-slate-200 text-xs p-2 rounded border border-slate-600 resize-none focus:outline-none" readonly></textarea>
+                        </div>
+                    </div>`
+            },
+            'camera_node': {
+                title: '鏡頭與光影 (Camera)',
+                inputs: [{ id: 'ref_in', label: 'Ref' }],
+                outputs: [{ id: 'camera_out', label: 'Camera' }],
+                color: 'border-teal-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-400">視角:</span>
+                            <select class="bg-slate-900 text-slate-200 text-xs p-1 rounded border border-slate-600 w-28" onchange="updateCameraPrompt(this)">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-400">光影:</span>
+                            <select class="bg-slate-900 text-slate-200 text-xs p-1 rounded border border-slate-600 w-28" onchange="updateCameraPrompt(this)">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-400">鏡頭:</span>
+                            <select class="bg-slate-900 text-slate-200 text-xs p-1 rounded border border-slate-600 w-28" onchange="updateCameraPrompt(this)">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="relative mt-1">
+                            <div class="text-xs text-slate-400 mb-1">Prompt:</div>
+                            <textarea class="prompt-preview w-full h-16 bg-slate-900 text-slate-200 text-xs p-2 rounded border border-slate-600 resize-none focus:outline-none" readonly></textarea>
+                        </div>
+                    </div>`
+            },
+            'reference_node': {
+                title: '參考素材',
+                inputs: [],
+                outputs: [{ id: 'ref_out', label: 'Ref Images' }],
+                color: 'border-red-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-400">類型:</span>
+                            <select class="ref-type-select bg-slate-900 text-slate-200 text-xs p-1 rounded border border-slate-600 w-32">
+                                <option value="style">風格參考 (Style)</option>
+                                <option value="character">角色參考 (Character)</option>
+                                <option value="composition">構圖參考 (Composition)</option>
+                                <option value="content">內容參考 (Content)</option>
+                            </select>
+                        </div>
+                        <div class="ref-images-list grid grid-cols-3 gap-1 max-h-40 overflow-y-auto p-1 bg-slate-900 rounded border border-slate-700 min-h-[80px]">
+                            <div class="add-ref-btn flex items-center justify-center aspect-square bg-slate-800 rounded cursor-pointer hover:bg-slate-700 border border-dashed border-slate-600 text-slate-500 transition-colors" onclick="this.querySelector('input').click()" title="新增圖片">
+                                <input type="file" accept="image/*" multiple class="hidden" onchange="handleAddRefImages(this)">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-yellow-500 px-1">Canvas 環境建議最多 3 張</div>
+                        <div class="flex items-center gap-2 px-1">
+                            <span class="text-xs text-slate-400">權重:</span>
+                            <input type="range" min="0" max="1" step="0.1" value="1" class="flex-1 h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500" oninput="this.nextElementSibling.innerText = this.value">
+                            <span class="text-xs text-slate-300 w-6 text-right">1</span>
+                        </div>
+                    </div>`,
+                onInit: (node) => {
+                    // 動態填充參考類型選項 (從 GitHub 載入)
+                    const select = node.querySelector('.ref-type-select');
+                    if (select && externalConfigs.referenceTypes?.types) {
+                        select.innerHTML = externalConfigs.referenceTypes.types
+                            .map(t => `<option value="${t.value}">${t.label}</option>`)
+                            .join('');
+                    }
+                }
+            },
+            'image_node': {
+                title: '圖片輸入',
+                inputs: [],
+                outputs: [{ id: 'img_out', label: 'Image' }, { id: 'prompt_out', label: 'Prompt' }],
+                color: 'border-red-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <div class="relative w-full h-48 bg-slate-800 rounded flex flex-col items-center justify-center text-slate-500 text-sm border border-dashed border-slate-600 overflow-hidden group cursor-pointer" onclick="this.querySelector('input').click()">
+                            <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
+                            <img class="absolute inset-0 w-full h-full object-cover hidden" />
+                            <div class="placeholder flex flex-col items-center pointer-events-none">
+                                <svg class="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                <span>點擊上傳 或 Ctrl+V</span>
+                            </div>
+                        </div>
+                        <textarea class="w-full h-20 bg-slate-900 text-slate-200 text-xs p-2 rounded border border-slate-600 resize-none focus:outline-none focus:border-blue-500" placeholder="輸入圖片描述 (Prompt)..."></textarea>
+                    </div>`
+            },
+            '3d_node': {
+                title: '3D 預覽 (GLB)',
+                inputs: [],
+                outputs: [{ id: 'view_out', label: 'Snapshot' }, { id: 'depth_out', label: 'Depth' }],
+                color: 'border-red-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <div class="relative w-full h-48 bg-slate-800 rounded flex flex-col items-center justify-center text-slate-500 text-sm border border-dashed border-slate-600 overflow-hidden" id="container-3d">
+                            <input type="file" accept=".glb,.gltf" class="hidden" onchange="handleGLBUpload(this)">
+                            
+                            <!-- 初始狀態:上傳按鈕 -->
+                            <div class="upload-placeholder flex flex-col items-center cursor-pointer" onclick="this.parentElement.querySelector('input').click()">
+                                <svg class="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                                <span>上傳 GLB (Max 100MB)</span>
+                            </div>
+
+                            <!-- 載入後狀態:截圖預覽 + 載入按鈕 -->
+                            <div class="preview-container hidden absolute inset-0 w-full h-full bg-black">
+                                <img class="snapshot-img w-full h-full object-cover opacity-50" />
+                                <button class="load-3d-btn absolute inset-0 m-auto w-32 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-lg flex items-center justify-center gap-2 z-10" onclick="initThreeJS(this)">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    載入 3D 場景
+                                </button>
+                                <div class="loading-spinner hidden absolute inset-0 m-auto w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+
+                            <!-- 3D Canvas 容器 -->
+                            <div class="canvas-wrapper absolute inset-0 w-full h-full z-20 pointer-events-none"></div>
+                            
+                            <!-- 3D Controls Overlay -->
+                            <div class="absolute bottom-2 right-2 z-30 flex gap-1">
+                                <button class="bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded shadow text-xs flex items-center gap-1" onclick="capture3DSnapshot(this)" title="截圖當前視角">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                    截圖
+                                </button>
+                                <button class="close-3d-btn bg-red-500 hover:bg-red-600 text-white p-1.5 rounded shadow" title="關閉 3D" onclick="disposeThreeJS(this)">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+
+                            <!-- Close Button (Legacy, removal handled by new controls) -->
+                            <!-- <button class="close-3d-btn..." > ... </button> -->
+                        </div>
+                        <textarea class="w-full h-20 bg-slate-900 text-slate-200 text-xs p-2 rounded border border-slate-600 resize-none focus:outline-none focus:border-blue-500" placeholder="輸入 3D 模型描述 (Prompt)..."></textarea>
+                    </div>`
+            },
+            'prompt_node': {
+                title: 'AI Prompt',
+                inputs: [],
+                outputs: [{ id: 'text_out', label: 'Text' }],
+                color: 'border-green-500',
+                content: '<textarea class="w-full h-32 bg-slate-900 text-slate-200 text-sm p-3 rounded border border-slate-600 resize-none focus:outline-none focus:border-blue-500 leading-relaxed" placeholder="輸入提示詞..."></textarea>'
+            },
+            'pose_node': {
+                title: '骨架姿勢 (Pose)',
+                inputs: [],
+                outputs: [{ id: 'pose_out', label: 'Pose Data' }],
+                color: 'border-purple-500',
+                content: `
+                    <div class="flex flex-col gap-2 items-center">
+                        <div class="w-full h-32 bg-slate-900 rounded border border-slate-600 flex items-center justify-center overflow-hidden relative group">
+                            <!-- 預覽圖 -->
+                            <canvas width="150" height="150" class="pose-preview-canvas w-full h-full object-contain"></canvas>
+                            <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer transition-opacity" onclick="SkeletonEditor.open(this.closest('.node'))">
+                                <span class="text-white text-xs font-bold px-3 py-1 bg-purple-600 rounded">編輯姿勢</span>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-slate-400 w-full text-center">點擊圖片開啟編輯器</div>
+                    </div>`
+            },
+            'negative_prompt_node': {
+                title: '負面提示 (Negative)',
+                inputs: [],
+                outputs: [{ id: 'neg_out', label: 'Negative' }],
+                color: 'border-red-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <div class="text-xs text-slate-400">不希望出現的內容:</div>
+                        <textarea class="w-full h-24 bg-slate-900 text-slate-200 text-sm p-2 rounded border border-slate-600 resize-none focus:outline-none focus:border-blue-500" placeholder="e.g. blur, distortion, low quality..."></textarea>
+                        <div class="text-[10px] text-slate-500">系統將自動轉譯為正向描述</div>
+                    </div>`
+            },
+            'style_node': {
+                title: '風格設定 (Style)',
+                inputs: [{ id: 'ref_in', label: 'Ref' }],
+                outputs: [{ id: 'style_out', label: 'Style' }],
+                color: 'border-pink-500',
+                content: `
+                    <div class="flex flex-col gap-3">
+                        <select class="w-full bg-slate-900 text-slate-200 text-sm p-2 rounded border border-slate-600 focus:border-blue-500 outline-none" onchange="updateStylePrompt(this)">
+                            <option value="">Loading Styles...</option>
+                        </select>
+                        <div class="relative">
+                            <div class="text-xs text-slate-400 mb-1">Style Prompt (可修改):</div>
+                            <textarea class="style-prompt-input w-full h-24 bg-slate-900 text-slate-200 text-xs p-2 rounded border border-slate-600 resize-none focus:outline-none focus:border-blue-500" placeholder="選擇上方風格或直接輸入..."></textarea>
+                        </div>
+                    </div>`
+            },
+            'paint_node': {
+                title: '智能繪圖 (Smart Paint)',
+                inputs: [{ id: 'img_in', label: 'Base Image' }],
+                outputs: [{ id: 'img_out', label: 'Painted Image' }],
+                color: 'border-cyan-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <!-- Canvas Container -->
+                        <div class="relative w-full h-48 bg-slate-800 rounded border border-slate-600 overflow-hidden cursor-crosshair touch-none paint-container">
+                            <canvas class="absolute inset-0 w-full h-full z-10" width="300" height="192"></canvas>
+                            <img class="paint-bg-img absolute inset-0 w-full h-full object-contain opacity-50 pointer-events-none" />
+                            <div class="placeholder absolute inset-0 flex flex-col items-center justify-center text-slate-500 pointer-events-none">
+                                <span class="text-xs">連接圖片或直接繪圖</span>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs text-slate-400">筆刷:</span>
+                                    <input type="color" class="brush-color w-6 h-6 bg-transparent border-0 cursor-pointer" value="#ff00ff" title="選擇顏色">
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs text-slate-400">大小:</span>
+                                    <input type="range" class="brush-size w-16 h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer" min="1" max="20" value="5">
+                                </div>
+                                <button class="text-xs text-red-400 hover:text-red-300" onclick="clearPaintCanvas(this)">清空</button>
+                            </div>
+                            
+                            <!-- Intent -->
+                            <div class="flex flex-col gap-1">
+                                <span class="text-xs text-slate-400">塗改用意 (Prompt 註解):</span>
+                                <div class="flex gap-1">
+                                    <input type="text" class="paint-intent flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-slate-200 focus:border-blue-500 outline-none" placeholder="例如: 遮罩區域, 新增物件..." value="Inpaint Mask">
+                                </div>
+                                <div class="text-[10px] text-cyan-500 flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    Prompt 將自動帶入色碼說明
+                                </div>
+                            </div>
+                        </div>
+                    </div>`
+            },
+            'trigger_node': {
+                title: '啟動按鈕 (Start)',
+                inputs: [{ id: 'cmd_in', label: 'Command' }],
+                outputs: [],
+                color: 'border-white',
+                content: `
+                    <div class="flex flex-col gap-2 p-2">
+
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-400">Count:</span>
+                            <input type="number" min="1" max="8" value="4" class="w-12 bg-slate-900 border border-slate-600 rounded px-1 py-0.5 text-xs focus:border-blue-500 outline-none text-center">
+                        </div>
+                        <button class="w-full h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 mt-2" onclick="runExecution(this)">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            START
+                        </button>
+                        <div class="text-[10px] text-slate-400 text-center">執行 Canvas 指令</div>
+                    </div>`
+            },
+            'instruction_node': {
+                title: 'AI 指令建構 (Instruction)',
+                inputs: [{ id: 'data_in', label: 'Data' }],
+                outputs: [{ id: 'cmd_out', label: 'Command' }],
+                color: 'border-purple-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <div class="text-xs text-slate-400">系統 Prompt 模式:</div>
+                        <div class="flex items-center justify-between gap-2">
+                            <select class="instruction-mode bg-slate-900 text-xs text-slate-200 border border-slate-600 rounded px-2 py-1 flex-1 focus:border-purple-500 outline-none">
+                                <option value="precise">精確 (依循 Guide)</option>
+                                <option value="simple">簡單 (僅組裝語句)</option>
+                            </select>
+                        </div>
+                        <button class="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs py-2 rounded flex items-center justify-center gap-2 transition-colors mt-1" onclick="buildInstruction(this)">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                            生成轉譯指令 (Build)
+                        </button>
+                        
+                        <!-- Split Areas -->
+                        <div class="flex flex-col gap-1 mt-1">
+                            <span class="text-[10px] text-green-400">Native American English</span>
+                            <textarea class="instruction-eng w-full h-32 bg-slate-950 text-green-300 font-mono text-[10px] p-2 rounded border border-slate-700 resize-none focus:outline-none" placeholder="AI Generated English Prompt..."></textarea>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] text-blue-400">繁體中文 (Direct Translation)</span>
+                            <textarea class="instruction-cht w-full h-24 bg-slate-950 text-blue-300 font-sans text-xs p-2 rounded border border-slate-700 resize-none focus:outline-none" placeholder="直接翻譯結果... (可修改此處並重新調整英文)"></textarea>
+                        </div>
+
+                         <button class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 rounded flex items-center justify-center gap-2 transition-colors mt-1" onclick="readjustInstruction(this)">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            依中文重新調整 (Re-adjust)
+                        </button>
+                    </div>`
+            },
+
+            'generator_node': {
+                title: '生成核心',
+                inputs: [
+                    { id: 'model_in', label: 'Model' },
+                    { id: 'prompt_in', label: 'Prompt' },
+                    { id: 'neg_in', label: 'Negative' },
+                    { id: 'pose_in', label: 'Pose' },
+                    { id: 'img_in', label: 'Image' },
+                    { id: 'style_in', label: 'Style' },
+                    { id: 'layout_in', label: 'Layout' },
+                    { id: 'camera_in', label: 'Camera' }
+                ],
+                outputs: [{ id: 'data_out', label: 'Data' }],
+                color: 'border-yellow-500',
+                content: `
+                    <div class="flex flex-col gap-2">
+                        <button class="w-full bg-slate-700 hover:bg-slate-600 text-white text-xs py-1 rounded mt-2" onclick="refreshGenerator(this)">
+                            Refresh Prompt
+                        </button>
+                        <textarea class="gen-prompt-preview w-full h-24 bg-black text-green-400 font-mono text-xs p-2 rounded border border-slate-700 resize-none focus:outline-none mt-1" placeholder="點擊 Refresh 更新，或直接編輯..."></textarea>
+                    </div>`
+            }
+        };
+
+        // --- Global Handlers ---
+        // --- Global Handlers ---
+        window.GITHUB_BASE = 'https://raw.githubusercontent.com/eeee821022/Storage/main/share/AI_Gen_Flow/';
+
+        window.STYLE_CONFIG_URL = window.GITHUB_BASE + 'styles.json';
+        window.LAYOUT_CONFIG_URL = window.GITHUB_BASE + 'layouts.json';
+        window.CAMERA_CONFIG_URL = window.GITHUB_BASE + 'cameras.json';
+
+        window.styleData = [];
+        window.layoutData = null;
+        window.cameraData = null;
+
+        async function fetchConfig(url, localFallback) {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("GitHub fetch failed");
+                return await res.json();
+            } catch (e) {
+                console.warn(`Failed to load from GitHub (${url}), trying local...`);
+                // Use a relative path fallback assuming files are next to HTML
+                const localRes = await fetch(localFallback);
+                if (!localRes.ok) throw new Error("Local fetch failed");
+                return await localRes.json();
+            }
+        }
+
+        window.loadAllConfigs = async function () {
+            try {
+                const [styles, layouts, cameras] = await Promise.all([
+                    fetchConfig(window.STYLE_CONFIG_URL, 'styles.json'),
+                    fetchConfig(window.LAYOUT_CONFIG_URL, 'layouts.json'),
+                    fetchConfig(window.CAMERA_CONFIG_URL, 'cameras.json')
+                ]);
+
+                window.styleData = styles;
+                window.layoutData = layouts;
+                window.cameraData = cameras;
+
+                // Update existing nodes
+                document.querySelectorAll('.node[data-type="style_node"] select').forEach(populateStyleSelect);
+                document.querySelectorAll('.node[data-type="layout_node"]').forEach(populateLayoutSelects);
+                document.querySelectorAll('.node[data-type="camera_node"]').forEach(populateCameraSelects);
+
+            } catch (e) {
+                console.error("Load configs failed", e);
+                // alert("設定檔載入失敗 (GitHub/Local)");
+            }
+        };
+
+        // Stub for backward compatibility if needed, but we use loadAllConfigs now
+        window.loadStyles = window.loadAllConfigs;
+
+        window.populateStyleSelect = function (select) {
+            if (!window.styleData || window.styleData.length === 0) {
+                select.innerHTML = '<option value="">Loading...</option>';
+                return;
+            }
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- 選擇風格 (GitHub) --</option>';
+            window.styleData.forEach(cat => {
+                const group = document.createElement('optgroup');
+                group.label = cat.category;
+                cat.styles.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.value;
+                    opt.textContent = s.name;
+                    if (s.value === currentVal) opt.selected = true;
+                    group.appendChild(opt);
+                });
+                select.appendChild(group);
+            });
+        };
+
+        window.updateStylePrompt = function (select) {
+            const container = select.parentElement;
+            const textarea = container.querySelector('.style-prompt-input');
+            if (textarea) {
+                textarea.value = select.value;
+            }
+        };
+
+        window.populateLayoutSelects = function (node) {
+            if (!window.layoutData) return;
+            const selects = node.querySelectorAll('select');
+            if (selects.length < 2) return;
+            const [ratioSelect, compSelect] = selects;
+
+            // Ratio
+            if (ratioSelect.options.length <= 1) { // Only populate if empty/loading
+                const currentVal = ratioSelect.value;
+                ratioSelect.innerHTML = '<option value="">預設</option>';
+                window.layoutData.ratios.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.value;
+                    opt.textContent = r.name;
+                    if (r.value === currentVal) opt.selected = true;
+                    ratioSelect.appendChild(opt);
+                });
+            }
+
+            // Composition
+            if (compSelect.options.length <= 1) {
+                const currentVal = compSelect.value;
+                compSelect.innerHTML = '<option value="">無特殊構圖</option>';
+                window.layoutData.compositions.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.value;
+                    opt.textContent = c.name;
+                    if (c.value === currentVal) opt.selected = true;
+                    compSelect.appendChild(opt);
+                });
+            }
+        };
+
+        window.populateCameraSelects = function (node) {
+            if (!window.cameraData) return;
+            const selects = node.querySelectorAll('select');
+            if (selects.length < 3) return;
+            const [viewSelect, lightSelect, lensSelect] = selects;
+
+            // View
+            if (viewSelect.options.length <= 1) {
+                const currentVal = viewSelect.value;
+                viewSelect.innerHTML = '<option value="">預設</option>';
+                window.cameraData.views.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.value;
+                    opt.textContent = v.name;
+                    if (v.value === currentVal) opt.selected = true;
+                    viewSelect.appendChild(opt);
+                });
+            }
+
+            // Lighting
+            if (lightSelect.options.length <= 1) {
+                const currentVal = lightSelect.value;
+                lightSelect.innerHTML = '<option value="">預設</option>';
+                window.cameraData.lightings.forEach(l => {
+                    const opt = document.createElement('option');
+                    opt.value = l.value;
+                    opt.textContent = l.name;
+                    if (l.value === currentVal) opt.selected = true;
+                    lightSelect.appendChild(opt);
+                });
+            }
+
+            // Lens
+            if (lensSelect.options.length <= 1) {
+                const currentVal = lensSelect.value;
+                lensSelect.innerHTML = '<option value="">預設</option>';
+                window.cameraData.lenses.forEach(l => {
+                    const opt = document.createElement('option');
+                    opt.value = l.value;
+                    opt.textContent = l.name;
+                    if (l.value === currentVal) opt.selected = true;
+                    lensSelect.appendChild(opt);
+                });
+            }
+        };
+
+        window.updateLayoutPrompt = function (select) {
+            const container = select.closest('.node-body');
+            const selects = container.querySelectorAll('select');
+            const textarea = container.querySelector('.prompt-preview');
+
+            if (textarea && selects.length >= 2) {
+                const ratio = selects[0].value;
+                const composition = selects[1].value;
+
+                const parts = [ratio, composition].filter(p => p);
+                textarea.value = parts.join(', ');
+            }
+        };
+
+        window.updateCameraPrompt = function (select) {
+            const container = select.closest('.node-body');
+            const selects = container.querySelectorAll('select');
+            const textarea = container.querySelector('.prompt-preview');
+
+            if (textarea && selects.length >= 3) {
+                const view = selects[0].value;
+                const lighting = selects[1].value;
+                const lens = selects[2].value;
+
+                const parts = [view, lighting, lens].filter(p => p);
+                textarea.value = parts.join(', ');
+            }
+        };
+
+
+        // --- Global Handlers for HTML Content ---
+        window.handleImageUpload = function (input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const container = input.parentElement;
+                    const img = container.querySelector('img');
+                    const placeholder = container.querySelector('.placeholder');
+
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+        window.handleAddRefImages = function (input) {
+            if (input.files && input.files.length > 0) {
+                const container = input.closest('.ref-images-list');
+                const addBtn = input.parentElement;
+
+                Array.from(input.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const div = document.createElement('div');
+                        div.className = 'relative aspect-square bg-slate-800 rounded overflow-hidden group border border-slate-700';
+                        div.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-full object-cover">
+                            <button class="absolute top-0 right-0 bg-black/60 text-white p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all rounded-bl" onclick="this.parentElement.remove()">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        `;
+                        container.insertBefore(div, addBtn);
+                    }
+                    reader.readAsDataURL(file);
+                });
+                // Reset input to allow re-uploading same files
+                input.value = '';
+            }
+        };
+
+        window.handleGLBUpload = function (input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const container = input.parentElement;
+                const uploadPlaceholder = container.querySelector('.upload-placeholder');
+                const previewContainer = container.querySelector('.preview-container');
+
+                // Store file object on the container for later use
+                container.dataset.fileUrl = URL.createObjectURL(file);
+
+                // Show preview container (initially just a placeholder or default image)
+                uploadPlaceholder.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+            }
+        };
+
+        window.initThreeJS = async function (btn) {
+            const container = btn.closest('#container-3d');
+            const canvasWrapper = container.querySelector('.canvas-wrapper');
+            const closeBtn = container.querySelector('.close-3d-btn');
+            const loadingSpinner = container.querySelector('.loading-spinner');
+            const fileUrl = container.dataset.fileUrl;
+
+            if (!fileUrl) return;
+
+            // Import Dependencies Dynamically
+            let THREE, GLTFLoader, OrbitControls, DRACOLoader;
+            try {
+                const threeModule = await import('three');
+                THREE = threeModule;
+                GLTFLoader = (await import('three/addons/loaders/GLTFLoader.js')).GLTFLoader;
+                OrbitControls = (await import('three/addons/controls/OrbitControls.js')).OrbitControls;
+                DRACOLoader = (await import('three/addons/loaders/DRACOLoader.js')).DRACOLoader;
+            } catch (err) {
+                alert("無法載入 Three.js 模組: " + err.message);
+                loadingSpinner.classList.add('hidden');
+                btn.classList.remove('hidden');
+                return;
+            }
+
+            // UI Updates
+            btn.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+
+            // Init Three.js
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1e293b); // Match slate-800
+
+            const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            camera.position.set(0, 0, 5);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            canvasWrapper.appendChild(renderer.domElement);
+            canvasWrapper.style.pointerEvents = 'auto'; // Enable interaction
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            // Controls
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            // Load GLB (Moved inside try for safety)
+            try {
+                const loader = new GLTFLoader();
+                const dracoLoader = new DRACOLoader();
+                dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
+                loader.setDRACOLoader(dracoLoader);
+
+                const gltf = await loader.loadAsync(fileUrl);
+                const model = gltf.scene;
+
+                // Auto-center and scale
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scaleFactor = 3 / maxDim; // Scale to fit in view
+                model.scale.setScalar(scaleFactor);
+
+                model.position.sub(center.multiplyScalar(scaleFactor)); // Center model
+
+                scene.add(model);
+
+                // Animation Loop
+                let animationId;
+                function animate() {
+                    animationId = requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                // Store references for disposal
+                container._threeData = {
+                    renderer,
+                    scene,
+                    camera,
+                    controls,
+                    animationId,
+                    model
+                };
+
+                // UI Finalize
+                loadingSpinner.classList.add('hidden');
+                closeBtn.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error loading GLB:", error);
+                alert("無法載入模型，請確認檔案格式。");
+                loadingSpinner.classList.add('hidden');
+                btn.classList.remove('hidden');
+                canvasWrapper.innerHTML = '';
+            }
+        };
+
+        window.capture3DSnapshot = function (btn) {
+            const container = btn.closest('#container-3d');
+            const node = container.closest('.node');
+            const canvasWrapper = container.querySelector('.canvas-wrapper');
+            const canvas = canvasWrapper.querySelector('canvas');
+            const snapshotImg = container.querySelector('.snapshot-img');
+
+            if (canvas && snapshotImg) {
+                try {
+                    // Temporarily render to ensure buffer is fresh (though orbit controls usually keep it fresh)
+                    const { renderer, scene, camera } = container._threeData;
+                    renderer.render(scene, camera);
+
+                    const dataURL = canvas.toDataURL('image/png');
+                    snapshotImg.src = dataURL;
+                    snapshotImg.classList.remove('opacity-50'); // Make full opacity to indicate captured
+
+                    // Flash effect
+                    const flash = document.createElement('div');
+                    flash.className = 'absolute inset-0 bg-white z-50 pointer-events-none transition-opacity duration-300';
+                    flash.style.opacity = '1';
+                    container.appendChild(flash);
+                    requestAnimationFrame(() => flash.style.opacity = '0');
+                    setTimeout(() => flash.remove(), 300);
+
+                    // UX Guidance
+                    const promptArea = node.querySelector('textarea');
+                    if (promptArea && !promptArea.value) {
+                        promptArea.placeholder = "已截圖！現在請將右側 [Snapshot] 連接點，拉線連至 [生成核心] 的 [Image] 插槽。";
+                    }
+
+                } catch (e) {
+                    console.error("Snapshot failed:", e);
+                    alert("截圖失敗");
+                }
+            }
+        };
+
+        window.disposeThreeJS = function (btn) {
+            const container = btn.closest('#container-3d');
+            const canvasWrapper = container.querySelector('.canvas-wrapper');
+            const loadBtn = container.querySelector('.load-3d-btn');
+            const closeBtn = container.querySelector('.close-3d-btn');
+
+            if (container._threeData) {
+                const { renderer, scene, animationId, controls, model } = container._threeData;
+
+                // Stop loop
+                cancelAnimationFrame(animationId);
+
+                // Dispose resources
+                if (model) {
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.geometry.dispose();
+                            if (child.material.map) child.material.map.dispose();
+                            child.material.dispose();
+                        }
+                    });
+                }
+
+                renderer.dispose();
+                controls.dispose();
+
+                // Clear DOM
+                canvasWrapper.innerHTML = '';
+                canvasWrapper.style.pointerEvents = 'none';
+
+                // Clear ref
+                delete container._threeData;
+            }
+
+            // UI Reset
+            closeBtn.classList.add('hidden');
+            loadBtn.classList.remove('hidden');
+        };
+
+        function deleteNode(node) {
+            // 移除相關連線
+            const nodeId = node.id;
+            const connectionsToRemove = connections.filter(conn =>
+                conn.source.dataset.nodeId === nodeId || conn.target.dataset.nodeId === nodeId
+            );
+
+            connectionsToRemove.forEach(conn => deleteConnection(conn.id));
+
+            // 移除節點 DOM
+            node.remove();
+
+            // 從陣列移除
+            nodes = nodes.filter(n => n !== node);
+        }
+
+        function deleteConnection(connId) {
+            const connIndex = connections.findIndex(c => c.id === connId);
+            if (connIndex > -1) {
+                const conn = connections[connIndex];
+                conn.element.remove();
+                conn.source.classList.remove('connected');
+                conn.target.classList.remove('connected');
+                connections.splice(connIndex, 1);
+            }
+        }
+
+        function createNode(type, x, y) {
+            const def = nodeDefinitions[type];
+            if (!def) return;
+
+            const node = document.createElement('div');
+            node.className = `node ${def.color}`;
+            node.id = `node_${nextNodeId++}`;
+            node.style.left = `${x}px`;
+            node.style.top = `${y}px`;
+            node.dataset.type = type; // Store type for copy/paste
+
+            // Header
+            const header = document.createElement('div');
+            header.className = 'node-header';
+            header.innerHTML = `<span>${def.title}</span>`;
+            node.appendChild(header);
+
+            // Body
+            const body = document.createElement('div');
+            body.className = 'node-body';
+            body.innerHTML = def.content;
+            node.appendChild(body);
+
+            // Auto-populate for External Configs
+            if (type === 'style_node') populateStyleSelect(body.querySelector('select'));
+            if (type === 'layout_node') populateLayoutSelects(node);
+            if (type === 'camera_node') populateCameraSelects(node);
+
+            // Calculate required min-height based on sockets
+            const maxSockets = Math.max(def.inputs.length, def.outputs.length);
+            const requiredHeight = 60 + maxSockets * 25 + 20; // Header + Sockets + Buffer
+            node.style.minHeight = `${requiredHeight}px`;
+
+            // Inputs
+            def.inputs.forEach((input, index) => {
+                const socket = document.createElement('div');
+                socket.className = 'socket socket-input';
+                socket.dataset.socketId = input.id;
+                socket.dataset.nodeId = node.id;
+                socket.dataset.type = 'input';
+                socket.style.top = `${50 + index * 25}px`; // Compact spacing
+
+                const label = document.createElement('div');
+                label.className = 'socket-label';
+                label.innerText = input.label;
+                socket.appendChild(label);
+
+                node.appendChild(socket);
+                setupSocketEvents(socket);
+            });
+
+            // Outputs
+            def.outputs.forEach((output, index) => {
+                const socket = document.createElement('div');
+                socket.className = 'socket socket-output';
+                socket.dataset.socketId = output.id;
+                socket.dataset.nodeId = node.id;
+                socket.dataset.type = 'output';
+                socket.style.top = `${50 + index * 25}px`; // Compact spacing
+
+                const label = document.createElement('div');
+                label.className = 'socket-label';
+                label.innerText = output.label;
+                socket.appendChild(label);
+
+                node.appendChild(socket);
+                setupSocketEvents(socket);
+            });
+
+            // Drag Logic
+            header.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                isDraggingNode = true;
+                draggedNode = node;
+
+                // Selection Logic
+                clearSelection();
+                selectedNode = node;
+                node.classList.add('selected');
+
+                const rect = node.getBoundingClientRect();
+                const { x: mouseX, y: mouseY } = getBoardCoordinates(e.clientX, e.clientY);
+
+                // Calculate offset in world coordinates
+                dragOffsetX = mouseX - parseFloat(node.style.left);
+                dragOffsetY = mouseY - parseFloat(node.style.top);
+
+                // Bring to front
+                node.style.zIndex = 100;
+                // Reset others
+                document.querySelectorAll('.node').forEach(n => {
+                    if (n !== node) n.style.zIndex = 10;
+                });
+            });
+
+            // Setup Paint Canvas Events if it's a paint node
+            if (type === 'paint_node') {
+                setupPaintNode(node);
+            }
+
+            // Click on body to select
+            node.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.socket')) return; // Ignore socket clicks
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+                clearSelection();
+                selectedNode = node;
+                node.classList.add('selected');
+            });
+
+            // Auto-fill API Key if present
+            const apiKeyInput = node.querySelector('.api-key-input');
+            if (apiKeyInput) {
+                const savedKey = localStorage.getItem('ai_gen_flow_model_api_key');
+                if (savedKey) apiKeyInput.value = savedKey;
+            }
+
+            board.appendChild(node);
+            nodes.push(node);
+
+            // 呼叫節點的初始化 hook (用於動態載入外部設定)
+            if (def.onInit && typeof def.onInit === 'function') {
+                def.onInit(node);
+            }
+        }
+
+        // --- 連線系統 ---
+
+        function setupSocketEvents(socket) {
+            socket.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                if (socket.dataset.type === 'output') {
+                    isDrawingConnection = true;
+                    connectionStartSocket = socket;
+                }
+            });
+
+            socket.addEventListener('mouseup', (e) => {
+                e.stopPropagation();
+                if (isDrawingConnection && connectionStartSocket) {
+                    // Check if valid connection (Output -> Input)
+                    if (socket.dataset.type === 'input' && socket.dataset.nodeId !== connectionStartSocket.dataset.nodeId) {
+                        createConnection(connectionStartSocket, socket);
+                    }
+                }
+            });
+        }
+
+        // --- Paint Node Logic ---
+        function setupPaintNode(node) {
+            const canvas = node.querySelector('canvas');
+            const container = node.querySelector('.paint-container');
+            const ctx = canvas.getContext('2d');
+
+            // Set resolution logic
+            const resizeCanvas = () => {
+                // Use clientWidth/Height to get element size ignoring transform scale
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                // Check if dimensions changed to avoid clearing
+                if (canvas.width !== width || canvas.height !== height) {
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+            };
+            // Initial size
+            setTimeout(resizeCanvas, 0); // Wait for DOM
+
+            let isPainting = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                // Calculate scale factor (internal resolution vs display size)
+                // This handles CSS zoom/transforms correctly
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            };
+
+            const startPaint = (e) => {
+                if (e.button !== 0 && !e.touches) return;
+                e.stopPropagation(); // Prevent node dragging
+                isPainting = true;
+                const { x, y } = getPos(e);
+                lastX = x;
+                lastY = y;
+
+                // Draw single dot
+                draw(x, y, true);
+            };
+
+            const movePaint = (e) => {
+                if (!isPainting) return;
+                e.stopPropagation();
+                const { x, y } = getPos(e);
+                draw(x, y);
+                lastX = x;
+                lastY = y;
+            };
+
+            const endPaint = () => {
+                isPainting = false;
+            };
+
+            const draw = (x, y, dot = false) => {
+                const color = node.querySelector('.brush-color').value;
+                const size = node.querySelector('.brush-size').value;
+
+                ctx.beginPath();
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = color;
+                ctx.lineWidth = size;
+
+                if (dot) {
+                    ctx.fillStyle = color;
+                    ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                }
+            };
+
+            // Mouse
+            canvas.addEventListener('mousedown', startPaint);
+            window.addEventListener('mousemove', movePaint);
+            window.addEventListener('mouseup', endPaint);
+
+            // Touch
+            canvas.addEventListener('touchstart', startPaint, { passive: false });
+            window.addEventListener('touchmove', (e) => { e.preventDefault(); movePaint(e); }, { passive: false });
+            window.addEventListener('touchend', endPaint);
+
+            // Cleanup on node delete (not implemented fully but structure is here)
+        }
+
+        window.clearPaintCanvas = function (btn) {
+            const node = btn.closest('.node');
+            const canvas = node.querySelector('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        };
+
+        // Update paint background when connection is made
+        function updatePaintBackground(targetSocket) {
+            const node = targetSocket.closest('.node');
+            if (node.dataset.type !== 'paint_node') return;
+
+            const connectionsToInput = connections.filter(c => c.target === targetSocket);
+            const bgImg = node.querySelector('.paint-bg-img');
+            const placeholder = node.querySelector('.placeholder');
+
+            if (connectionsToInput.length > 0) {
+                const sourceNode = connectionsToInput[0].source.closest('.node');
+                // Try to get image from source
+                let src = null;
+                if (sourceNode.dataset.type === 'image_node') {
+                    const img = sourceNode.querySelector('img');
+                    if (img && !img.classList.contains('hidden')) src = img.src;
+                } else if (sourceNode.dataset.type === '3d_node') {
+                    const img = sourceNode.querySelector('.snapshot-img');
+                    if (img && img.src) src = img.src;
+                }
+
+                if (src) {
+                    bgImg.src = src;
+                    bgImg.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                }
+            } else {
+                bgImg.classList.add('hidden');
+                bgImg.src = '';
+                placeholder.classList.remove('hidden');
+            }
+        }
+
+        function createConnection(sourceSocket, targetSocket) {
+            const id = `conn_${Date.now()}`;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.id = id;
+            path.setAttribute('class', 'connection-path');
+
+            // Click to select connection
+            path.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clearSelection();
+                selectedConnection = { id, element: path };
+                path.classList.add('selected');
+            });
+
+            // Insert before temp connection so temp is always on top
+            boardSvg.insertBefore(path, tempConnectionPath);
+
+            connections.push({
+                id,
+                source: sourceSocket,
+                target: targetSocket,
+                element: path
+            });
+
+            sourceSocket.classList.add('connected');
+            targetSocket.classList.add('connected');
+
+            // Trigger update for paint node
+            if (targetSocket.closest('.node').dataset.type === 'paint_node') {
+                updatePaintBackground(targetSocket);
+            }
+
+            updateConnections();
+        }
+
+        function updateConnections() {
+            connections.forEach(conn => {
+                const sourceRect = conn.source.getBoundingClientRect();
+                const targetRect = conn.target.getBoundingClientRect();
+                const boardRect = boardContainer.getBoundingClientRect();
+
+                const x1 = (sourceRect.left + sourceRect.width / 2 - boardRect.left - panX) / scale;
+                const y1 = (sourceRect.top + sourceRect.height / 2 - boardRect.top - panY) / scale;
+                const x2 = (targetRect.left + targetRect.width / 2 - boardRect.left - panX) / scale;
+                const y2 = (targetRect.top + targetRect.height / 2 - boardRect.top - panY) / scale;
+
+                drawBezier(conn.element, x1, y1, x2, y2);
+            });
+        }
+
+        function drawBezier(pathElement, x1, y1, x2, y2) {
+            const dist = Math.abs(x2 - x1) * 0.5;
+            const cp1x = x1 + dist;
+            const cp1y = y1;
+            const cp2x = x2 - dist;
+            const cp2y = y2;
+
+            const d = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+            pathElement.setAttribute('d', d);
+        }
+
+        // --- 拖放新增節點 (Drag & Drop from Sidebar) ---
+
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+        sidebarItems.forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('nodeType', item.dataset.type);
+            });
+        });
+
+        boardContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        boardContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('nodeType');
+            if (type) {
+                const { x, y } = getBoardCoordinates(e.clientX, e.clientY);
+                createNode(type, x, y);
+            }
+        });
+
+        // --- Sidebar Toggle ---
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('toggle-sidebar-btn');
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            const icon = sidebar.classList.contains('collapsed')
+                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />'
+                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />';
+            toggleBtn.querySelector('svg').innerHTML = icon;
+        });
+
+        // --- Paste Support ---
+        window.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            const blobs = [];
+
+            for (const item of items) {
+                if (item.type.indexOf('image') === 0) {
+                    blobs.push(item.getAsFile());
+                }
+            }
+
+            if (blobs.length > 0) {
+                // Find target node
+                let targetNode = null;
+
+                // 1. Check hover
+                const hoveredElements = document.querySelectorAll(':hover');
+                for (let i = hoveredElements.length - 1; i >= 0; i--) {
+                    const el = hoveredElements[i].closest('.node');
+                    if (el && ['image_node', 'reference_node'].includes(el.dataset.type)) {
+                        targetNode = el;
+                        break;
+                    }
+                }
+
+                // 2. Check selection if no hover
+                if (!targetNode && selectedNode && ['image_node', 'reference_node'].includes(selectedNode.dataset.type)) {
+                    targetNode = selectedNode;
+                }
+
+                if (targetNode) {
+                    e.preventDefault(); // Prevent default paste behavior
+
+                    if (targetNode.dataset.type === 'reference_node') {
+                        // Append logic for reference node (handle multiple images)
+                        const container = targetNode.querySelector('.ref-images-list');
+                        const addBtn = targetNode.querySelector('.add-ref-btn');
+
+                        blobs.forEach(blob => {
+                            const reader = new FileReader();
+                            reader.onload = function (event) {
+                                const div = document.createElement('div');
+                                div.className = 'relative aspect-square bg-slate-800 rounded overflow-hidden group border border-slate-700';
+                                div.innerHTML = `
+                                    <img src="${event.target.result}" class="w-full h-full object-cover">
+                                    <button class="absolute top-0 right-0 bg-black/60 text-white p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all rounded-bl" onclick="this.parentElement.remove()">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                `;
+                                container.insertBefore(div, addBtn);
+                            };
+                            reader.readAsDataURL(blob);
+                        });
+                    } else {
+                        // Existing replace logic for image_node (only take the first one)
+                        const blob = blobs[0];
+                        const reader = new FileReader();
+                        reader.onload = function (event) {
+                            const img = targetNode.querySelector('img');
+                            const placeholder = targetNode.querySelector('.placeholder');
+                            if (img && placeholder) {
+                                img.src = event.target.result;
+                                img.classList.remove('hidden');
+                                placeholder.classList.add('hidden');
+                            }
+                        };
+                        reader.readAsDataURL(blob);
+                    }
+                }
+            }
+        });
+
+        // --- Result Sidebar & Generation Logic ---
+
+        const resultSidebar = document.getElementById('result-sidebar');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const toggleResultBtn = document.getElementById('toggle-result-btn');
+        const sidebarResizer = document.getElementById('sidebar-resizer');
+        const chaosSlider = document.getElementById('chaos-slider');
+        const chaosValue = document.getElementById('chaos-value');
+        const generateDraftsBtn = document.getElementById('generate-drafts-btn');
+        const draftsGrid = document.getElementById('drafts-grid');
+        const stage2Block = document.getElementById('stage-2-block');
+        const selectedSeedDisplay = document.getElementById('selected-seed');
+        const stage2Preview = document.getElementById('stage-2-preview');
+        const jsonDebug = document.getElementById('json-debug');
+
+        // 1. Sidebar Toggle
+        function openResultSidebar() {
+            resultSidebar.classList.remove('translate-x-full');
+            toggleResultBtn.style.right = resultSidebar.style.width ? resultSidebar.style.width : '24rem'; // Move button with sidebar
+            toggleResultBtn.querySelector('svg').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />';
+        }
+
+        function closeResultSidebar() {
+            resultSidebar.classList.add('translate-x-full');
+            toggleResultBtn.style.right = '0'; // Reset button position
+            toggleResultBtn.querySelector('svg').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />';
+        }
+
+        function toggleResultSidebar() {
+            if (resultSidebar.classList.contains('translate-x-full')) {
+                openResultSidebar();
+            } else {
+                closeResultSidebar();
+            }
+        }
+
+        closeSidebarBtn.addEventListener('click', closeResultSidebar);
+        toggleResultBtn.addEventListener('click', toggleResultSidebar);
+
+        // 2. Sidebar Resizer
+        let isResizingSidebar = false;
+
+        sidebarResizer.addEventListener('mousedown', (e) => {
+            isResizingSidebar = true;
+            document.body.style.cursor = 'ew-resize';
+            e.preventDefault();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isResizingSidebar) {
+                const newWidth = window.innerWidth - e.clientX;
+                if (newWidth > 300 && newWidth < 800) {
+                    resultSidebar.style.width = `${newWidth}px`;
+                    if (!resultSidebar.classList.contains('translate-x-full')) {
+                        toggleResultBtn.style.right = `${newWidth}px`;
+                    }
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isResizingSidebar) {
+                isResizingSidebar = false;
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        // 4. Chaos Slider
+        if (chaosSlider) {
+            chaosSlider.addEventListener('input', (e) => {
+                chaosValue.innerText = e.target.value;
+            });
+        }
+
+        // --- Modal Functions ---
+        window.openImageModal = function (src) {
+            const modal = document.getElementById('image-modal');
+            const img = document.getElementById('modal-image');
+            img.src = src;
+            modal.classList.remove('hidden');
+        };
+
+        window.closeImageModal = function () {
+            document.getElementById('image-modal').classList.add('hidden');
+        };
+
+        window.downloadModalImage = function () {
+            const src = document.getElementById('modal-image').src;
+            const a = document.createElement('a');
+            a.href = src;
+            a.download = `gemini_gen_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        window.copyModalImage = async function () {
+            const src = document.getElementById('modal-image').src;
+            try {
+                const response = await fetch(src);
+                const blob = await response.blob();
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        [blob.type]: blob
+                    })
+                ]);
+                alert('已複製到剪貼簿');
+            } catch (err) {
+                console.error(err);
+                alert('複製失敗');
+            }
+        };
+
+        // --- Generator Refresh ---
+        window.refreshGenerator = function (btn) {
+            const node = btn.closest('.node');
+            const data = collectNodeData(node);
+            const textarea = node.querySelector('.gen-prompt-preview');
+
+            if (data) {
+                let finalPrompt = data.prompts.join(' ');
+                if (data.images && data.images.length > 0) {
+                    data.images.forEach(img => {
+                        if (img.prompt) finalPrompt += '\nRef Annotation: ' + img.prompt;
+                    });
+                }
+                if (data.negative_prompts && data.negative_prompts.length > 0) finalPrompt += '\nNegative: ' + data.negative_prompts.join(', ');
+                if (data.style && data.style.prompt) finalPrompt += '\nStyle: ' + data.style.prompt;
+                if (data.camera && data.camera.description) finalPrompt += '\nCamera: ' + data.camera.description;
+                if (data.layout && data.layout.description) finalPrompt += '\nLayout: ' + data.layout.description;
+
+                textarea.value = finalPrompt;
+                // Flash effect
+                textarea.classList.add('bg-slate-800');
+                setTimeout(() => textarea.classList.remove('bg-slate-800'), 200);
+            } else {
+                textarea.value = "無法收集數據，請檢查連線。";
+            }
+        };
+
+        // --- API Integration ---
+        const apiKey = ""; // Canvas handles this automatically
+
+        async function callGeminiText(systemPrompt, userJson) {
+            const fullPrompt = systemPrompt + "\n\nUser Configuration (JSON):\n" + JSON.stringify(userJson, null, 2);
+
+            // Updated to use the correct model for the environment
+            let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`;
+            if (apiKey) url += `?key=${apiKey}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: fullPrompt }] }]
+                    })
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error?.message || "Translation API Error");
+                }
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
+        }
+
+        async function callImageGen(modelId, prompt, images = []) {
+            // Determine endpoint based on model
+            const isImagen = modelId.includes('imagen');
+            const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models";
+
+            try {
+                if (isImagen) {
+                    let url = `${baseUrl}/${modelId}:predict`;
+                    if (apiKey) url += `?key=${apiKey}`;
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            instances: [{ prompt: prompt }],
+                            parameters: { sampleCount: 1, aspectRatio: "1:1" }
+                        })
+                    });
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error?.message || "Imagen API Error");
+                    }
+                    const data = await response.json();
+                    const b64 = data.predictions?.[0]?.bytesBase64Encoded;
+                    if (!b64) throw new Error("No image data returned");
+                    return `data:image/png;base64,${b64}`;
+                } else {
+                    let url = `${baseUrl}/${modelId}:generateContent`;
+                    if (apiKey) url += `?key=${apiKey}`;
+
+                    // Construct parts
+                    const parts = [{ text: prompt }];
+
+                    // Add images if present
+                    if (images && images.length > 0) {
+                        images.forEach(img => {
+                            if (img.src && img.src.startsWith('data:')) {
+                                const base64Data = img.src.split(',')[1];
+                                const mimeType = img.src.split(';')[0].split(':')[1];
+                                parts.push({
+                                    inlineData: {
+                                        mimeType: mimeType,
+                                        data: base64Data
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: parts }],
+                            generationConfig: { responseModalities: ["IMAGE"] }
+                        })
+                    });
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error?.message || "Gemini API Error");
+                    }
+                    const data = await response.json();
+                    const b64 = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                    if (!b64) throw new Error("No image data returned (Safety filter?)");
+                    return `data:image/png;base64,${b64}`;
+                }
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
+        }
+
+        function getTranslationSystemPrompt(mode = 'precise') {
+            // 優先使用外部設定 (GitHub)，若無則使用內建 FALLBACK
+            const prompts = externalConfigs.prompts || FALLBACK_PROMPTS;
+
+            if (prompts[mode]) {
+                return prompts[mode];
+            }
+
+            // 如果指定的 mode 不存在，預設使用 precise
+            return prompts['precise'] || FALLBACK_PROMPTS.precise;
+        }
+
+        // 6.1 Build Instruction (Instruction Node) - Now calls API
+        window.buildInstruction = async function (btn) {
+            const instructionNode = btn.closest('.node');
+            const dataInSocket = instructionNode.querySelector('.socket-input[data-socket-id="data_in"]');
+            const connection = connections.find(c => c.target === dataInSocket);
+
+            if (!connection) {
+                alert('請連接資料來源 (生成核心)');
+                return;
+            }
+
+            const generatorNode = connection.source.closest('.node');
+            const data = collectNodeData(generatorNode);
+            if (!data) {
+                alert('生成核心設定不完整');
+                return;
+            }
+
+            const modeSelect = instructionNode.querySelector('.instruction-mode');
+            const mode = modeSelect ? modeSelect.value : 'precise';
+
+            const textarea = instructionNode.querySelector('.instruction-preview');
+            const originalText = btn.innerHTML;
+
+            try {
+                btn.innerHTML = `<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 轉譯中...`;
+                btn.disabled = true;
+
+                const systemPrompt = getTranslationSystemPrompt(mode);
+
+                const sanitizedData = JSON.parse(JSON.stringify(data));
+
+                // If we have a finalized prompt from the Generator node, we should use that as the primary instruction
+                // instead of asking the AI to re-invent it from raw components.
+                if (data.generated_prompt) {
+                    systemPrompt += `\n\nIMPORTANT: The user has already generated/edited a draft prompt in the component "generated_prompt". Please use this text as the primary basis for your translation, while still ensuring it follows the Nano Banana Guide style.`;
+                }
+
+                const sanitizeImages = (obj) => {
+                    if (!obj) return;
+                    for (const key in obj) {
+                        if (key === 'src' && typeof obj[key] === 'string' && obj[key].startsWith('data:')) {
+                            obj[key] = "<Base64 Image Data Omitted>";
+                        } else if (key === 'images' && Array.isArray(obj[key])) {
+                            obj[key] = obj[key].map(img => {
+                                if (typeof img === 'string' && img.startsWith('data:')) return "<Base64 Image Data Omitted>";
+                                if (typeof img === 'object' && img.src && img.src.startsWith('data:')) return { ...img, src: "<Base64 Image Data Omitted>" };
+                                return img;
+                            });
+                        } else if (typeof obj[key] === 'object') {
+                            sanitizeImages(obj[key]);
+                        }
+                    }
+                };
+                sanitizeImages(sanitizedData);
+
+                const resultText = await callGeminiText(systemPrompt, sanitizedData);
+
+                // Parse Result
+                const engMatch = resultText.match(/Native American English\s*[:：]?\s*([\s\S]*?)(?=繁體中文|$)/i);
+                const chtMatch = resultText.match(/繁體中文\s*[:：]?\s*([\s\S]*?)$/i);
+
+                const engText = engMatch ? engMatch[1].trim() : resultText;
+                const chtText = chtMatch ? chtMatch[1].trim() : "Translation Error / Format Mismatch";
+
+                // Populate Textareas
+                const engArea = instructionNode.querySelector('.instruction-eng');
+                const chtArea = instructionNode.querySelector('.instruction-cht');
+                if (engArea) engArea.value = engText;
+                if (chtArea) chtArea.value = chtText;
+
+                // Flash Effect
+                if (engArea) {
+                    engArea.classList.add('bg-slate-800');
+                    setTimeout(() => engArea.classList.remove('bg-slate-800'), 200);
+                }
+
+            } catch (error) {
+                alert('轉譯失敗: ' + error.message);
+                console.error(error);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        window.readjustInstruction = async function (btn) {
+            const instructionNode = btn.closest('.node');
+            const engArea = instructionNode.querySelector('.instruction-eng');
+            const chtArea = instructionNode.querySelector('.instruction-cht');
+
+            if (!engArea || !chtArea) return;
+
+            const currentEng = engArea.value;
+            const feedbackCht = chtArea.value;
+
+            if (!feedbackCht) {
+                alert("請先在繁體中文欄位輸入您的修改建議");
+                return;
+            }
+
+            const originalText = btn.innerHTML;
+            try {
+                btn.innerHTML = `<svg class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 調整中...`;
+                btn.disabled = true;
+
+                // System Prompt for Readjustment
+                const systemPrompt = `
+You are an expert AI Prompt Engineer.
+The user wants to RE-ADJUST an existing image generation prompt based on their Chinese feedback.
+
+**CURRENT CONTEXT:**
+Existing English Prompt: "${currentEng}"
+User's Modified Chinese Translation/Intent: "${feedbackCht}"
+
+**YOUR TASK:**
+1. Understand the nuances of the User's Chinese input.
+2. Rewrite the "Native American English" prompt to match determining the new intent, while STILL following the **Nano Banana Guide** principles (Narrative, Descriptive, Specific Camera/Lighting).
+3. Provide the Direct Chinese Translation of your *New* English prompt.
+
+**OUTPUT FORMAT (STRICT):**
+Native American English:
+{New English Prompt}
+繁體中文:
+{Direct Translation of New Prompt}
+`;
+
+                const resultText = await callGeminiText(systemPrompt, "Re-adjust Request"); // Content logic handled in prompt
+
+                // Parse Result
+                const engMatch = resultText.match(/Native American English\s*[:：]?\s*([\s\S]*?)(?=繁體中文|$)/i);
+                const chtMatch = resultText.match(/繁體中文\s*[:：]?\s*([\s\S]*?)$/i);
+
+                if (engMatch && engMatch[1]) engArea.value = engMatch[1].trim();
+                if (chtMatch && chtMatch[1]) chtArea.value = chtMatch[1].trim();
+
+                // Flash Effect
+                engArea.classList.add('bg-blue-900');
+                setTimeout(() => engArea.classList.remove('bg-blue-900'), 500);
+
+            } catch (error) {
+                alert('調整失敗: ' + error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        // 6.2 Execute Flow (Triggered by Execute Node) - Now calls Image API
+        window.runExecution = async function (btn) {
+            const triggerNode = btn.closest('.node');
+
+            // 1. Find connected Source
+            const cmdInSocket = triggerNode.querySelector('.socket-input[data-socket-id="cmd_in"]');
+            const dataInSocket = triggerNode.querySelector('.socket-input[data-socket-id="data_in"]'); // Backwards compat
+            const targetSocket = cmdInSocket || dataInSocket;
+            const connection = connections.find(c => c.target === targetSocket);
+
+            if (!connection) {
+                alert('請連接指令來源 (AI 指令建構)');
+                return;
+            }
+
+            // 1.5 Get Count
+            const countInput = triggerNode.querySelector('input[type="number"]');
+            let count = countInput ? parseInt(countInput.value) : 1;
+            if (count < 1) count = 1;
+            if (count > 8) count = 8; // Safety limit
+
+            const sourceNode = connection.source.closest('.node');
+            let finalPrompt = "";
+            let modelId = "gemini-2.5-flash-image-preview"; // Default
+
+            // Get Model ID from Generator Node (if possible)
+            let generatorNode = null;
+            if (sourceNode.dataset.type === 'instruction_node') {
+                const inputSocket = sourceNode.querySelector('.socket-input[data-socket-id="data_in"]');
+                const conn = connections.find(c => c.target === inputSocket);
+                if (conn) generatorNode = conn.source.closest('.node');
+
+                const engArea = sourceNode.querySelector('.instruction-eng');
+                const legacyArea = sourceNode.querySelector('.instruction-preview');
+                finalPrompt = engArea ? engArea.value : (legacyArea ? legacyArea.value : '');
+
+                if (!finalPrompt) {
+                    alert('指令為空，請先執行「生成轉譯指令」');
+                    return;
+                }
+            } else if (sourceNode.dataset.type === 'generator_node') {
+                generatorNode = sourceNode;
+                const data = collectNodeData(generatorNode);
+                finalPrompt = data.prompts.join(', ');
+            }
+
+            if (generatorNode) {
+                const data = collectNodeData(generatorNode);
+                if (data && data.model) modelId = data.model;
+            }
+
+            // UI Feedback
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+            btn.disabled = true;
+
+            try {
+                openResultSidebar();
+                const draftsGrid = document.getElementById('drafts-grid');
+                draftsGrid.innerHTML = ''; // Clear previous
+
+                // Prepare placeholders
+                const placeholders = [];
+                for (let i = 0; i < count; i++) {
+                    const id = `img-slot-${Date.now()}-${i}`;
+                    const div = document.createElement('div');
+                    div.id = id;
+                    div.className = 'col-span-1 aspect-square bg-slate-800 rounded-lg flex flex-col items-center justify-center border border-slate-700 p-2 gap-2 text-xs';
+                    div.innerHTML = `
+                         <div class="loader w-6 h-6 border-2 border-slate-600 border-t-blue-500 rounded-full animate-spin"></div>
+                         <div class="text-slate-500 animate-pulse">Generating...</div>
+                    `;
+                    draftsGrid.appendChild(div);
+                    placeholders.push(div);
+                }
+
+                // Call Image API (Parallel)
+                let images = [];
+                if (generatorNode) {
+                    const data = collectNodeData(generatorNode);
+                    if (data && data.images) {
+                        images = data.images.filter(img => img && img.src);
+                    }
+                }
+
+                const tasks = placeholders.map(async (div) => {
+                    try {
+                        const imageUrl = await callImageGen(modelId, finalPrompt, images);
+                        div.className = 'col-span-1 relative group aspect-square bg-black rounded-lg overflow-hidden border border-slate-700';
+                        div.innerHTML = `
+                            <img src="${imageUrl}" class="w-full h-full object-contain cursor-pointer" onclick="openImageModal(this.src)">
+                            <div class="absolute bottom-0 left-0 right-0 bg-black/80 p-1 transform translate-y-full group-hover:translate-y-0 transition-transform flex justify-around">
+                                <button class="text-white text-[10px] hover:text-blue-400" onclick="window.openImageModal('${imageUrl}')">放大</button>
+                                <button class="text-white text-[10px] hover:text-blue-400" onclick="const a=document.createElement('a');a.href='${imageUrl}';a.download='gen_${Date.now()}.png';a.click();">下載</button>
+                            </div>
+                        `;
+                    } catch (err) {
+                        console.error(err);
+                        div.className = 'col-span-1 aspect-square bg-red-900/20 border border-red-500/50 rounded p-2 text-[10px] text-red-200 overflow-auto';
+                        div.innerHTML = `<div>失敗</div><div class="opacity-70">${err.message}</div>`;
+                    }
+                });
+
+                await Promise.all(tasks);
+
+            } catch (error) {
+                console.error(error);
+                alert("流程錯誤: " + error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        // Updated collectNodeData to accept specific node
+        function collectNodeData(targetGenNode = null) {
+            let genNode = targetGenNode;
+
+            if (!genNode) {
+                const generators = nodes.filter(n => n.dataset.type === 'generator_node');
+                if (generators.length === 0) return null;
+                genNode = generators[0];
+            }
+
+            // Helper to get connected nodes for a specific input socket
+            const getConnectedNodes = (inputId, targetNode = genNode) => {
+                const socket = targetNode.querySelector(`.socket-input[data-socket-id="${inputId}"]`);
+                if (!socket) return [];
+
+                return connections
+                    .filter(c => c.target === socket)
+                    .map(c => {
+                        const sourceNode = c.source.closest('.node');
+                        return { node: sourceNode, socketId: c.source.dataset.socketId };
+                    });
+            };
+
+            // Helper to get reference image
+            const getReferenceImage = (paramNode) => {
+                const refConns = getConnectedNodes('ref_in', paramNode);
+                if (refConns.length > 0) {
+                    const refNode = refConns[0].node;
+                    if (refNode.dataset.type === 'reference_node') {
+                        const imgs = Array.from(refNode.querySelectorAll('.ref-images-list img'));
+                        const weight = refNode.querySelector('input[type="range"]').value;
+                        const typeSelect = refNode.querySelector('select');
+                        const type = typeSelect ? typeSelect.value : 'style';
+
+                        if (imgs.length > 0) {
+                            return {
+                                images: imgs.map(img => img.src.length > 100 ? 'base64_data...' : img.src),
+                                weight: weight,
+                                type: type
+                            };
+                        }
+                    }
+                }
+                return null;
+            };
+
+            const inputs = {};
+
+            // 1. Model
+            const modelConns = getConnectedNodes('model_in');
+            if (modelConns.length > 0) {
+                const node = modelConns[0].node;
+                const select = node.querySelector('select');
+                const apiKeyInput = node.querySelector('.api-key-input');
+                inputs.model = select ? select.value : null;
+                inputs.apiKey = apiKeyInput ? apiKeyInput.value : null;
+            }
+
+            // 2. Prompt
+            const promptConns = getConnectedNodes('prompt_in');
+            inputs.prompts = promptConns.map(c => {
+                const textarea = c.node.querySelector('textarea');
+                return textarea ? textarea.value : '';
+            });
+
+            // 2.5 Negative Prompt
+            const negConns = getConnectedNodes('neg_in');
+            inputs.negative_prompts = negConns.map(c => {
+                const textarea = c.node.querySelector('textarea');
+                return textarea ? textarea.value : '';
+            });
+
+            // 2.8 Pose (New & Old Support)
+            const poseConns = getConnectedNodes('pose_in');
+            if (poseConns.length > 0) {
+                const node = poseConns[0].node;
+
+                // Case A: Skeleton Editor Node (Canvas)
+                const canvas = node.querySelector('.pose-preview-canvas');
+                if (canvas) {
+                    // Check if content exists (not just empty transparent canvas)
+                    // Simple check: dataset.skeleton must exist if confirmed
+                    if (node.dataset.skeleton) {
+                        if (!inputs.images) inputs.images = [];
+                        // Get image from canvas directly
+                        // Note: The preview canvas in node is 150x150, but we want the high-res one?
+                        // Actually, capturing the node canvas is fine for reference.
+                        inputs.images.push({
+                            type: 'pose_reference',
+                            src: canvas.toDataURL(),
+                            prompt: 'Reference Pose: Use this skeleton image to control the character posture.'
+                        });
+                        inputs.skeleton_json = node.dataset.skeleton; // Save raw data too
+                    }
+                }
+                // Case B: Legacy Image Upload (Img tag)
+                else {
+                    const img = node.querySelector('img');
+                    if (img && !img.classList.contains('hidden')) {
+                        if (!inputs.images) inputs.images = [];
+                        inputs.images.push({
+                            type: 'pose_reference',
+                            src: img.src,
+                            prompt: 'Reference Pose: Use this skeleton/pose image to control the character\'s posture EXACTLY.'
+                        });
+                    }
+                }
+            }
+
+            // 3. Images (General)
+            const imgConns = getConnectedNodes('img_in');
+            const generalImages = imgConns.map(c => {
+                const node = c.node;
+                const type = node.dataset.type;
+                if (type === 'image_node') {
+                    const img = node.querySelector('img');
+                    const prompt = node.querySelector('textarea').value;
+                    const hasImage = !img.classList.contains('hidden');
+                    return {
+                        type: 'image',
+                        src: hasImage ? img.src : null,
+                        prompt: prompt
+                    };
+                } else if (type === '3d_node') {
+                    const prompt = node.querySelector('textarea').value;
+                    const img = node.querySelector('.snapshot-img');
+                    const hasImage = img && img.src && img.src.length > 100;
+                    return {
+                        type: '3d_snapshot',
+                        src: hasImage ? img.src : null,
+                        prompt: prompt
+                    };
+                } else if (type === 'paint_node') {
+                    // Combine Background + Canvas
+                    const canvas = node.querySelector('canvas');
+                    const bgImg = node.querySelector('.paint-bg-img');
+                    const color = node.querySelector('.brush-color').value;
+                    const intent = node.querySelector('.paint-intent').value;
+
+                    // Create a temp canvas to merge
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = canvas.width;
+                    tempCanvas.height = canvas.height;
+                    const ctx = tempCanvas.getContext('2d');
+
+                    // 1. Draw Background
+                    if (bgImg && bgImg.src && !bgImg.classList.contains('hidden')) {
+                        ctx.drawImage(bgImg, 0, 0, tempCanvas.width, tempCanvas.height);
+                    } else {
+                        ctx.fillStyle = '#1e293b'; // Slate 800
+                        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    }
+
+                    // 2. Draw Strokes
+                    ctx.drawImage(canvas, 0, 0);
+
+                    return {
+                        type: 'paint',
+                        src: tempCanvas.toDataURL('image/png'),
+                        prompt: `\n[Reference Annotation]: The visual elements drawn in color ${color} represent: "${intent}".`
+                    };
+                }
+            }).filter(i => i); // Remove undefined
+
+            if (!inputs.images) inputs.images = [];
+            inputs.images = inputs.images.concat(generalImages);
+
+
+            // 4. Style
+            const styleConns = getConnectedNodes('style_in');
+            if (styleConns.length > 0) {
+                const node = styleConns[0].node;
+                const textarea = node.querySelector('.style-prompt-input');
+                inputs.style = {
+                    prompt: textarea ? textarea.value : '',
+                    reference: getReferenceImage(node)
+                };
+            }
+
+            // 5. Layout
+            const layoutConns = getConnectedNodes('layout_in');
+            if (layoutConns.length > 0) {
+                const node = layoutConns[0].node;
+                const selects = node.querySelectorAll('select');
+                const textarea = node.querySelector('.prompt-preview');
+                inputs.layout = {
+                    ratio: selects[0]?.value,
+                    composition: selects[1]?.value,
+                    description: textarea?.value,
+                    reference: getReferenceImage(node)
+                };
+            }
+
+            // 6. Camera
+            const cameraConns = getConnectedNodes('camera_in');
+            if (cameraConns.length > 0) {
+                const node = cameraConns[0].node;
+                const selects = node.querySelectorAll('select');
+                const textarea = node.querySelector('.prompt-preview');
+                inputs.camera = {
+                    angle: selects[0]?.value,
+                    lighting: selects[1]?.value,
+                    lens: selects[2]?.value,
+                    description: textarea?.value,
+                    reference: getReferenceImage(node)
+                };
+            }
+
+            // Generator Params
+            // Previously read Seed/Steps here, now removed.
+            inputs.seed = -1;
+            inputs.steps = 20;
+            inputs.chaos = 0;
+
+            // Generator Prompt State (The text inside the Generator Node's text area)
+            // This allows downstream nodes (like Translation) to see what the user actually sees/edited
+            const genPromptArea = genNode.querySelector('.gen-prompt-preview');
+            inputs.generated_prompt = genPromptArea ? genPromptArea.value : '';
+
+            return inputs;
+        }
+
+        // 7. Select Draft (Enter Stage 2)
+        function selectDraft(seed, imgUrl, element) {
+            // Highlight selection
+            Array.from(draftsGrid.children).forEach(child => {
+                child.classList.remove('ring-2', 'ring-blue-500');
+            });
+            element.classList.add('ring-2', 'ring-blue-500');
+
+            // Show Stage 2
+            stage2Block.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
+            selectedSeedDisplay.innerText = seed;
+            stage2Preview.src = imgUrl;
+
+            // Scroll to bottom
+            setTimeout(() => {
+                resultSidebar.querySelector('.flex-1').scrollTo({ top: resultSidebar.querySelector('.flex-1').scrollHeight, behavior: 'smooth' });
+            }, 100);
+        }
+
+        // 8. Upscale Logic
+        document.querySelectorAll('.btn-upscale').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const quality = btn.dataset.quality;
+                const seed = selectedSeedDisplay.innerText;
+
+                if (seed === '---') return;
+
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = `<span class="loading-spinner w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>`;
+
+                // Simulate Upscale
+                await new Promise(r => setTimeout(r, 2000));
+
+                alert(`已完成 ${quality.toUpperCase()} 畫質提升！\nSeed: ${seed}\n(此為模擬功能)`);
+
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            if (confirm('確定要清空所有節點嗎？')) {
+                nodes.forEach(n => n.remove());
+                nodes = [];
+                connections.forEach(c => c.element.remove());
+                connections = [];
+                nextNodeId = 1;
+            }
+        });
+
+        // --- Init ---
+        // Create some demo nodes
+        createNode('prompt_node', 100, 100);
+        createNode('generator_node', 500, 200);
+        createNode('instruction_node', 500, 600);
+        createNode('trigger_node', 900, 600);
+
+        // Auto connect
+        setTimeout(() => {
+            const promptNode = nodes[0];
+            const genNode = nodes[1];
+            const instructionNode = nodes[2];
+            const triggerNode = nodes[3];
+
+            if (promptNode && genNode && instructionNode && triggerNode) {
+                const promptOut = promptNode.querySelector('.socket-output');
+                const genIn = genNode.querySelector('.socket-input[data-socket-id="prompt_in"]');
+                if (promptOut && genIn) createConnection(promptOut, genIn);
+
+                const genOut = genNode.querySelector('.socket-output');
+                const instIn = instructionNode.querySelector('.socket-input[data-socket-id="data_in"]');
+                if (genOut && instIn) createConnection(genOut, instIn);
+
+                const instOut = instructionNode.querySelector('.socket-output');
+                const triggerIn = triggerNode.querySelector('.socket-input[data-socket-id="cmd_in"]');
+                if (instOut && triggerIn) createConnection(instOut, triggerIn);
+            }
+        }, 100);
+
+        // --- Export / Import Logic ---
+
+        const exportBtn = document.getElementById('export-btn');
+        const importBtn = document.getElementById('import-btn');
+        const importInput = document.getElementById('import-input');
+
+        function serializeNode(node) {
+            const type = node.dataset.type;
+            const data = {
+                id: node.id,
+                type: type,
+                x: parseFloat(node.style.left),
+                y: parseFloat(node.style.top),
+                inputs: {}
+            };
+
+            // Extract inputs based on type
+            if (type === 'model_node') {
+                const select = node.querySelector('select');
+                const apiKeyInput = node.querySelector('.api-key-input');
+                data.inputs.model = select ? select.value : null;
+                data.inputs.apiKey = apiKeyInput ? apiKeyInput.value : null;
+            } else if (type === 'layout_node') {
+                const selects = node.querySelectorAll('select');
+                data.inputs.ratio = selects[0] ? selects[0].value : null;
+                data.inputs.composition = selects[1] ? selects[1].value : null;
+            } else if (type === 'camera_node') {
+                const selects = node.querySelectorAll('select');
+                if (selects.length >= 3) {
+                    data.inputs.angle = selects[0].value;
+                    data.inputs.lighting = selects[1].value;
+                    data.inputs.lens = selects[2].value;
+                }
+            } else if (type === 'reference_node') {
+                const imgs = Array.from(node.querySelectorAll('.ref-images-list img'));
+                data.inputs.images = imgs.map(img => img.src);
+                const range = node.querySelector('input[type="range"]');
+                data.inputs.weight = range ? range.value : 1;
+            } else if (type === 'image_node') {
+                const img = node.querySelector('img');
+                const textarea = node.querySelector('textarea');
+                data.inputs.src = (img && !img.classList.contains('hidden')) ? img.src : null;
+                data.inputs.prompt = textarea ? textarea.value : '';
+            } else if (type === '3d_node') {
+                const textarea = node.querySelector('textarea');
+                data.inputs.prompt = textarea ? textarea.value : '';
+            } else if (type === 'prompt_node') {
+                const textarea = node.querySelector('textarea');
+                data.inputs.prompt = textarea ? textarea.value : '';
+            } else if (type === 'style_node') {
+                const select = node.querySelector('select');
+                const textarea = node.querySelector('.style-prompt-input');
+                data.inputs.style = select ? select.value : '';
+                data.inputs.prompt = textarea ? textarea.value : '';
+            } else if (type === 'trigger_node') {
+                const countInput = node.querySelector('input[type="number"]');
+                data.inputs.chaos = 0;
+                data.inputs.count = countInput ? countInput.value : 4;
+
+
+            }
+
+            return data;
+        }
+
+        function restoreNodeState(node, data) {
+            // Restore inputs based on type
+            const type = data.type;
+            if (type === 'model_node') {
+                const select = node.querySelector('select');
+                const apiKeyInput = node.querySelector('.api-key-input');
+                if (select && data.inputs.model) select.value = data.inputs.model;
+                if (apiKeyInput && data.inputs.apiKey) apiKeyInput.value = data.inputs.apiKey;
+            } else if (type === 'layout_node') {
+                const selects = node.querySelectorAll('select');
+                if (selects.length >= 2) {
+                    if (data.inputs.ratio) selects[0].value = data.inputs.ratio;
+                    if (data.inputs.composition) selects[1].value = data.inputs.composition;
+                    updateLayoutPrompt(selects[0]); // Trigger update
+                }
+            } else if (type === 'camera_node') {
+                const selects = node.querySelectorAll('select');
+                if (selects.length >= 3) {
+                    if (data.inputs.angle) selects[0].value = data.inputs.angle;
+                    if (data.inputs.lighting) selects[1].value = data.inputs.lighting;
+                    if (data.inputs.lens) selects[2].value = data.inputs.lens;
+                    updateCameraPrompt(selects[0]); // Trigger update
+                }
+            } else if (type === 'reference_node') {
+                if (data.inputs.images && data.inputs.images.length > 0) {
+                    const container = node.querySelector('.ref-images-list');
+                    const addBtn = node.querySelector('.add-ref-btn');
+                    data.inputs.images.forEach(src => {
+                        const div = document.createElement('div');
+                        div.className = 'relative aspect-square bg-slate-800 rounded overflow-hidden group border border-slate-700';
+                        div.innerHTML = `
+                            <img src="${src}" class="w-full h-full object-cover">
+                            <button class="absolute top-0 right-0 bg-black/60 text-white p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all rounded-bl" onclick="this.parentElement.remove()">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        `;
+                        container.insertBefore(div, addBtn);
+                    });
+                }
+                const range = node.querySelector('input[type="range"]');
+                if (range && data.inputs.weight) {
+                    range.value = data.inputs.weight;
+                    range.nextElementSibling.innerText = data.inputs.weight;
+                }
+            } else if (type === 'image_node') {
+                if (data.inputs.src) {
+                    const img = node.querySelector('img');
+                    const placeholder = node.querySelector('.placeholder');
+                    img.src = data.inputs.src;
+                    img.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                }
+                const textarea = node.querySelector('textarea');
+                if (textarea && data.inputs.prompt) textarea.value = data.inputs.prompt;
+            } else if (type === '3d_node') {
+                const textarea = node.querySelector('textarea');
+                if (textarea && data.inputs.prompt) textarea.value = data.inputs.prompt;
+            } else if (type === 'prompt_node') {
+                const textarea = node.querySelector('textarea');
+                if (textarea && data.inputs.prompt) textarea.value = data.inputs.prompt;
+            } else if (type === 'style_node') {
+                const select = node.querySelector('select');
+                const textarea = node.querySelector('.style-prompt-input');
+                if (select && data.inputs.style) select.value = data.inputs.style;
+                if (textarea && data.inputs.prompt) textarea.value = data.inputs.prompt;
+            } else if (type === 'trigger_node') {
+                const countInput = node.querySelector('input[type="number"]');
+                if (countInput && data.inputs.count) countInput.value = data.inputs.count;
+            }
+        }
+
+        exportBtn.addEventListener('click', () => {
+            const nodesData = nodes.map(serializeNode);
+            const connectionsData = connections.map(c => ({
+                id: c.id,
+                sourceNodeId: c.source.dataset.nodeId,
+                sourceSocketId: c.source.dataset.socketId,
+                targetNodeId: c.target.dataset.nodeId,
+                targetSocketId: c.target.dataset.socketId
+            }));
+
+            const state = {
+                nodes: nodesData,
+                connections: connectionsData,
+                viewport: { panX, panY, scale }
+            };
+
+            const jsonString = JSON.stringify(state, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ai-gen-flow-export.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        importBtn.addEventListener('click', () => {
+            importInput.click();
+        });
+
+        importInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const state = JSON.parse(event.target.result);
+                    if (state && state.nodes && state.connections) {
+                        // Clear existing
+                        nodes.forEach(n => n.remove());
+                        nodes = [];
+                        connections.forEach(c => c.element.remove());
+                        connections = [];
+                        boardSvg.innerHTML = '<path id="temp-connection" d="" />';
+                        tempConnectionPath = document.getElementById('temp-connection');
+
+                        // Restore Viewport
+                        if (state.viewport) {
+                            panX = state.viewport.panX;
+                            panY = state.viewport.panY;
+                            scale = state.viewport.scale;
+                            updateBoardTransform();
+                        }
+
+                        // Restore Nodes
+                        state.nodes.forEach(nodeData => {
+                            createNode(nodeData.type, nodeData.x, nodeData.y);
+                            const newNode = nodes[nodes.length - 1];
+                            newNode.id = nodeData.id; // Restore ID
+                            // Update socket dataset nodeId
+                            newNode.querySelectorAll('.socket').forEach(s => s.dataset.nodeId = newNode.id);
+
+                            restoreNodeState(newNode, nodeData);
+
+                            // Update nextNodeId to avoid collision
+                            const idNum = parseInt(nodeData.id.split('_')[1]);
+                            if (idNum >= nextNodeId) nextNodeId = idNum + 1;
+                        });
+
+                        // Restore Connections
+                        state.connections.forEach(connData => {
+                            const sourceNode = document.getElementById(connData.sourceNodeId);
+                            const targetNode = document.getElementById(connData.targetNodeId);
+                            if (sourceNode && targetNode) {
+                                const sourceSocket = sourceNode.querySelector(`.socket[data-socket-id="${connData.sourceSocketId}"]`);
+                                const targetSocket = targetNode.querySelector(`.socket[data-socket-id="${connData.targetSocketId}"]`);
+                                if (sourceSocket && targetSocket) {
+                                    createConnection(sourceSocket, targetSocket);
+                                }
+                            }
+                        });
+
+                    } else {
+                        alert('無效的檔案格式');
+                    }
+                } catch (err) {
+                    console.error('匯入失敗:', err);
+                    alert('匯入失敗: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            importInput.value = '';
+        });
+
+        // Initialize Configs
+        loadAllConfigs();
+
+    </script>
+
+    <!-- ╔══════════════════════════════════════════════════════════╗ -->
+    <!-- ║               SKELETON EDITOR MODULE                      ║ -->
+    <!-- ╚══════════════════════════════════════════════════════════╝ -->
+
+    <style>
+        /* Skeleton Editor Specific Styles */
+        #skel-editor-modal {
+            font-family: 'Inter', sans-serif;
+        }
+
+        #pose-canvas {
+            background-color: #0d121b;
+            cursor: grab;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        #pose-canvas.grabbing {
+            cursor: grabbing;
+        }
+
+        /* Custom range slider thumb */
+        .skel-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #60a5fa;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+
+    <!-- Skeleton Editor Modal -->
+    <div id="skel-editor-modal" class="fixed inset-0 z-[9999] hidden bg-black/90 flex flex-col">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 bg-slate-800 border-b border-slate-700">
+            <div>
+                <h2 class="text-xl font-bold text-white">2D 骨架編輯器</h2>
+                <p class="text-xs text-slate-400">點擊線段選取刪除，點擊端點拖曳 (Shift+Click 可多選)</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="SkeletonEditor.close()"
+                    class="px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-600">取消</button>
+                <button onclick="SkeletonEditor.confirm()"
+                    class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">確認使用</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Sidebar Controls -->
+            <div class="w-80 bg-slate-900 border-r border-slate-700 p-4 flex flex-col gap-4 overflow-y-auto">
+
+                <!-- Background Image Control -->
+                <div class="p-3 bg-slate-800 rounded border border-slate-700">
+                    <h3 class="text-sm font-bold text-slate-300 mb-2">底圖參照</h3>
+                    <input type="file" id="skel-bg-input" accept="image/*"
+                        class="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:bg-slate-700 file:text-white mb-2" />
+
+                    <button id="skel-ai-btn"
+                        class="w-full py-1.5 mb-3 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                        ✨ AI 捕捉姿勢 (Gemini)
+                    </button>
+
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-slate-400">顯示底圖</span>
+                        <input type="checkbox" id="skel-bg-toggle" class="toggle toggle-sm" disabled>
+                    </div>
+
+                    <div class="space-y-2 opacity-50" id="skel-bg-controls">
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-slate-500">縮放 (<span
+                                    id="skel-bg-scale-val">1.0</span>)</label>
+                            <input type="range" id="skel-bg-scale" min="0.1" max="3.0" step="0.01" value="1.0"
+                                class="skel-range w-full h-1 bg-slate-700 rounded-lg appearance-none" disabled>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-slate-500">X 偏移</label>
+                            <input type="range" id="skel-bg-dx" min="-500" max="500" step="5" value="0"
+                                class="skel-range w-full h-1 bg-slate-700 rounded-lg appearance-none" disabled>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-slate-500">Y 偏移</label>
+                            <input type="range" id="skel-bg-dy" min="-500" max="500" step="5" value="0"
+                                class="skel-range w-full h-1 bg-slate-700 rounded-lg appearance-none" disabled>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-slate-500">透明度</label>
+                            <input type="range" id="skel-bg-opacity" min="0.1" max="1" step="0.1" value="0.5"
+                                class="skel-range w-full h-1 bg-slate-700 rounded-lg appearance-none" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tools -->
+                <div class="flex flex-col gap-2">
+                    <button id="skel-add-btn"
+                        class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm transition-colors">
+                        🖊️ 新增線段 (畫筆)
+                    </button>
+                    <button id="skel-del-btn"
+                        class="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors">
+                        🗑️ 刪除選取 (Delete)
+                    </button>
+                    <button id="skel-reset-btn"
+                        class="w-full py-2 bg-slate-600 hover:bg-slate-500 text-white rounded text-sm transition-colors">
+                        ↺ 重置骨架
+                    </button>
+                </div>
+
+                <div class="mt-auto text-[10px] text-slate-500">
+                    <p>Tip: 點擊空白處可取消選取。</p>
+                    <p>Tip: 拖曳端點靠近另一點會自動吸附。</p>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="flex-1 bg-black relative overflow-hidden flex items-center justify-center p-4">
+                <canvas id="pose-canvas" class="rounded border border-slate-700 max-w-full max-h-full"></canvas>
+
+                <!-- Status Message -->
+                <div id="skel-status"
+                    class="absolute top-4 left-4 px-3 py-1 bg-black/70 text-yellow-400 text-xs rounded opacity-0 transition-opacity pointer-events-none">
+                    Ready
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Inject Point -->
+    <script>
+        // ╔══════════════════════════════════════════════════════════╗
+        // ║               SKELETON EDITOR LOGIC                      ║
+        // ╚══════════════════════════════════════════════════════════╝
+
+        window.SkeletonEditor = (function () {
+            // Private Variables
+            let modal, canvas, ctx;
+            let currentNode = null;
+            let width, height;
+
+            // State
+            let joints = [];
+            let nextJointId = 0;
+            let selectedJointId = null;
+            let selectedBoneId = null;
+
+            // AI Schema
+            const POSE_SCHEMA = {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        "id": { "type": "STRING", "description": "Unique joint ID." },
+                        "x_norm": { "type": "NUMBER", "description": "Normalized X coordinate (0 to 1000)." },
+                        "y_norm": { "type": "NUMBER", "description": "Normalized Y coordinate (0 to 1000)." },
+                        "parentId": { "type": "STRING", "description": "ID of parent, or null for root." },
+                        "name": { "type": "STRING", "description": "Joint name (e.g. Head, LShoulder)." }
+                    },
+                    required: ["id", "x_norm", "y_norm", "parentId", "name"]
+                }
+            };
+
+            // Interaction
+            let isDragging = false;
+            let dragOffsetX = 0, dragOffsetY = 0;
+            let isAddingMode = false;
+            let startJointId = null;
+            let tempJoint = null; // CAD mode preview
+
+            // Background Image
+            let bgImage = new Image();
+            let bgState = {
+                loaded: false,
+                visible: false,
+                scale: 1.0,
+                dx: 0, dy: 0,
+                opacity: 0.5
+            };
+
+            // Default Skeleton (Optimized for 800x800 Square)
+            const INITIAL_SKELETON = [
+                { id: 0, x: 400, y: 350, parentId: null, name: 'Root' },
+                { id: 1, x: 400, y: 400, parentId: 0, name: 'Pelvis' },
+                { id: 2, x: 400, y: 300, parentId: 1, name: 'Chest' },
+                { id: 3, x: 400, y: 150, parentId: 2, name: 'Head' },
+                { id: 4, x: 300, y: 300, parentId: 2, name: 'LShoulder' },
+                { id: 5, x: 200, y: 350, parentId: 4, name: 'LElbow' },
+                { id: 6, x: 100, y: 300, parentId: 5, name: 'LHand' },
+                { id: 7, x: 500, y: 300, parentId: 2, name: 'RShoulder' },
+                { id: 8, x: 600, y: 350, parentId: 7, name: 'RElbow' },
+                { id: 9, x: 700, y: 300, parentId: 8, name: 'RHand' },
+                { id: 10, x: 350, y: 450, parentId: 1, name: 'LHip' },
+                { id: 11, x: 320, y: 580, parentId: 10, name: 'LKnee' },
+                { id: 12, x: 320, y: 700, parentId: 11, name: 'LFoot' },
+                { id: 13, x: 450, y: 450, parentId: 1, name: 'RHip' },
+                { id: 14, x: 480, y: 580, parentId: 13, name: 'RKnee' },
+                { id: 15, x: 480, y: 700, parentId: 14, name: 'RFoot' },
+            ];
+
+            function init() {
+                modal = document.getElementById('skel-editor-modal');
+                canvas = document.getElementById('pose-canvas');
+                ctx = canvas.getContext('2d');
+
+                // Initialize events
+                setupEvents();
+
+                // Load default skeleton if empty
+                if (joints.length === 0) resetSkeleton();
+
+                console.log('💀 Skeleton Editor Initialized');
+            }
+
+            function setupEvents() {
+                // Resize
+                window.addEventListener('resize', resizeCanvas);
+
+                // Mouse / Touch
+                canvas.addEventListener('mousedown', handleDown);
+                canvas.addEventListener('mousemove', handleMove);
+                window.addEventListener('mouseup', handleUp);
+
+                canvas.addEventListener('touchstart', e => {
+                    e.preventDefault();
+                    const t = e.touches[0];
+                    handleDown({ clientX: t.clientX, clientY: t.clientY });
+                }, { passive: false });
+
+                canvas.addEventListener('touchmove', e => {
+                    e.preventDefault();
+                    const t = e.touches[0];
+                    handleMove({ clientX: t.clientX, clientY: t.clientY });
+                }, { passive: false });
+
+                window.addEventListener('touchend', handleUp);
+
+                // Tools
+                document.getElementById('skel-add-btn').onclick = toggleAddMode;
+                document.getElementById('skel-del-btn').onclick = deleteSelected;
+                document.getElementById('skel-reset-btn').onclick = resetSkeleton;
+
+                // Background Controls
+                setupBgControls();
+            }
+
+            function setupBgControls() {
+                const input = document.getElementById('skel-bg-input');
+                const toggle = document.getElementById('skel-bg-toggle');
+                const aiBtn = document.getElementById('skel-ai-btn');
+
+                if (aiBtn) {
+                    aiBtn.onclick = handleAICapture;
+                    // Reset disabled state if no file
+                    aiBtn.disabled = !input.files || input.files.length === 0;
+                }
+
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (aiBtn) aiBtn.disabled = !file;
+
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        bgImage.onload = () => {
+                            bgState.loaded = true;
+                            bgState.visible = true;
+                            toggle.disabled = false;
+                            toggle.checked = true;
+                            enableBgSliders(true);
+                            draw();
+                        };
+                        bgImage.src = evt.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                };
+
+                toggle.onchange = (e) => {
+                    bgState.visible = e.target.checked;
+                    enableBgSliders(e.target.checked);
+                    draw();
+                };
+
+                // Sliders
+                ['scale', 'dx', 'dy', 'opacity'].forEach(key => {
+                    const el = document.getElementById(`skel-bg-${key}`);
+                    el.oninput = (e) => {
+                        bgState[key] = parseFloat(e.target.value);
+                        if (key === 'scale') document.getElementById('skel-bg-scale-val').textContent = bgState[key];
+                        draw();
+                    };
+                });
+            }
+
+            function enableBgSliders(enabled) {
+                const div = document.getElementById('skel-bg-controls');
+                div.style.opacity = enabled ? '1' : '0.5';
+                div.querySelectorAll('input').forEach(el => el.disabled = !enabled);
+            }
+
+            function resizeCanvas() {
+                if (!canvas) return;
+                const rect = canvas.parentElement.getBoundingClientRect();
+
+                // Force 1:1 Aspect Ratio based on the smaller dimension
+                // But we want to fill the available space as much as possible, centered.
+
+                const size = Math.min(rect.width, rect.height);
+
+                // Set Display Size (CSS)
+                canvas.style.width = size + 'px';
+                canvas.style.height = size + 'px';
+
+                // Set Internal Resolution (Fixed to 800x800 for consistent coordinates)
+                canvas.width = 800;
+                canvas.height = 800;
+
+                width = 800;
+                height = 800;
+
+                draw();
+            }
+
+            // --- Logic ---
+
+            function resetSkeleton() {
+                nextJointId = 16;
+                joints = JSON.parse(JSON.stringify(INITIAL_SKELETON)).map(j => ({ ...j, id: j.id.toString(), parentId: j.parentId?.toString() || null }));
+                draw();
+            }
+
+            function getJointAt(x, y) {
+                const radius = 15;
+                for (let i = joints.length - 1; i >= 0; i--) {
+                    const dx = joints[i].x - x;
+                    const dy = joints[i].y - y;
+                    if (dx * dx + dy * dy < radius * radius) return joints[i];
+                }
+                return null;
+            }
+
+            function getBoneAt(x, y) {
+                // Simple distance to segment check
+                for (const j of joints) {
+                    if (!j.parentId) continue;
+                    const p = joints.find(p => p.id === j.parentId);
+                    if (!p) continue;
+
+                    const dist = distToSegment(x, y, p.x, p.y, j.x, j.y);
+                    if (dist < 8) return j.id; // Return child node ID as bone ID
+                }
+                return null;
+            }
+
+            function distToSegment(x, y, x1, y1, x2, y2) {
+                const A = x - x1;
+                const B = y - y1;
+                const C = x2 - x1;
+                const D = y2 - y1;
+                const dot = A * C + B * D;
+                const len_sq = C * C + D * D;
+                let param = -1;
+                if (len_sq !== 0) param = dot / len_sq;
+                let xx, yy;
+                if (param < 0) { xx = x1; yy = y1; }
+                else if (param > 1) { xx = x2; yy = y2; }
+                else { xx = x1 + param * C; yy = y1 + param * D; }
+                const dx = x - xx;
+                const dy = y - yy;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            function handleDown(e) {
+                if (modal.classList.contains('hidden')) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
+
+                const joint = getJointAt(x, y);
+                const boneId = getBoneAt(x, y);
+
+                if (isAddingMode) {
+                    if (joint) {
+                        startJointId = joint.id;
+                    } else {
+                        // Create new root
+                        const newId = (nextJointId++).toString();
+                        joints.push({ id: newId, x, y, parentId: null, name: 'Joint' + newId });
+                        startJointId = newId;
+                    }
+                    selectedJointId = null;
+                    selectedBoneId = null;
+                } else {
+                    if (joint) {
+                        isDragging = true;
+                        selectedJointId = joint.id;
+                        selectedBoneId = null;
+                        dragOffsetX = x - joint.x;
+                        dragOffsetY = y - joint.y;
+                        canvas.classList.add('grabbing');
+                    } else if (boneId) {
+                        selectedBoneId = boneId;
+                        selectedJointId = null;
+                    } else {
+                        selectedJointId = null;
+                        selectedBoneId = null;
+                    }
+                }
+                draw();
+            }
+
+            function handleMove(e) {
+                if (modal.classList.contains('hidden')) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = Math.max(0, Math.min(width, (e.clientX - rect.left) * scaleX));
+                const y = Math.max(0, Math.min(height, (e.clientY - rect.top) * scaleY));
+
+                if (isAddingMode && startJointId) {
+                    const snap = getJointAt(x, y);
+                    tempJoint = snap ? { x: snap.x, y: snap.y } : { x, y };
+                    draw();
+                    return;
+                }
+
+                if (isDragging && selectedJointId) {
+                    const j = joints.find(j => j.id === selectedJointId);
+                    if (j) {
+                        j.x = x - dragOffsetX;
+                        j.y = y - dragOffsetY;
+                        draw();
+                    }
+                }
+            }
+
+            function handleUp() {
+                if (modal.classList.contains('hidden')) return;
+
+                if (isAddingMode && startJointId && tempJoint) {
+                    // Create bone logic (simplified from original)
+                    const newId = (nextJointId++).toString();
+                    // Check if snap to existing
+                    const snap = getJointAt(tempJoint.x, tempJoint.y);
+
+                    if (snap && snap.id !== startJointId) {
+                        // Connect to existing node logic
+                        // For simplicity in this integration, we just create a NEW node at that position
+                        // A full graph implementation would be too large for this single file merge
+                        joints.push({
+                            id: newId,
+                            x: snap.x,
+                            y: snap.y,
+                            parentId: startJointId,
+                            name: 'Joint' + newId
+                        });
+                    } else {
+                        joints.push({
+                            id: newId,
+                            x: tempJoint.x,
+                            y: tempJoint.y,
+                            parentId: startJointId,
+                            name: 'Joint' + newId
+                        });
+                    }
+
+                    startJointId = null;
+                    tempJoint = null;
+                    draw();
+                }
+                isDragging = false;
+                canvas.classList.remove('grabbing');
+            }
+
+            function deleteSelected() {
+                if (selectedBoneId) {
+                    deleteSubtree(selectedBoneId);
+                    selectedBoneId = null;
+                } else if (selectedJointId) {
+                    deleteSubtree(selectedJointId);
+                    selectedJointId = null;
+                }
+                draw();
+            }
+
+            function deleteSubtree(id) {
+                // Delete node and all children
+                const toDel = [id];
+                let changed = true;
+                while (changed) {
+                    changed = false;
+                    for (const j of joints) {
+                        if (j.parentId && toDel.includes(j.parentId) && !toDel.includes(j.id)) {
+                            toDel.push(j.id);
+                            changed = true;
+                        }
+                    }
+                }
+                joints = joints.filter(j => !toDel.includes(j.id));
+            }
+
+            function toggleAddMode() {
+                isAddingMode = !isAddingMode;
+                const btn = document.getElementById('skel-add-btn');
+                if (isAddingMode) {
+                    btn.classList.add('bg-red-600');
+                    btn.classList.remove('bg-indigo-600');
+                    btn.textContent = '❌ 停止新增';
+                } else {
+                    btn.classList.remove('bg-red-600');
+                    btn.classList.add('bg-indigo-600');
+                    btn.textContent = '🖊️ 新增線段 (畫筆)';
+                }
+            }
+
+            function draw() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+
+                // 1. Background
+                if (bgState.visible && bgState.loaded) {
+                    ctx.save();
+                    ctx.globalAlpha = bgState.opacity;
+                    const w = bgImage.width * bgState.scale;
+                    const h = bgImage.height * bgState.scale;
+                    const x = (width - w) / 2 + bgState.dx;
+                    const y = (height - h) / 2 + bgState.dy;
+                    ctx.drawImage(bgImage, x, y, w, h);
+                    ctx.restore();
+                }
+
+                // 2. Bones
+                ctx.lineWidth = 4;
+                for (const j of joints) {
+                    if (j.parentId) {
+                        const p = joints.find(p => p.id === j.parentId);
+                        if (p) {
+                            ctx.strokeStyle = (j.id === selectedBoneId) ? '#ffffff' : '#60a5fa';
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(j.x, j.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                // 3. Temp Bone
+                if (isAddingMode && startJointId && tempJoint) {
+                    const start = joints.find(j => j.id === startJointId);
+                    if (start) {
+                        ctx.strokeStyle = '#fcd34d';
+                        ctx.beginPath();
+                        ctx.moveTo(start.x, start.y);
+                        ctx.lineTo(tempJoint.x, tempJoint.y);
+                        ctx.stroke();
+                    }
+                }
+
+                // 4. Joints
+                for (const j of joints) {
+                    const isSel = (j.id === selectedJointId);
+                    ctx.fillStyle = isSel ? '#10b981' : '#34d399';
+                    if (isAddingMode && isSel) ctx.fillStyle = '#ef4444';
+
+                    const size = (j.name === 'Head') ? (isSel ? 10 : 8) : (isSel ? 6 : 4);
+
+                    ctx.beginPath();
+                    ctx.arc(j.x, j.y, size * (j.name === 'Head' ? 2.5 : 1.5), 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+
+            // --- AI Capture Logic ---
+
+            let statusTimeout;
+            function showStatus(msg, duration = 3000) {
+                const el = document.getElementById('skel-status');
+                if (!el) return;
+                el.textContent = msg;
+                el.classList.remove('opacity-0');
+                if (statusTimeout) clearTimeout(statusTimeout);
+                statusTimeout = setTimeout(() => el.classList.add('opacity-0'), duration);
+            }
+
+            async function handleAICapture() {
+                const btn = document.getElementById('skel-ai-btn');
+                const startText = btn.innerHTML;
+                const input = document.getElementById('skel-bg-input');
+                const file = input.files[0];
+
+                if (!file) { showStatus('請先選擇參考圖片'); return; }
+
+                try {
+                    btn.disabled = true;
+                    btn.textContent = '⏳ 分析中...';
+                    showStatus('AI 正在分析影像捕捉骨架 (需要 10-20 秒)...', 10000);
+
+                    // 1. Convert to Base64
+                    const reader = new FileReader();
+                    const base64Promise = new Promise((resolve) => {
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                    const base64Data = await base64Promise;
+
+                    // 2. Fetch AI
+                    const aiJoints = await fetchAICapture(base64Data, file.type);
+
+                    // 3. Apply
+                    applyAIPose(aiJoints);
+                    showStatus('捕捉完成！');
+                } catch (e) {
+                    console.error(e);
+                    showStatus('失敗: ' + (e.message || 'Unknown Error'));
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = startText;
+                }
+            }
+
+            async function fetchAICapture(base64Data, mimeType) {
+                const cleanBase64 = base64Data.split(',')[1];
+                const modelId = "gemini-2.5-flash-preview-09-2025";
+
+                const userPrompt = `Analyze the pose in this image. Identify key joints (Head, Neck, Shoulders, Elbows, Wrists, Hips, Knees, Ankles). 
+                Normalize coordinates to 0-1000 (x_norm, y_norm).
+                Create a logical parent-child hierarchy (Root parentId is null).
+                Output EXACTLY as a JSON array matching this schema. No markdown.`;
+
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: userPrompt },
+                            { inlineData: { mimeType: mimeType, data: cleanBase64 } }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: POSE_SCHEMA
+                    }
+                };
+
+                // Use global apiKey if available, otherwise rely on environment auth
+                let url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`;
+                if (typeof apiKey !== 'undefined' && apiKey) {
+                    url += `?key=${apiKey}`;
+                }
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error?.message || response.statusText);
+                }
+
+                const result = await response.json();
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!jsonText) throw new Error("No data returned");
+
+                return JSON.parse(jsonText);
+            }
+
+            function applyAIPose(aiJoints) {
+                if (!aiJoints || aiJoints.length === 0) return;
+
+                // Update Joint IDs to ensure they are clean
+                // Map local vars
+                joints = aiJoints.map(j => ({
+                    id: j.id.toString(),
+                    name: j.name,
+                    parentId: j.parentId ? j.parentId.toString() : null,
+                    // Map 0-1000 to Canvas Size (800x800 internal)
+                    x: (j.x_norm / 1000) * 800,
+                    y: (j.y_norm / 1000) * 800
+                }));
+
+                // Recalculate IDs
+                nextJointId = joints.reduce((max, j) => Math.max(max, parseInt(j.id) || 0), -1) + 1;
+                selectedJointId = null;
+                selectedBoneId = null;
+
+                draw();
+            }
+
+            // Public API
+            return {
+                init: init,
+                open: function (node) {
+                    currentNode = node;
+                    modal.classList.remove('hidden');
+                    // Helper to delay resize until modal is visible
+                    requestAnimationFrame(() => resizeCanvas());
+                },
+                close: function () {
+                    modal.classList.add('hidden');
+                },
+                confirm: function () {
+                    if (!currentNode) return;
+
+                    // Generate Preview Image
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const img = currentNode.querySelector('.pose-preview-canvas');
+
+                    if (img) {
+                        const nCtx = img.getContext('2d');
+                        nCtx.clearRect(0, 0, 150, 150);
+
+                        const pImg = new Image();
+                        pImg.onload = () => {
+                            // Centered fit
+                            const scale = Math.min(150 / pImg.width, 150 / pImg.height);
+                            const x = (150 - pImg.width * scale) / 2;
+                            const y = (150 - pImg.height * scale) / 2;
+                            nCtx.drawImage(pImg, x, y, pImg.width * scale, pImg.height * scale);
+                        };
+                        pImg.src = dataUrl;
+                    }
+
+                    // Store data in node (hidden)
+                    currentNode.dataset.skeleton = JSON.stringify(joints);
+
+                    this.close();
+                }
+            };
+        })();
+
+        // Initialize on Load
+        setTimeout(() => {
+            if (window.SkeletonEditor) window.SkeletonEditor.init();
+        }, 500);
+    </script>
+
+</html>
