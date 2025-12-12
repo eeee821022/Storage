@@ -1,35 +1,87 @@
 [
   {
+    "category": "自訂與參考 (Custom)",
+    "styles": [
+      {
+        "name": "引用素材風格 (Reference Style)",
+        "value": "Use the art style directly from the Reference Image node."
+      },
+      {
+        "name": "不使用風格 (None)",
+        "value": ""
+      }
+    ]
+  },
+  {
     "category": "動畫風格",
     "styles": [
-      { "name": "吉卜力 (Studio Ghibli)", "value": "Studio Ghibli, Hayao Miyazaki style, watercolor background, lush nature, natural colors" },
-      { "name": "新海誠 (Makoto Shinkai)", "value": "Makoto Shinkai style, vibrant lighting, highly detailed clouds, cinematic lighting, sentimental atmosphere, lens flare" },
-      { "name": "皮克斯 (Pixar)", "value": "Pixar style, 3D render, Disney animation style, cute character design, expressive lighting, detailed textures" },
-      { "name": "賽博龐克 (Cyberpunk)", "value": "Cyberpunk, neon lights, futuristic city, high tech low life, Blade Runner style, blue and purple color palette" },
-      { "name": "美式漫畫/黑色電影 (Noir)", "value": "Noir art style, high-contrast black and white inks, gritty, comic panel, hard shadows" }
+      {
+        "name": "吉卜力 (Studio Ghibli)",
+        "value": "Studio Ghibli, Hayao Miyazaki style, watercolor background, lush nature, natural colors"
+      },
+      {
+        "name": "新海誠 (Makoto Shinkai)",
+        "value": "Makoto Shinkai style, vibrant lighting, highly detailed clouds, cinematic lighting, sentimental atmosphere, lens flare"
+      },
+      {
+        "name": "皮克斯 (Pixar)",
+        "value": "Pixar style, 3D render, Disney animation style, cute character design, expressive lighting, detailed textures"
+      },
+      {
+        "name": "賽博龐克 (Cyberpunk)",
+        "value": "Cyberpunk, neon lights, futuristic city, high tech low life, Blade Runner style, blue and purple color palette"
+      },
+      {
+        "name": "美式漫畫/黑色電影 (Noir)",
+        "value": "Noir art style, high-contrast black and white inks, gritty, comic panel, hard shadows"
+      }
     ]
   },
   {
     "category": "藝術流派",
     "styles": [
-      { "name": "印象派 (Impressionism)", "value": "Impressionism, Vincent van Gogh style, impasto brushstrokes, swirling patterns, oil painting" },
-      { "name": "浮世繪 (Ukiyo-e)", "value": "Ukiyo-e style, Japanese woodblock print, Hokusai style, flat perspective, wave patterns" },
-      { "name": "達文西手稿 (Da Vinci)", "value": "Da Vinci style, anatomical sketch, textured parchment, detailed drawings, sepia tone" }
+      {
+        "name": "印象派 (Impressionism)",
+        "value": "Impressionism, Vincent van Gogh style, impasto brushstrokes, swirling patterns, oil painting"
+      },
+      {
+        "name": "浮世繪 (Ukiyo-e)",
+        "value": "Ukiyo-e style, Japanese woodblock print, Hokusai style, flat perspective, wave patterns"
+      },
+      {
+        "name": "達文西手稿 (Da Vinci)",
+        "value": "Da Vinci style, anatomical sketch, textured parchment, detailed drawings, sepia tone"
+      }
     ]
   },
   {
     "category": "插畫與設計",
     "styles": [
-      { "name": "可愛貼紙 (Kawaii Sticker)", "value": "Kawaii-style sticker, bold outlines, simple cel-shading, vibrant color palette, white background" },
-      { "name": "極簡主義 (Minimalist)", "value": "Minimalist composition, negative space, clean lines, soft lighting, simple elements" },
-      { "name": "向量扁平 (Vector/Flat)", "value": "Vector art, flat design, Adobe Illustrator style, clean shapes, no gradients" }
+      {
+        "name": "可愛貼紙 (Kawaii Sticker)",
+        "value": "Kawaii-style sticker, bold outlines, simple cel-shading, vibrant color palette, white background"
+      },
+      {
+        "name": "極簡主義 (Minimalist)",
+        "value": "Minimalist composition, negative space, clean lines, soft lighting, simple elements"
+      },
+      {
+        "name": "向量扁平 (Vector/Flat)",
+        "value": "Vector art, flat design, Adobe Illustrator style, clean shapes, no gradients"
+      }
     ]
   },
   {
     "category": "攝影寫實",
     "styles": [
-      { "name": "超寫實攝影 (Photorealistic)", "value": "Photorealistic, 85mm portrait lens, bokeh, golden hour light, highly detailed, 8k" },
-      { "name": "商業產品攝影 (Product)", "value": "Studio-lit product photograph, softbox setup, ultra-realistic, 4k resolution, clean background" }
+      {
+        "name": "超寫實攝影 (Photorealistic)",
+        "value": "Photorealistic, 85mm portrait lens, bokeh, golden hour light, highly detailed, 8k"
+      },
+      {
+        "name": "商業產品攝影 (Product)",
+        "value": "Studio-lit product photograph, softbox setup, ultra-realistic, 4k resolution, clean background"
+      }
     ]
   }
 ]
