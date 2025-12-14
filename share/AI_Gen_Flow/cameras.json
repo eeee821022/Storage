@@ -1,64 +1,446 @@
 {
-    "views": [
+    "shotTypes": [
         {
-            "name": "平視 (Eye Level)",
-            "value": "eye level shot"
+            "name": "極特寫-眼部 (Extreme Close-Up Eyes)",
+            "value": "extreme close-up of eyes, ECU, detailed iris"
         },
         {
-            "name": "低角度 (Low Angle)",
-            "value": "low angle shot"
+            "name": "極特寫-臉部局部 (Extreme Close-Up Detail)",
+            "value": "extreme close-up, face detail, macro shot"
         },
         {
-            "name": "高角度 (High Angle)",
-            "value": "high angle shot"
+            "name": "大頭照 (Headshot)",
+            "value": "headshot, face and neck, professional headshot"
         },
         {
-            "name": "鳥瞰 (Bird's Eye)",
-            "value": "bird's eye view"
+            "name": "臉部特寫 (Face Close-Up)",
+            "value": "face close-up, head only, facial focus"
         },
         {
-            "name": "蟲視 (Worm's Eye)",
-            "value": "worm's eye view"
+            "name": "頭肩像 (Head and Shoulders)",
+            "value": "head and shoulders portrait, shoulders up"
+        },
+        {
+            "name": "半身像-胸上 (Bust Shot)",
+            "value": "bust shot, chest up, upper body portrait"
+        },
+        {
+            "name": "半身像-腰上 (Waist-Up / Half Body)",
+            "value": "waist-up shot, half body portrait, medium shot"
+        },
+        {
+            "name": "四分之三身 (Three-Quarter Body)",
+            "value": "three-quarter body shot, thigh up, 3/4 length"
+        },
+        {
+            "name": "膝上鏡頭 (Knee Shot / Cowboy)",
+            "value": "knee shot, cowboy shot, american shot, mid-thigh"
+        },
+        {
+            "name": "全身照 (Full Body)",
+            "value": "full body shot, head to toe, full length portrait"
+        },
+        {
+            "name": "全身帶環境 (Full Body with Environment)",
+            "value": "full body environmental portrait, figure in context"
+        },
+        {
+            "name": "遠景人像 (Long Shot)",
+            "value": "long shot portrait, wide shot, subject small in frame"
+        },
+        {
+            "name": "極遠景 (Extreme Long Shot)",
+            "value": "extreme long shot, vast landscape with figure"
+        },
+        {
+            "name": "坐姿半身 (Seated Half Body)",
+            "value": "seated portrait, sitting pose, waist up"
+        },
+        {
+            "name": "坐姿全身 (Seated Full Body)",
+            "value": "seated full body, sitting pose complete"
+        },
+        {
+            "name": "側身半身 (Profile Half Body)",
+            "value": "profile half body, side view bust"
+        },
+        {
+            "name": "側身全身 (Profile Full Body)",
+            "value": "profile full body, side view complete"
+        },
+        {
+            "name": "背影半身 (Back View Half)",
+            "value": "back view half body, from behind upper"
+        },
+        {
+            "name": "背影全身 (Back View Full)",
+            "value": "back view full body, walking away"
+        },
+        {
+            "name": "雙人合照 (Two Shot)",
+            "value": "two shot, two people, couple portrait"
+        },
+        {
+            "name": "團體照 (Group Shot)",
+            "value": "group shot, multiple people, team photo"
+        },
+        {
+            "name": "動作捕捉 (Action Shot)",
+            "value": "action shot, dynamic pose, movement"
+        },
+        {
+            "name": "剪影 (Silhouette)",
+            "value": "silhouette shot, backlit figure, outline"
+        },
+        {
+            "name": "局部身體 (Body Part Close-Up)",
+            "value": "body part close-up, hands, feet detail"
+        },
+        {
+            "name": "環境人像 (Environmental Portrait)",
+            "value": "environmental portrait, subject in context"
+        },
+        {
+            "name": "時尚全身 (Fashion Full Length)",
+            "value": "fashion shot, editorial, outfit showcase"
+        },
+        {
+            "name": "證件照 (ID Photo)",
+            "value": "ID photo style, passport photo, formal"
+        },
+        {
+            "name": "形體照 (Figure Study)",
+            "value": "figure study, artistic pose, body form"
         }
     ],
-    "lightings": [
+    "cameraAngles": [
         {
-            "name": "黃金時刻 (Golden Hour)",
-            "value": "golden hour lighting, warm soft light"
+            "name": "平視 (Eye Level)",
+            "value": "eye level shot, neutral angle"
         },
         {
-            "name": "攝影棚光 (Studio)",
-            "value": "studio lighting, softbox, professional"
+            "name": "微仰角 (Slight Low Angle)",
+            "value": "slight low angle, subtle upward tilt"
         },
         {
-            "name": "電影光 (Cinematic)",
-            "value": "cinematic lighting, dramatic shadows"
+            "name": "仰角 (Low Angle)",
+            "value": "low angle shot, from below, looking up"
         },
         {
-            "name": "霓虹光 (Neon)",
-            "value": "neon lighting, cyberpunk atmosphere"
+            "name": "極端仰角 (Extreme Low Angle)",
+            "value": "extreme low angle, dramatic upward"
         },
         {
-            "name": "自然光 (Natural)",
-            "value": "natural lighting, soft daylight"
+            "name": "微俯角 (Slight High Angle)",
+            "value": "slight high angle, subtle downward"
+        },
+        {
+            "name": "俯角 (High Angle)",
+            "value": "high angle shot, from above, looking down"
+        },
+        {
+            "name": "極端俯角 (Extreme High Angle)",
+            "value": "extreme high angle, steep downward"
+        },
+        {
+            "name": "鳥瞰 (Bird's Eye View)",
+            "value": "bird's eye view, aerial, directly overhead"
+        },
+        {
+            "name": "無人機視角 (Drone Shot)",
+            "value": "drone shot, aerial photography, UAV view"
+        },
+        {
+            "name": "蟲視 (Worm's Eye View)",
+            "value": "worm's eye view, ground level looking up"
+        },
+        {
+            "name": "地面視角 (Ground Level)",
+            "value": "ground level shot, camera on ground"
+        },
+        {
+            "name": "荷蘭角 (Dutch Angle)",
+            "value": "dutch angle, tilted horizon, canted"
+        },
+        {
+            "name": "傾斜角 (Oblique Angle)",
+            "value": "oblique angle, skewed perspective"
+        },
+        {
+            "name": "過肩鏡頭 (Over the Shoulder)",
+            "value": "over the shoulder shot, OTS"
+        },
+        {
+            "name": "第一人稱 (POV Shot)",
+            "value": "POV shot, first person view, subjective"
+        },
+        {
+            "name": "正面視角 (Frontal View)",
+            "value": "frontal view, straight on, direct"
+        },
+        {
+            "name": "四分之一側面 (1/4 Profile)",
+            "value": "quarter profile, slight turn"
+        },
+        {
+            "name": "四分之三側面 (3/4 View)",
+            "value": "three-quarter view, 3/4 angle"
+        },
+        {
+            "name": "側面視角 (Side Profile)",
+            "value": "side profile, 90 degree angle"
+        },
+        {
+            "name": "四分之三背面 (3/4 Back)",
+            "value": "three-quarter back view"
+        },
+        {
+            "name": "背面視角 (Back View)",
+            "value": "back view, from behind"
+        },
+        {
+            "name": "斜上方 (Above Diagonal)",
+            "value": "above diagonal, 45 degree elevated"
+        },
+        {
+            "name": "斜下方 (Below Diagonal)",
+            "value": "below diagonal, 45 degree low"
+        },
+        {
+            "name": "環繞視角 (Orbital)",
+            "value": "orbital view, rotating perspective"
+        },
+        {
+            "name": "透過物體 (Through Object)",
+            "value": "shot through object, foreground frame"
+        }
+    ],
+    "compositions": [
+        {
+            "name": "中央構圖 (Centered)",
+            "value": "centered composition, subject in center"
+        },
+        {
+            "name": "三分法則 (Rule of Thirds)",
+            "value": "rule of thirds, balanced framing"
+        },
+        {
+            "name": "黃金比例 (Golden Ratio)",
+            "value": "golden ratio, fibonacci spiral"
+        },
+        {
+            "name": "對稱構圖 (Symmetrical)",
+            "value": "symmetrical composition, mirror balance"
+        },
+        {
+            "name": "對角線構圖 (Diagonal)",
+            "value": "diagonal composition, dynamic lines"
+        },
+        {
+            "name": "前景引導 (Leading Lines)",
+            "value": "leading lines, depth perspective"
+        },
+        {
+            "name": "框中框 (Frame within Frame)",
+            "value": "frame within frame, natural framing"
+        },
+        {
+            "name": "負空間 (Negative Space)",
+            "value": "negative space, empty space emphasis"
+        },
+        {
+            "name": "填滿畫面 (Fill Frame)",
+            "value": "fill the frame, tight crop"
+        },
+        {
+            "name": "分層構圖 (Layered)",
+            "value": "layered composition, foreground background"
+        },
+        {
+            "name": "極簡留白 (Minimalist)",
+            "value": "minimalist, clean lines, simple"
+        },
+        {
+            "name": "平鋪擺拍 (Knolling)",
+            "value": "knolling, flat lay, organized items"
+        },
+        {
+            "name": "等角視圖 (Isometric)",
+            "value": "isometric view, 3D projection"
+        },
+        {
+            "name": "重複圖案 (Pattern)",
+            "value": "pattern, repetition, geometric"
         }
     ],
     "lenses": [
         {
+            "name": "魚眼 (Fisheye 8mm)",
+            "value": "fisheye lens, 8mm, extreme distortion"
+        },
+        {
+            "name": "超廣角 (Ultra Wide 14mm)",
+            "value": "ultra wide angle, 14mm, expansive"
+        },
+        {
             "name": "廣角 (Wide 24mm)",
             "value": "wide angle lens, 24mm"
+        },
+        {
+            "name": "標準 (Standard 35mm)",
+            "value": "standard lens, 35mm, natural"
+        },
+        {
+            "name": "標準 (Standard 50mm)",
+            "value": "50mm lens, nifty fifty, normal"
         },
         {
             "name": "人像 (Portrait 85mm)",
             "value": "portrait lens, 85mm, bokeh"
         },
         {
-            "name": "微距 (Macro)",
-            "value": "macro lens, extreme close-up"
+            "name": "中長焦 (Medium Tele 100mm)",
+            "value": "100mm lens, compression effect"
         },
         {
-            "name": "魚眼 (Fisheye)",
-            "value": "fisheye lens, distorted"
+            "name": "長焦 (Telephoto 200mm)",
+            "value": "telephoto, 200mm, subject isolation"
+        },
+        {
+            "name": "超長焦 (Super Tele 400mm)",
+            "value": "super telephoto, 400mm, extreme"
+        },
+        {
+            "name": "微距 (Macro)",
+            "value": "macro lens, 1:1, extreme detail"
+        },
+        {
+            "name": "移軸 (Tilt-Shift)",
+            "value": "tilt-shift lens, miniature effect"
+        },
+        {
+            "name": "變形 (Anamorphic)",
+            "value": "anamorphic lens, cinematic, oval bokeh"
+        }
+    ],
+    "lighting": [
+        {
+            "name": "自然光 (Natural Light)",
+            "value": "natural lighting, ambient daylight"
+        },
+        {
+            "name": "黃金時刻 (Golden Hour)",
+            "value": "golden hour, warm sunset glow"
+        },
+        {
+            "name": "藍調時刻 (Blue Hour)",
+            "value": "blue hour, twilight, cool ambient"
+        },
+        {
+            "name": "正午陽光 (Midday Sun)",
+            "value": "harsh midday sun, high contrast"
+        },
+        {
+            "name": "陰天光 (Overcast)",
+            "value": "overcast, soft diffused light"
+        },
+        {
+            "name": "逆光 (Backlit)",
+            "value": "backlit, rim lighting, silhouette"
+        },
+        {
+            "name": "側光 (Side Light)",
+            "value": "side lighting, dramatic shadows"
+        },
+        {
+            "name": "環形燈 (Ring Light)",
+            "value": "ring light, even illumination"
+        },
+        {
+            "name": "電影感 (Cinematic)",
+            "value": "cinematic lighting, dramatic, volumetric"
+        },
+        {
+            "name": "霓虹燈 (Neon)",
+            "value": "neon lighting, colorful glow"
+        },
+        {
+            "name": "燭光 (Candlelight)",
+            "value": "candlelight, warm orange, intimate"
+        },
+        {
+            "name": "月光 (Moonlight)",
+            "value": "moonlight, cool blue, night"
+        },
+        {
+            "name": "攝影棚燈 (Studio)",
+            "value": "studio lighting, three-point"
+        },
+        {
+            "name": "高調 (High Key)",
+            "value": "high key, bright, minimal shadows"
+        },
+        {
+            "name": "低調 (Low Key)",
+            "value": "low key, dark, dramatic shadows"
+        },
+        {
+            "name": "體積光 (Volumetric)",
+            "value": "volumetric lighting, god rays"
+        },
+        {
+            "name": "柔光 (Soft Light)",
+            "value": "soft diffused light, gentle"
+        },
+        {
+            "name": "硬光 (Hard Light)",
+            "value": "hard light, sharp shadows"
+        },
+        {
+            "name": "林布蘭光 (Rembrandt)",
+            "value": "Rembrandt lighting, triangle shadow"
+        },
+        {
+            "name": "蝴蝶光 (Butterfly)",
+            "value": "butterfly lighting, glamour"
+        },
+        {
+            "name": "分割光 (Split)",
+            "value": "split lighting, half face lit"
+        }
+    ],
+    "focusEffects": [
+        {
+            "name": "淺景深 (Shallow DOF)",
+            "value": "shallow depth of field, bokeh, blurred background"
+        },
+        {
+            "name": "深景深 (Deep DOF)",
+            "value": "deep depth of field, everything in focus"
+        },
+        {
+            "name": "散景 (Bokeh)",
+            "value": "beautiful bokeh, creamy blur, out of focus highlights"
+        },
+        {
+            "name": "前景虛化 (Foreground Blur)",
+            "value": "foreground blur, focus on background"
+        },
+        {
+            "name": "景深拉伸 (Rack Focus)",
+            "value": "rack focus effect, focus transition"
+        },
+        {
+            "name": "全景深 (Pan Focus)",
+            "value": "pan focus, sharp throughout"
+        },
+        {
+            "name": "柔焦 (Soft Focus)",
+            "value": "soft focus, dreamy, diffused"
+        },
+        {
+            "name": "銳利對焦 (Tack Sharp)",
+            "value": "tack sharp focus, crisp details"
         }
     ]
 }

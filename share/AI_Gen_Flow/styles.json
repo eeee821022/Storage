@@ -13,74 +13,623 @@
     ]
   },
   {
-    "category": "動畫風格",
+    "category": "日本動畫風格",
     "styles": [
       {
         "name": "吉卜力 (Studio Ghibli)",
-        "value": "Studio Ghibli, Hayao Miyazaki style, watercolor background, lush nature, natural colors"
+        "value": "Studio Ghibli style, Hayao Miyazaki, watercolor background, lush nature, soft colors, hand-painted feeling"
       },
       {
         "name": "新海誠 (Makoto Shinkai)",
-        "value": "Makoto Shinkai style, vibrant lighting, highly detailed clouds, cinematic lighting, sentimental atmosphere, lens flare"
+        "value": "Makoto Shinkai style, Your Name, vibrant sky, highly detailed clouds, lens flare, sentimental atmosphere, photorealistic backgrounds"
       },
       {
-        "name": "皮克斯 (Pixar)",
-        "value": "Pixar style, 3D render, Disney animation style, cute character design, expressive lighting, detailed textures"
+        "name": "京都動畫 (Kyoto Animation)",
+        "value": "Kyoto Animation style, KyoAni, detailed character expressions, beautiful lighting, slice of life aesthetic"
       },
       {
-        "name": "賽博龐克 (Cyberpunk)",
-        "value": "Cyberpunk, neon lights, futuristic city, high tech low life, Blade Runner style, blue and purple color palette"
+        "name": "今敏 (Satoshi Kon)",
+        "value": "Satoshi Kon style, Paprika, surreal transitions, dream-like quality, psychological themes"
       },
       {
-        "name": "美式漫畫/黑色電影 (Noir)",
-        "value": "Noir art style, high-contrast black and white inks, gritty, comic panel, hard shadows"
+        "name": "押井守 (Mamoru Oshii)",
+        "value": "Mamoru Oshii style, Ghost in the Shell, cyberpunk aesthetic, philosophical, detailed mechanical design"
+      },
+      {
+        "name": "大友克洋 (Katsuhiro Otomo)",
+        "value": "Katsuhiro Otomo style, Akira, neo-tokyo, dystopian, detailed urban destruction, motorcycle aesthetics"
+      },
+      {
+        "name": "90年代動畫 (90s Anime)",
+        "value": "90s anime style, cel animation, nostalgic, Sailor Moon aesthetic, soft gradients, classic anime"
+      },
+      {
+        "name": "現代動畫 (Modern Anime)",
+        "value": "modern anime style, high detail, vibrant colors, sharp linework, digital coloring"
       }
     ]
   },
   {
-    "category": "藝術流派",
+    "category": "3D動畫風格",
+    "styles": [
+      {
+        "name": "皮克斯 (Pixar)",
+        "value": "Pixar 3D animation style, Disney quality, expressive characters, warm lighting, detailed textures, emotional storytelling"
+      },
+      {
+        "name": "夢工廠 (DreamWorks)",
+        "value": "DreamWorks animation style, How to Train Your Dragon, stylized characters, dynamic action, rich environments"
+      },
+      {
+        "name": "照明娛樂 (Illumination)",
+        "value": "Illumination Entertainment style, Minions, bright colors, simple shapes, comedic expressions"
+      },
+      {
+        "name": "蜘蛛人新宇宙 (Spider-Verse)",
+        "value": "Spider-Verse animation style, comic book halftone, mixed media, stylized motion blur, bold outlines"
+      },
+      {
+        "name": "阿乓恐龍 (Aardman)",
+        "value": "Aardman animation style, claymation look, Wallace and Gromit, handcrafted feel, British humor"
+      },
+      {
+        "name": "萊卡 (Laika)",
+        "value": "Laika Studios style, Coraline, stop-motion aesthetic, dark whimsy, detailed craftsmanship"
+      }
+    ]
+  },
+  {
+    "category": "科幻與奇幻",
+    "styles": [
+      {
+        "name": "賽博龐克 (Cyberpunk)",
+        "value": "Cyberpunk aesthetic, neon lights, rain-slicked streets, holographic ads, Blade Runner style, high tech low life"
+      },
+      {
+        "name": "蒸汽龐克 (Steampunk)",
+        "value": "Steampunk style, Victorian era, brass gears, steam-powered machinery, clockwork, sepia tones"
+      },
+      {
+        "name": "原子龐克 (Atompunk)",
+        "value": "Atompunk style, 1950s retro-futurism, atomic age, space race aesthetic, chrome and fins"
+      },
+      {
+        "name": "柴油龐克 (Dieselpunk)",
+        "value": "Dieselpunk style, 1920s-1940s, Art Deco machinery, industrial, wartime aesthetic"
+      },
+      {
+        "name": "生物龐克 (Biopunk)",
+        "value": "Biopunk style, organic technology, genetic modification, bio-mechanical, living machines"
+      },
+      {
+        "name": "太陽龐克 (Solarpunk)",
+        "value": "Solarpunk style, sustainable future, green technology, Art Nouveau architecture, utopian, nature integrated"
+      },
+      {
+        "name": "奇幻史詩 (High Fantasy)",
+        "value": "High fantasy style, epic landscapes, magical elements, Lord of the Rings inspired, dramatic lighting"
+      },
+      {
+        "name": "黑暗奇幻 (Dark Fantasy)",
+        "value": "Dark fantasy style, gothic horror, grim atmosphere, Dark Souls aesthetic, ominous"
+      },
+      {
+        "name": "太空歌劇 (Space Opera)",
+        "value": "Space opera style, grand scale, epic spacecraft, Star Wars aesthetic, dramatic space scenes"
+      },
+      {
+        "name": "外星異世界 (Alien World)",
+        "value": "Alien world style, exotic flora and fauna, otherworldly landscapes, bioluminescence, Avatar inspired"
+      }
+    ]
+  },
+  {
+    "category": "復古與懷舊",
+    "styles": [
+      {
+        "name": "復古未來 (Retro Futurism)",
+        "value": "Retro futurism style, vintage sci-fi, 1960s vision of future, chrome, bold colors"
+      },
+      {
+        "name": "蒸氣波 (Vaporwave)",
+        "value": "Vaporwave aesthetic, 80s nostalgia, pink and cyan, greek statues, glitch art, retro computer graphics"
+      },
+      {
+        "name": "合成波 (Synthwave)",
+        "value": "Synthwave style, 80s neon, retro grid, sunset gradient, chrome typography, Outrun aesthetic"
+      },
+      {
+        "name": "70年代迷幻 (70s Psychedelic)",
+        "value": "70s psychedelic style, trippy patterns, vibrant colors, tie-dye, groovy, flower power"
+      },
+      {
+        "name": "80年代美學 (80s Aesthetic)",
+        "value": "80s aesthetic, neon colors, geometric shapes, Memphis design, bold patterns, MTV era"
+      },
+      {
+        "name": "90年代復古 (90s Retro)",
+        "value": "90s retro style, grunge, bold primary colors, early internet aesthetic, radical"
+      },
+      {
+        "name": "Y2K美學 (Y2K Aesthetic)",
+        "value": "Y2K aesthetic, 2000s style, silver chrome, bubble text, futuristic optimism, glossy"
+      },
+      {
+        "name": "復古海報 (Vintage Poster)",
+        "value": "Vintage poster style, retro advertisement, aged paper texture, classic typography, nostalgic"
+      }
+    ]
+  },
+  {
+    "category": "漫畫與插畫",
+    "styles": [
+      {
+        "name": "美式漫畫 (American Comics)",
+        "value": "American comic book style, Marvel DC, bold colors, dynamic action, halftone dots, speech bubbles"
+      },
+      {
+        "name": "黑色電影漫畫 (Noir Comics)",
+        "value": "Noir comic style, Sin City, high contrast black and white, hard shadows, gritty"
+      },
+      {
+        "name": "日本漫畫 (Manga)",
+        "value": "Manga style, Japanese comics, screen tones, expressive eyes, dynamic panel layout"
+      },
+      {
+        "name": "歐洲漫畫 (Bande Dessinée)",
+        "value": "European comic style, ligne claire, Tintin inspired, clear outlines, flat colors"
+      },
+      {
+        "name": "兒童繪本 (Children's Book)",
+        "value": "Children's book illustration, whimsical, warm colors, friendly characters, storybook quality"
+      },
+      {
+        "name": "概念藝術 (Concept Art)",
+        "value": "Concept art style, entertainment design, painterly, dramatic composition, professional illustration"
+      },
+      {
+        "name": "角色設計圖 (Character Sheet)",
+        "value": "Character design sheet, multiple angles, reference sheet, turnaround, expression sheet"
+      },
+      {
+        "name": "分鏡腳本 (Storyboard)",
+        "value": "Storyboard style, sequential frames, rough sketches, action notes, cinematic planning"
+      }
+    ]
+  },
+  {
+    "category": "傳統藝術流派",
     "styles": [
       {
         "name": "印象派 (Impressionism)",
-        "value": "Impressionism, Vincent van Gogh style, impasto brushstrokes, swirling patterns, oil painting"
+        "value": "Impressionism style, Monet, visible brushstrokes, light emphasis, outdoor scenes, fleeting moments"
+      },
+      {
+        "name": "後印象派 (Post-Impressionism)",
+        "value": "Post-Impressionism, Van Gogh style, bold colors, expressive brushwork, emotional intensity"
+      },
+      {
+        "name": "表現主義 (Expressionism)",
+        "value": "Expressionism style, emotional distortion, bold colors, psychological depth, Munch inspired"
+      },
+      {
+        "name": "立體派 (Cubism)",
+        "value": "Cubism style, Picasso, fragmented forms, multiple perspectives, geometric abstraction"
+      },
+      {
+        "name": "超現實主義 (Surrealism)",
+        "value": "Surrealism style, Dali, dreamlike imagery, impossible scenes, subconscious exploration"
+      },
+      {
+        "name": "新藝術 (Art Nouveau)",
+        "value": "Art Nouveau style, Mucha, organic curves, decorative patterns, nature motifs, flowing lines"
+      },
+      {
+        "name": "裝飾藝術 (Art Deco)",
+        "value": "Art Deco style, geometric patterns, bold colors, luxury aesthetic, 1920s elegance"
+      },
+      {
+        "name": "巴洛克 (Baroque)",
+        "value": "Baroque style, dramatic lighting, rich colors, ornate details, Caravaggio, chiaroscuro"
+      },
+      {
+        "name": "文藝復興 (Renaissance)",
+        "value": "Renaissance style, classical proportions, religious themes, Da Vinci inspired, sfumato"
+      },
+      {
+        "name": "浪漫主義 (Romanticism)",
+        "value": "Romanticism style, dramatic landscapes, emotional intensity, sublime nature, Turner inspired"
       },
       {
         "name": "浮世繪 (Ukiyo-e)",
-        "value": "Ukiyo-e style, Japanese woodblock print, Hokusai style, flat perspective, wave patterns"
+        "value": "Ukiyo-e style, Japanese woodblock print, Hokusai, flat colors, bold outlines, wave patterns"
       },
       {
-        "name": "達文西手稿 (Da Vinci)",
-        "value": "Da Vinci style, anatomical sketch, textured parchment, detailed drawings, sepia tone"
+        "name": "水墨畫 (Chinese Ink)",
+        "value": "Chinese ink painting style, sumi-e, minimalist, expressive brushwork, mountains and water"
+      },
+      {
+        "name": "工筆畫 (Gongbi)",
+        "value": "Gongbi style, Chinese meticulous painting, fine brushwork, detailed, traditional colors"
+      },
+      {
+        "name": "敦煌壁畫 (Dunhuang)",
+        "value": "Dunhuang mural style, Buddhist art, ancient Chinese, vibrant pigments, spiritual themes"
       }
     ]
   },
   {
-    "category": "插畫與設計",
+    "category": "現代藝術與設計",
     "styles": [
       {
-        "name": "可愛貼紙 (Kawaii Sticker)",
-        "value": "Kawaii-style sticker, bold outlines, simple cel-shading, vibrant color palette, white background"
-      },
-      {
         "name": "極簡主義 (Minimalist)",
-        "value": "Minimalist composition, negative space, clean lines, soft lighting, simple elements"
+        "value": "Minimalist design, clean lines, simple shapes, limited color palette, elegant simplicity"
       },
       {
-        "name": "向量扁平 (Vector/Flat)",
-        "value": "Vector art, flat design, Adobe Illustrator style, clean shapes, no gradients"
+        "name": "扁平化設計 (Flat Design)",
+        "value": "Flat design style, 2D, no gradients or shadows, bold colors, simple shapes, modern UI"
+      },
+      {
+        "name": "材質設計 (Material Design)",
+        "value": "Material Design style, Google design language, subtle shadows, paper metaphor, clean"
+      },
+      {
+        "name": "新態物化 (Neumorphism)",
+        "value": "Neumorphism style, soft shadows, extruded shapes, monochromatic, tactile UI elements"
+      },
+      {
+        "name": "玻璃擬態 (Glassmorphism)",
+        "value": "Glassmorphism style, frosted glass effect, transparency, blur, modern UI, light borders"
+      },
+      {
+        "name": "向量插畫 (Vector Art)",
+        "value": "Vector illustration, Adobe Illustrator style, clean shapes, scalable, geometric"
+      },
+      {
+        "name": "等距設計 (Isometric)",
+        "value": "Isometric illustration, 3D projection, no perspective, technical, clean lines"
+      },
+      {
+        "name": "低多邊形 (Low Poly)",
+        "value": "Low poly 3D style, geometric facets, stylized, polygonal, modern minimalist"
+      },
+      {
+        "name": "普普藝術 (Pop Art)",
+        "value": "Pop Art style, Andy Warhol, bold colors, celebrity culture, Ben-Day dots, graphic"
+      },
+      {
+        "name": "街頭塗鴉 (Street Art)",
+        "value": "Street art style, graffiti, urban, Banksy inspired, stencil art, spray paint"
       }
     ]
   },
   {
-    "category": "攝影寫實",
+    "category": "攝影風格",
     "styles": [
       {
         "name": "超寫實攝影 (Photorealistic)",
-        "value": "Photorealistic, 85mm portrait lens, bokeh, golden hour light, highly detailed, 8k"
+        "value": "Photorealistic, ultra detailed, 8K UHD, sharp focus, professional photography, realistic"
+      },
+      {
+        "name": "電影攝影 (Cinematic)",
+        "value": "Cinematic photography, movie still, anamorphic, dramatic lighting, film grain, 35mm"
       },
       {
         "name": "商業產品攝影 (Product)",
-        "value": "Studio-lit product photograph, softbox setup, ultra-realistic, 4k resolution, clean background"
+        "value": "Professional product photography, studio lighting, clean background, commercial quality"
+      },
+      {
+        "name": "人像攝影 (Portrait)",
+        "value": "Professional portrait photography, 85mm lens, bokeh, studio lighting, editorial"
+      },
+      {
+        "name": "時尚攝影 (Fashion)",
+        "value": "High fashion photography, Vogue style, editorial, dramatic poses, professional lighting"
+      },
+      {
+        "name": "街頭攝影 (Street)",
+        "value": "Street photography, candid, urban life, documentary style, authentic moments"
+      },
+      {
+        "name": "風景攝影 (Landscape)",
+        "value": "Landscape photography, golden hour, dramatic sky, National Geographic quality"
+      },
+      {
+        "name": "建築攝影 (Architecture)",
+        "value": "Architectural photography, clean lines, perspective correction, structural beauty"
+      },
+      {
+        "name": "美食攝影 (Food)",
+        "value": "Professional food photography, appetizing, styled, natural lighting, gourmet"
+      },
+      {
+        "name": "微距攝影 (Macro)",
+        "value": "Macro photography, extreme close-up, intricate details, shallow depth of field"
+      },
+      {
+        "name": "黑白攝影 (Black & White)",
+        "value": "Black and white photography, monochrome, high contrast, dramatic shadows, timeless"
+      },
+      {
+        "name": "紅外線攝影 (Infrared)",
+        "value": "Infrared photography, false color, surreal landscape, white foliage"
+      },
+      {
+        "name": "長曝光 (Long Exposure)",
+        "value": "Long exposure photography, light trails, smooth water, motion blur, ethereal"
+      },
+      {
+        "name": "高動態範圍 (HDR)",
+        "value": "HDR photography, wide dynamic range, vivid colors, detailed shadows and highlights"
+      },
+      {
+        "name": "底片感 (Film Grain)",
+        "value": "Film photography look, Kodak Portra, analog grain, vintage color grading, nostalgic"
+      },
+      {
+        "name": "拍立得 (Polaroid)",
+        "value": "Polaroid instant photo style, white frame, faded colors, nostalgic, authentic"
+      }
+    ]
+  },
+  {
+    "category": "遊戲美術",
+    "styles": [
+      {
+        "name": "像素藝術 (Pixel Art)",
+        "value": "Pixel art style, 16-bit, retro gaming, limited palette, nostalgic, detailed sprites"
+      },
+      {
+        "name": "復古遊戲 (Retro Gaming)",
+        "value": "Retro game art, 8-bit style, NES era, limited colors, CRT scanlines"
+      },
+      {
+        "name": "次世代3D (AAA Gaming)",
+        "value": "AAA video game graphics, Unreal Engine 5, ray tracing, photorealistic, next-gen"
+      },
+      {
+        "name": "手繪遊戲 (Hand-Painted)",
+        "value": "Hand-painted game art style, World of Warcraft, stylized textures, fantasy"
+      },
+      {
+        "name": "賽璐珞渲染 (Cel-Shaded)",
+        "value": "Cel-shaded 3D style, Zelda Wind Waker, toon shading, bold outlines, anime look"
+      },
+      {
+        "name": "視覺小說 (Visual Novel)",
+        "value": "Visual novel art style, anime character portraits, dialogue boxes, dating sim aesthetic"
+      },
+      {
+        "name": "遊戲UI (Game UI)",
+        "value": "Game UI design, HUD elements, health bars, inventory icons, fantasy interface"
+      }
+    ]
+  },
+  {
+    "category": "質感與媒材",
+    "styles": [
+      {
+        "name": "油畫 (Oil Painting)",
+        "value": "Oil painting style, rich colors, visible brushstrokes, classical technique, impasto"
+      },
+      {
+        "name": "水彩 (Watercolor)",
+        "value": "Watercolor painting, soft edges, color bleeding, delicate, transparent washes"
+      },
+      {
+        "name": "壓克力 (Acrylic)",
+        "value": "Acrylic painting style, bold colors, versatile texture, modern art feel"
+      },
+      {
+        "name": "粉彩 (Pastel)",
+        "value": "Pastel art style, soft colors, powdery texture, gentle blending, dreamy"
+      },
+      {
+        "name": "炭筆素描 (Charcoal)",
+        "value": "Charcoal drawing, dramatic contrast, expressive marks, textured paper"
+      },
+      {
+        "name": "鉛筆素描 (Pencil)",
+        "value": "Pencil sketch, graphite drawing, detailed shading, realistic rendering"
+      },
+      {
+        "name": "色鉛筆 (Colored Pencil)",
+        "value": "Colored pencil illustration, layered colors, detailed texture, soft blending"
+      },
+      {
+        "name": "蠟筆 (Crayon)",
+        "value": "Crayon drawing style, childlike, waxy texture, bold strokes, playful"
+      },
+      {
+        "name": "墨水筆 (Ink)",
+        "value": "Ink illustration, pen and ink, crosshatching, detailed linework, black and white"
+      },
+      {
+        "name": "版畫 (Woodcut Print)",
+        "value": "Woodcut print style, bold contrasts, carved lines, traditional printmaking"
+      },
+      {
+        "name": "絲網印刷 (Screen Print)",
+        "value": "Screen print style, limited colors, graphic, poster art, Andy Warhol technique"
+      },
+      {
+        "name": "雕塑感 (Sculptural)",
+        "value": "Sculptural 3D render, marble texture, classical sculpture, chiseled, dimensional"
+      },
+      {
+        "name": "黏土動畫 (Claymation)",
+        "value": "Claymation style, stop-motion look, handcrafted clay texture, tactile feel"
+      },
+      {
+        "name": "紙藝拼貼 (Paper Craft)",
+        "value": "Paper craft style, cut paper, layered, collage, dimensional, handmade"
+      },
+      {
+        "name": "刺繡風格 (Embroidery)",
+        "value": "Embroidery style, thread texture, stitched patterns, fabric art, handcrafted"
+      },
+      {
+        "name": "玻璃彩繪 (Stained Glass)",
+        "value": "Stained glass style, lead lines, vibrant colors, translucent, cathedral windows"
+      }
+    ]
+  },
+  {
+    "category": "氛圍與情緒",
+    "styles": [
+      {
+        "name": "夢幻 (Dreamy)",
+        "value": "Dreamy atmosphere, soft focus, ethereal glow, pastel colors, surreal, whimsical"
+      },
+      {
+        "name": "神秘 (Mysterious)",
+        "value": "Mysterious atmosphere, moody lighting, shadows, enigmatic, suspenseful"
+      },
+      {
+        "name": "史詩 (Epic)",
+        "value": "Epic atmosphere, grand scale, dramatic lighting, heroic, awe-inspiring"
+      },
+      {
+        "name": "恐怖 (Horror)",
+        "value": "Horror atmosphere, dark, unsettling, creepy, ominous shadows, fear-inducing"
+      },
+      {
+        "name": "浪漫 (Romantic)",
+        "value": "Romantic atmosphere, soft lighting, warm tones, intimate, tender mood"
+      },
+      {
+        "name": "憂鬱 (Melancholic)",
+        "value": "Melancholic atmosphere, muted colors, overcast, wistful, contemplative"
+      },
+      {
+        "name": "歡樂 (Joyful)",
+        "value": "Joyful atmosphere, bright colors, dynamic, celebratory, energetic"
+      },
+      {
+        "name": "寧靜 (Serene)",
+        "value": "Serene atmosphere, calm, peaceful, tranquil, balanced composition, zen"
+      },
+      {
+        "name": "懷舊 (Nostalgic)",
+        "value": "Nostalgic atmosphere, vintage feel, warm sepia, faded colors, memory-like"
+      },
+      {
+        "name": "未來感 (Futuristic)",
+        "value": "Futuristic atmosphere, sleek, high-tech, chrome, blue lighting, advanced"
+      },
+      {
+        "name": "陰森 (Eerie)",
+        "value": "Eerie atmosphere, unsettling calm, fog, abandoned places, unnatural silence"
+      },
+      {
+        "name": "奢華 (Luxurious)",
+        "value": "Luxurious atmosphere, gold accents, rich textures, opulent, premium quality"
+      }
+    ]
+  },
+  {
+    "category": "創意與實驗",
+    "styles": [
+      {
+        "name": "雙重曝光 (Double Exposure)",
+        "value": "Double exposure effect, overlapping images, silhouettes, artistic blend"
+      },
+      {
+        "name": "故障藝術 (Glitch Art)",
+        "value": "Glitch art style, digital corruption, RGB split, datamoshing, cyberpunk"
+      },
+      {
+        "name": "霓虹光暈 (Neon Glow)",
+        "value": "Neon glow effect, luminous outlines, dark background, vibrant colors, electric"
+      },
+      {
+        "name": "彩虹棱鏡 (Prismatic)",
+        "value": "Prismatic effect, rainbow light dispersion, crystalline, iridescent, spectrum"
+      },
+      {
+        "name": "煙霧效果 (Smoke Art)",
+        "value": "Smoke art effect, flowing vapor, ethereal, dynamic shapes, mysterious"
+      },
+      {
+        "name": "分形藝術 (Fractal)",
+        "value": "Fractal art, mathematical patterns, infinite detail, psychedelic, complex geometry"
+      },
+      {
+        "name": "抽象幾何 (Abstract Geometric)",
+        "value": "Abstract geometric art, shapes and colors, non-representational, modern"
+      },
+      {
+        "name": "生成藝術 (Generative)",
+        "value": "Generative art, algorithmic patterns, procedural, creative coding aesthetic"
+      },
+      {
+        "name": "萬花筒 (Kaleidoscope)",
+        "value": "Kaleidoscope effect, symmetrical patterns, colorful, mesmerizing, psychedelic"
+      },
+      {
+        "name": "X光透視 (X-Ray)",
+        "value": "X-ray style, transparent view, skeletal, medical imaging aesthetic, blue tones"
+      },
+      {
+        "name": "熱成像 (Thermal)",
+        "value": "Thermal imaging style, heat map colors, infrared look, temperature visualization"
+      },
+      {
+        "name": "全像投影 (Holographic)",
+        "value": "Holographic effect, iridescent shimmer, futuristic, rainbow reflections, 3D projection"
+      }
+    ]
+  },
+  {
+    "category": "特定主題風格",
+    "styles": [
+      {
+        "name": "可愛貼紙 (Kawaii Sticker)",
+        "value": "Kawaii sticker style, cute, bold outlines, pastel colors, die-cut, white background"
+      },
+      {
+        "name": "吉祥物設計 (Mascot)",
+        "value": "Mascot character design, friendly, memorable, brand identity, cartoon style"
+      },
+      {
+        "name": "塔羅牌 (Tarot Card)",
+        "value": "Tarot card art style, mystical, symbolic, ornate borders, esoteric imagery"
+      },
+      {
+        "name": "撲克牌 (Playing Card)",
+        "value": "Playing card design, symmetrical, royal court, decorative, classic patterns"
+      },
+      {
+        "name": "徽章紋章 (Heraldry)",
+        "value": "Heraldic design, coat of arms, medieval, symbolic animals, royal crests"
+      },
+      {
+        "name": "地圖插畫 (Illustrated Map)",
+        "value": "Illustrated map style, fantasy cartography, vintage atlas, detailed landmarks"
+      },
+      {
+        "name": "植物圖鑑 (Botanical)",
+        "value": "Botanical illustration, scientific accuracy, detailed flora, vintage naturalist"
+      },
+      {
+        "name": "解剖圖 (Anatomical)",
+        "value": "Anatomical illustration style, medical, detailed cross-section, educational, realistic"
+      },
+      {
+        "name": "機械圖解 (Technical)",
+        "value": "Technical illustration, blueprint style, exploded view, mechanical parts, precise"
+      },
+      {
+        "name": "節日賀卡 (Greeting Card)",
+        "value": "Greeting card style, festive, decorative, heartwarming, celebratory design"
+      },
+      {
+        "name": "專輯封面 (Album Art)",
+        "value": "Album cover art style, iconic, artistic, music-inspired, memorable graphic design"
+      },
+      {
+        "name": "電影海報 (Movie Poster)",
+        "value": "Movie poster style, dramatic composition, Hollywood, key art, promotional"
       }
     ]
   }

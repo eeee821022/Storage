@@ -2,41 +2,87 @@
     "ratios": [
         {
             "name": "1:1 (Square)",
-            "value": "1:1 aspect ratio"
+            "value": "1:1 aspect ratio, square format"
         },
         {
-            "name": "16:9 (Landscape)",
-            "value": "16:9 aspect ratio"
+            "name": "4:3 (Standard)",
+            "value": "4:3 aspect ratio, standard format"
         },
         {
-            "name": "9:16 (Portrait)",
-            "value": "9:16 aspect ratio"
+            "name": "3:4 (Portrait Standard)",
+            "value": "3:4 aspect ratio, vertical standard"
         },
         {
-            "name": "21:9 (Cinematic)",
-            "value": "21:9 aspect ratio"
+            "name": "16:9 (Widescreen)",
+            "value": "16:9 aspect ratio, widescreen format"
+        },
+        {
+            "name": "9:16 (Vertical/Story)",
+            "value": "9:16 aspect ratio, vertical video, story format"
+        },
+        {
+            "name": "21:9 (Cinematic Ultra)",
+            "value": "21:9 aspect ratio, ultra-wide cinematic"
+        },
+        {
+            "name": "2:3 (Classic Portrait)",
+            "value": "2:3 aspect ratio, classic portrait format"
+        },
+        {
+            "name": "3:2 (Classic Landscape)",
+            "value": "3:2 aspect ratio, classic landscape, 35mm film"
+        },
+        {
+            "name": "4:5 (Instagram Portrait)",
+            "value": "4:5 aspect ratio, Instagram portrait"
+        },
+        {
+            "name": "5:4 (Large Format)",
+            "value": "5:4 aspect ratio, large format photography"
+        },
+        {
+            "name": "2.35:1 (Anamorphic)",
+            "value": "2.35:1 aspect ratio, anamorphic widescreen, Cinemascope"
+        },
+        {
+            "name": "1.85:1 (Film Standard)",
+            "value": "1.85:1 aspect ratio, standard theatrical film"
         }
     ],
-    "compositions": [
+    "orientations": [
         {
-            "name": "極簡留白 (Minimalist)",
-            "value": "minimalist composition, negative space, clean lines"
+            "name": "橫向 (Landscape)",
+            "value": "landscape orientation, horizontal"
         },
         {
-            "name": "平鋪擺拍 (Knolling)",
-            "value": "knolling photography, flat lay, organized items"
+            "name": "直向 (Portrait)",
+            "value": "portrait orientation, vertical"
         },
         {
-            "name": "等角視圖 (Isometric)",
-            "value": "isometric view, 3d render style"
+            "name": "正方 (Square)",
+            "value": "square format"
+        }
+    ],
+    "margins": [
+        {
+            "name": "無邊距 (Full Bleed)",
+            "value": "full bleed, edge to edge, no margins"
         },
         {
-            "name": "漫畫分鏡 (Comic Panel)",
-            "value": "comic book panel, sequential art"
+            "name": "窄邊距 (Thin Border)",
+            "value": "thin border, small margins, subtle frame"
         },
         {
-            "name": "對稱構圖 (Symmetrical)",
-            "value": "symmetrical composition, centered"
+            "name": "標準邊距 (Standard Margin)",
+            "value": "standard margins, balanced spacing"
+        },
+        {
+            "name": "寬邊距 (Wide Margin)",
+            "value": "wide margins, generous white space"
+        },
+        {
+            "name": "畫框風格 (Framed)",
+            "value": "framed style, decorative border, gallery presentation"
         }
     ]
 }
