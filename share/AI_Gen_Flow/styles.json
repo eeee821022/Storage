@@ -4,11 +4,17 @@
     "styles": [
       {
         "name": "引用素材風格 (Reference Style)",
-        "value": "Use the art style directly from the Reference Image node."
+        "value": "Use the art style directly from the Reference Image node.",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "Y"
       },
       {
         "name": "不使用風格 (None)",
-        "value": ""
+        "value": "",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "Y"
       }
     ]
   },
@@ -17,35 +23,59 @@
     "styles": [
       {
         "name": "吉卜力 (Studio Ghibli)",
-        "value": "Studio Ghibli style, Hayao Miyazaki, watercolor background, lush nature, soft colors, hand-painted feeling"
+        "value": "Studio Ghibli style, Hayao Miyazaki, watercolor background, lush nature, soft colors, hand-painted feeling",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "新海誠 (Makoto Shinkai)",
-        "value": "Makoto Shinkai style, Your Name, vibrant sky, highly detailed clouds, lens flare, sentimental atmosphere, photorealistic backgrounds"
+        "value": "Makoto Shinkai style, Your Name, vibrant sky, highly detailed clouds, lens flare, sentimental atmosphere, photorealistic backgrounds",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "京都動畫 (Kyoto Animation)",
-        "value": "Kyoto Animation style, KyoAni, detailed character expressions, beautiful lighting, slice of life aesthetic"
+        "value": "Kyoto Animation style, KyoAni, detailed character expressions, beautiful lighting, slice of life aesthetic",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "今敏 (Satoshi Kon)",
-        "value": "Satoshi Kon style, Paprika, surreal transitions, dream-like quality, psychological themes"
+        "value": "Satoshi Kon style, Paprika, surreal transitions, dream-like quality, psychological themes",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "押井守 (Mamoru Oshii)",
-        "value": "Mamoru Oshii style, Ghost in the Shell, cyberpunk aesthetic, philosophical, detailed mechanical design"
+        "value": "Mamoru Oshii style, Ghost in the Shell, cyberpunk aesthetic, philosophical, detailed mechanical design",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "大友克洋 (Katsuhiro Otomo)",
-        "value": "Katsuhiro Otomo style, Akira, neo-tokyo, dystopian, detailed urban destruction, motorcycle aesthetics"
+        "value": "Katsuhiro Otomo style, Akira, neo-tokyo, dystopian, detailed urban destruction, motorcycle aesthetics",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "90年代動畫 (90s Anime)",
-        "value": "90s anime style, cel animation, nostalgic, Sailor Moon aesthetic, soft gradients, classic anime"
+        "value": "90s anime style, cel animation, nostalgic, Sailor Moon aesthetic, soft gradients, classic anime",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "現代動畫 (Modern Anime)",
-        "value": "modern anime style, high detail, vibrant colors, sharp linework, digital coloring"
+        "value": "modern anime style, high detail, vibrant colors, sharp linework, digital coloring",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -54,27 +84,45 @@
     "styles": [
       {
         "name": "皮克斯 (Pixar)",
-        "value": "Pixar 3D animation style, Disney quality, expressive characters, warm lighting, detailed textures, emotional storytelling"
+        "value": "Pixar 3D animation style, Disney quality, expressive characters, warm lighting, detailed textures, emotional storytelling",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "夢工廠 (DreamWorks)",
-        "value": "DreamWorks animation style, How to Train Your Dragon, stylized characters, dynamic action, rich environments"
+        "value": "DreamWorks animation style, How to Train Your Dragon, stylized characters, dynamic action, rich environments",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "照明娛樂 (Illumination)",
-        "value": "Illumination Entertainment style, Minions, bright colors, simple shapes, comedic expressions"
+        "value": "Illumination Entertainment style, Minions, bright colors, simple shapes, comedic expressions",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "蜘蛛人新宇宙 (Spider-Verse)",
-        "value": "Spider-Verse animation style, comic book halftone, mixed media, stylized motion blur, bold outlines"
+        "value": "Spider-Verse animation style, comic book halftone, mixed media, stylized motion blur, bold outlines",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "阿乓恐龍 (Aardman)",
-        "value": "Aardman animation style, claymation look, Wallace and Gromit, handcrafted feel, British humor"
+        "value": "Aardman animation style, claymation look, Wallace and Gromit, handcrafted feel, British humor",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "萊卡 (Laika)",
-        "value": "Laika Studios style, Coraline, stop-motion aesthetic, dark whimsy, detailed craftsmanship"
+        "value": "Laika Studios style, Coraline, stop-motion aesthetic, dark whimsy, detailed craftsmanship",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -83,43 +131,73 @@
     "styles": [
       {
         "name": "賽博龐克 (Cyberpunk)",
-        "value": "Cyberpunk aesthetic, neon lights, rain-slicked streets, holographic ads, Blade Runner style, high tech low life"
+        "value": "Cyberpunk aesthetic, neon lights, rain-slicked streets, holographic ads, Blade Runner style, high tech low life",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "蒸汽龐克 (Steampunk)",
-        "value": "Steampunk style, Victorian era, brass gears, steam-powered machinery, clockwork, sepia tones"
+        "value": "Steampunk style, Victorian era, brass gears, steam-powered machinery, clockwork, sepia tones",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "原子龐克 (Atompunk)",
-        "value": "Atompunk style, 1950s retro-futurism, atomic age, space race aesthetic, chrome and fins"
+        "value": "Atompunk style, 1950s retro-futurism, atomic age, space race aesthetic, chrome and fins",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "柴油龐克 (Dieselpunk)",
-        "value": "Dieselpunk style, 1920s-1940s, Art Deco machinery, industrial, wartime aesthetic"
+        "value": "Dieselpunk style, 1920s-1940s, Art Deco machinery, industrial, wartime aesthetic",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "生物龐克 (Biopunk)",
-        "value": "Biopunk style, organic technology, genetic modification, bio-mechanical, living machines"
+        "value": "Biopunk style, organic technology, genetic modification, bio-mechanical, living machines",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "太陽龐克 (Solarpunk)",
-        "value": "Solarpunk style, sustainable future, green technology, Art Nouveau architecture, utopian, nature integrated"
+        "value": "Solarpunk style, sustainable future, green technology, Art Nouveau architecture, utopian, nature integrated",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "奇幻史詩 (High Fantasy)",
-        "value": "High fantasy style, epic landscapes, magical elements, Lord of the Rings inspired, dramatic lighting"
+        "value": "High fantasy style, epic landscapes, magical elements, Lord of the Rings inspired, dramatic lighting",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "黑暗奇幻 (Dark Fantasy)",
-        "value": "Dark fantasy style, gothic horror, grim atmosphere, Dark Souls aesthetic, ominous"
+        "value": "Dark fantasy style, gothic horror, grim atmosphere, Dark Souls aesthetic, ominous",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "太空歌劇 (Space Opera)",
-        "value": "Space opera style, grand scale, epic spacecraft, Star Wars aesthetic, dramatic space scenes"
+        "value": "Space opera style, grand scale, epic spacecraft, Star Wars aesthetic, dramatic space scenes",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "外星異世界 (Alien World)",
-        "value": "Alien world style, exotic flora and fauna, otherworldly landscapes, bioluminescence, Avatar inspired"
+        "value": "Alien world style, exotic flora and fauna, otherworldly landscapes, bioluminescence, Avatar inspired",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -128,35 +206,59 @@
     "styles": [
       {
         "name": "復古未來 (Retro Futurism)",
-        "value": "Retro futurism style, vintage sci-fi, 1960s vision of future, chrome, bold colors"
+        "value": "Retro futurism style, vintage sci-fi, 1960s vision of future, chrome, bold colors",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "蒸氣波 (Vaporwave)",
-        "value": "Vaporwave aesthetic, 80s nostalgia, pink and cyan, greek statues, glitch art, retro computer graphics"
+        "value": "Vaporwave aesthetic, 80s nostalgia, pink and cyan, greek statues, glitch art, retro computer graphics",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "合成波 (Synthwave)",
-        "value": "Synthwave style, 80s neon, retro grid, sunset gradient, chrome typography, Outrun aesthetic"
+        "value": "Synthwave style, 80s neon, retro grid, sunset gradient, chrome typography, Outrun aesthetic",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "70年代迷幻 (70s Psychedelic)",
-        "value": "70s psychedelic style, trippy patterns, vibrant colors, tie-dye, groovy, flower power"
+        "value": "70s psychedelic style, trippy patterns, vibrant colors, tie-dye, groovy, flower power",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "80年代美學 (80s Aesthetic)",
-        "value": "80s aesthetic, neon colors, geometric shapes, Memphis design, bold patterns, MTV era"
+        "value": "80s aesthetic, neon colors, geometric shapes, Memphis design, bold patterns, MTV era",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "90年代復古 (90s Retro)",
-        "value": "90s retro style, grunge, bold primary colors, early internet aesthetic, radical"
+        "value": "90s retro style, grunge, bold primary colors, early internet aesthetic, radical",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "Y2K美學 (Y2K Aesthetic)",
-        "value": "Y2K aesthetic, 2000s style, silver chrome, bubble text, futuristic optimism, glossy"
+        "value": "Y2K aesthetic, 2000s style, silver chrome, bubble text, futuristic optimism, glossy",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "復古海報 (Vintage Poster)",
-        "value": "Vintage poster style, retro advertisement, aged paper texture, classic typography, nostalgic"
+        "value": "Vintage poster style, retro advertisement, aged paper texture, classic typography, nostalgic",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -165,35 +267,59 @@
     "styles": [
       {
         "name": "美式漫畫 (American Comics)",
-        "value": "American comic book style, Marvel DC, bold colors, dynamic action, halftone dots, speech bubbles"
+        "value": "American comic book style, Marvel DC, bold colors, dynamic action, halftone dots, speech bubbles",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "黑色電影漫畫 (Noir Comics)",
-        "value": "Noir comic style, Sin City, high contrast black and white, hard shadows, gritty"
+        "value": "Noir comic style, Sin City, high contrast black and white, hard shadows, gritty",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "日本漫畫 (Manga)",
-        "value": "Manga style, Japanese comics, screen tones, expressive eyes, dynamic panel layout"
+        "value": "Manga style, Japanese comics, screen tones, expressive eyes, dynamic panel layout",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "歐洲漫畫 (Bande Dessinée)",
-        "value": "European comic style, ligne claire, Tintin inspired, clear outlines, flat colors"
+        "value": "European comic style, ligne claire, Tintin inspired, clear outlines, flat colors",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "兒童繪本 (Children's Book)",
-        "value": "Children's book illustration, whimsical, warm colors, friendly characters, storybook quality"
+        "value": "Children's book illustration, whimsical, warm colors, friendly characters, storybook quality",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "概念藝術 (Concept Art)",
-        "value": "Concept art style, entertainment design, painterly, dramatic composition, professional illustration"
+        "value": "Concept art style, entertainment design, painterly, dramatic composition, professional illustration",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "角色設計圖 (Character Sheet)",
-        "value": "Character design sheet, multiple angles, reference sheet, turnaround, expression sheet"
+        "value": "Character design sheet, multiple angles, reference sheet, turnaround, expression sheet",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "分鏡腳本 (Storyboard)",
-        "value": "Storyboard style, sequential frames, rough sketches, action notes, cinematic planning"
+        "value": "Storyboard style, sequential frames, rough sketches, action notes, cinematic planning",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -202,59 +328,101 @@
     "styles": [
       {
         "name": "印象派 (Impressionism)",
-        "value": "Impressionism style, Monet, visible brushstrokes, light emphasis, outdoor scenes, fleeting moments"
+        "value": "Impressionism style, Monet, visible brushstrokes, light emphasis, outdoor scenes, fleeting moments",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "後印象派 (Post-Impressionism)",
-        "value": "Post-Impressionism, Van Gogh style, bold colors, expressive brushwork, emotional intensity"
+        "value": "Post-Impressionism, Van Gogh style, bold colors, expressive brushwork, emotional intensity",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "表現主義 (Expressionism)",
-        "value": "Expressionism style, emotional distortion, bold colors, psychological depth, Munch inspired"
+        "value": "Expressionism style, emotional distortion, bold colors, psychological depth, Munch inspired",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "立體派 (Cubism)",
-        "value": "Cubism style, Picasso, fragmented forms, multiple perspectives, geometric abstraction"
+        "value": "Cubism style, Picasso, fragmented forms, multiple perspectives, geometric abstraction",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "超現實主義 (Surrealism)",
-        "value": "Surrealism style, Dali, dreamlike imagery, impossible scenes, subconscious exploration"
+        "value": "Surrealism style, Dali, dreamlike imagery, impossible scenes, subconscious exploration",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "新藝術 (Art Nouveau)",
-        "value": "Art Nouveau style, Mucha, organic curves, decorative patterns, nature motifs, flowing lines"
+        "value": "Art Nouveau style, Mucha, organic curves, decorative patterns, nature motifs, flowing lines",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "裝飾藝術 (Art Deco)",
-        "value": "Art Deco style, geometric patterns, bold colors, luxury aesthetic, 1920s elegance"
+        "value": "Art Deco style, geometric patterns, bold colors, luxury aesthetic, 1920s elegance",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "巴洛克 (Baroque)",
-        "value": "Baroque style, dramatic lighting, rich colors, ornate details, Caravaggio, chiaroscuro"
+        "value": "Baroque style, dramatic lighting, rich colors, ornate details, Caravaggio, chiaroscuro",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "文藝復興 (Renaissance)",
-        "value": "Renaissance style, classical proportions, religious themes, Da Vinci inspired, sfumato"
+        "value": "Renaissance style, classical proportions, religious themes, Da Vinci inspired, sfumato",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "浪漫主義 (Romanticism)",
-        "value": "Romanticism style, dramatic landscapes, emotional intensity, sublime nature, Turner inspired"
+        "value": "Romanticism style, dramatic landscapes, emotional intensity, sublime nature, Turner inspired",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "浮世繪 (Ukiyo-e)",
-        "value": "Ukiyo-e style, Japanese woodblock print, Hokusai, flat colors, bold outlines, wave patterns"
+        "value": "Ukiyo-e style, Japanese woodblock print, Hokusai, flat colors, bold outlines, wave patterns",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "水墨畫 (Chinese Ink)",
-        "value": "Chinese ink painting style, sumi-e, minimalist, expressive brushwork, mountains and water"
+        "value": "Chinese ink painting style, sumi-e, minimalist, expressive brushwork, mountains and water",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "工筆畫 (Gongbi)",
-        "value": "Gongbi style, Chinese meticulous painting, fine brushwork, detailed, traditional colors"
+        "value": "Gongbi style, Chinese meticulous painting, fine brushwork, detailed, traditional colors",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "敦煌壁畫 (Dunhuang)",
-        "value": "Dunhuang mural style, Buddhist art, ancient Chinese, vibrant pigments, spiritual themes"
+        "value": "Dunhuang mural style, Buddhist art, ancient Chinese, vibrant pigments, spiritual themes",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -263,43 +431,73 @@
     "styles": [
       {
         "name": "極簡主義 (Minimalist)",
-        "value": "Minimalist design, clean lines, simple shapes, limited color palette, elegant simplicity"
+        "value": "Minimalist design, clean lines, simple shapes, limited color palette, elegant simplicity",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "扁平化設計 (Flat Design)",
-        "value": "Flat design style, 2D, no gradients or shadows, bold colors, simple shapes, modern UI"
+        "value": "Flat design style, 2D, no gradients or shadows, bold colors, simple shapes, modern UI",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "Y"
       },
       {
         "name": "材質設計 (Material Design)",
-        "value": "Material Design style, Google design language, subtle shadows, paper metaphor, clean"
+        "value": "Material Design style, Google design language, subtle shadows, paper metaphor, clean",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "新態物化 (Neumorphism)",
-        "value": "Neumorphism style, soft shadows, extruded shapes, monochromatic, tactile UI elements"
+        "value": "Neumorphism style, soft shadows, extruded shapes, monochromatic, tactile UI elements",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "玻璃擬態 (Glassmorphism)",
-        "value": "Glassmorphism style, frosted glass effect, transparency, blur, modern UI, light borders"
+        "value": "Glassmorphism style, frosted glass effect, transparency, blur, modern UI, light borders",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "向量插畫 (Vector Art)",
-        "value": "Vector illustration, Adobe Illustrator style, clean shapes, scalable, geometric"
+        "value": "Vector illustration, Adobe Illustrator style, clean shapes, scalable, geometric",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "Y"
       },
       {
         "name": "等距設計 (Isometric)",
-        "value": "Isometric illustration, 3D projection, no perspective, technical, clean lines"
+        "value": "Isometric illustration, 3D projection, no perspective, technical, clean lines",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "Y"
       },
       {
         "name": "低多邊形 (Low Poly)",
-        "value": "Low poly 3D style, geometric facets, stylized, polygonal, modern minimalist"
+        "value": "Low poly 3D style, geometric facets, stylized, polygonal, modern minimalist",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "Y"
       },
       {
         "name": "普普藝術 (Pop Art)",
-        "value": "Pop Art style, Andy Warhol, bold colors, celebrity culture, Ben-Day dots, graphic"
+        "value": "Pop Art style, Andy Warhol, bold colors, celebrity culture, Ben-Day dots, graphic",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "街頭塗鴉 (Street Art)",
-        "value": "Street art style, graffiti, urban, Banksy inspired, stencil art, spray paint"
+        "value": "Street art style, graffiti, urban, Banksy inspired, stencil art, spray paint",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -308,67 +506,115 @@
     "styles": [
       {
         "name": "超寫實攝影 (Photorealistic)",
-        "value": "Photorealistic, ultra detailed, 8K UHD, sharp focus, professional photography, realistic"
+        "value": "Photorealistic, ultra detailed, 8K UHD, sharp focus, professional photography, realistic",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "電影攝影 (Cinematic)",
-        "value": "Cinematic photography, movie still, anamorphic, dramatic lighting, film grain, 35mm"
+        "value": "Cinematic photography, movie still, anamorphic, dramatic lighting, film grain, 35mm",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "商業產品攝影 (Product)",
-        "value": "Professional product photography, studio lighting, clean background, commercial quality"
+        "value": "Professional product photography, studio lighting, clean background, commercial quality",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "人像攝影 (Portrait)",
-        "value": "Professional portrait photography, 85mm lens, bokeh, studio lighting, editorial"
+        "value": "Professional portrait photography, 85mm lens, bokeh, studio lighting, editorial",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "時尚攝影 (Fashion)",
-        "value": "High fashion photography, Vogue style, editorial, dramatic poses, professional lighting"
+        "value": "High fashion photography, Vogue style, editorial, dramatic poses, professional lighting",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "街頭攝影 (Street)",
-        "value": "Street photography, candid, urban life, documentary style, authentic moments"
+        "value": "Street photography, candid, urban life, documentary style, authentic moments",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "風景攝影 (Landscape)",
-        "value": "Landscape photography, golden hour, dramatic sky, National Geographic quality"
+        "value": "Landscape photography, golden hour, dramatic sky, National Geographic quality",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "建築攝影 (Architecture)",
-        "value": "Architectural photography, clean lines, perspective correction, structural beauty"
+        "value": "Architectural photography, clean lines, perspective correction, structural beauty",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "美食攝影 (Food)",
-        "value": "Professional food photography, appetizing, styled, natural lighting, gourmet"
+        "value": "Professional food photography, appetizing, styled, natural lighting, gourmet",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "微距攝影 (Macro)",
-        "value": "Macro photography, extreme close-up, intricate details, shallow depth of field"
+        "value": "Macro photography, extreme close-up, intricate details, shallow depth of field",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "黑白攝影 (Black & White)",
-        "value": "Black and white photography, monochrome, high contrast, dramatic shadows, timeless"
+        "value": "Black and white photography, monochrome, high contrast, dramatic shadows, timeless",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "紅外線攝影 (Infrared)",
-        "value": "Infrared photography, false color, surreal landscape, white foliage"
+        "value": "Infrared photography, false color, surreal landscape, white foliage",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "長曝光 (Long Exposure)",
-        "value": "Long exposure photography, light trails, smooth water, motion blur, ethereal"
+        "value": "Long exposure photography, light trails, smooth water, motion blur, ethereal",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "高動態範圍 (HDR)",
-        "value": "HDR photography, wide dynamic range, vivid colors, detailed shadows and highlights"
+        "value": "HDR photography, wide dynamic range, vivid colors, detailed shadows and highlights",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "底片感 (Film Grain)",
-        "value": "Film photography look, Kodak Portra, analog grain, vintage color grading, nostalgic"
+        "value": "Film photography look, Kodak Portra, analog grain, vintage color grading, nostalgic",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "拍立得 (Polaroid)",
-        "value": "Polaroid instant photo style, white frame, faded colors, nostalgic, authentic"
+        "value": "Polaroid instant photo style, white frame, faded colors, nostalgic, authentic",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -377,31 +623,52 @@
     "styles": [
       {
         "name": "像素藝術 (Pixel Art)",
-        "value": "Pixel art style, 16-bit, retro gaming, limited palette, nostalgic, detailed sprites"
+        "value": "Pixel art style, 16-bit, retro gaming, limited palette, nostalgic, detailed sprites",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "Y"
       },
       {
         "name": "復古遊戲 (Retro Gaming)",
-        "value": "Retro game art, 8-bit style, NES era, limited colors, CRT scanlines"
+        "value": "Retro game art, 8-bit style, NES era, limited colors, CRT scanlines",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "Y"
       },
       {
         "name": "次世代3D (AAA Gaming)",
-        "value": "AAA video game graphics, Unreal Engine 5, ray tracing, photorealistic, next-gen"
+        "value": "AAA video game graphics, Unreal Engine 5, ray tracing, photorealistic, next-gen",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "手繪遊戲 (Hand-Painted)",
-        "value": "Hand-painted game art style, World of Warcraft, stylized textures, fantasy"
+        "value": "Hand-painted game art style, World of Warcraft, stylized textures, fantasy",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "賽璐珞渲染 (Cel-Shaded)",
-        "value": "Cel-shaded 3D style, Zelda Wind Waker, toon shading, bold outlines, anime look"
+        "value": "Cel-shaded 3D style, Zelda Wind Waker, toon shading, bold outlines, anime look",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "視覺小說 (Visual Novel)",
-        "value": "Visual novel art style, anime character portraits, dialogue boxes, dating sim aesthetic"
+        "value": "Visual novel art style, anime character portraits, dialogue boxes, dating sim aesthetic",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "遊戲UI (Game UI)",
-        "value": "Game UI design, HUD elements, health bars, inventory icons, fantasy interface"
+        "value": "Game UI design, HUD elements, health bars, inventory icons, fantasy interface",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "Y"
       }
     ]
   },
@@ -410,67 +677,115 @@
     "styles": [
       {
         "name": "油畫 (Oil Painting)",
-        "value": "Oil painting style, rich colors, visible brushstrokes, classical technique, impasto"
+        "value": "Oil painting style, rich colors, visible brushstrokes, classical technique, impasto",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "水彩 (Watercolor)",
-        "value": "Watercolor painting, soft edges, color bleeding, delicate, transparent washes"
+        "value": "Watercolor painting, soft edges, color bleeding, delicate, transparent washes",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "壓克力 (Acrylic)",
-        "value": "Acrylic painting style, bold colors, versatile texture, modern art feel"
+        "value": "Acrylic painting style, bold colors, versatile texture, modern art feel",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "粉彩 (Pastel)",
-        "value": "Pastel art style, soft colors, powdery texture, gentle blending, dreamy"
+        "value": "Pastel art style, soft colors, powdery texture, gentle blending, dreamy",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "炭筆素描 (Charcoal)",
-        "value": "Charcoal drawing, dramatic contrast, expressive marks, textured paper"
+        "value": "Charcoal drawing, dramatic contrast, expressive marks, textured paper",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "鉛筆素描 (Pencil)",
-        "value": "Pencil sketch, graphite drawing, detailed shading, realistic rendering"
+        "value": "Pencil sketch, graphite drawing, detailed shading, realistic rendering",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "色鉛筆 (Colored Pencil)",
-        "value": "Colored pencil illustration, layered colors, detailed texture, soft blending"
+        "value": "Colored pencil illustration, layered colors, detailed texture, soft blending",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "蠟筆 (Crayon)",
-        "value": "Crayon drawing style, childlike, waxy texture, bold strokes, playful"
+        "value": "Crayon drawing style, childlike, waxy texture, bold strokes, playful",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "墨水筆 (Ink)",
-        "value": "Ink illustration, pen and ink, crosshatching, detailed linework, black and white"
+        "value": "Ink illustration, pen and ink, crosshatching, detailed linework, black and white",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "版畫 (Woodcut Print)",
-        "value": "Woodcut print style, bold contrasts, carved lines, traditional printmaking"
+        "value": "Woodcut print style, bold contrasts, carved lines, traditional printmaking",
+        "keyframe": "Y",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "絲網印刷 (Screen Print)",
-        "value": "Screen print style, limited colors, graphic, poster art, Andy Warhol technique"
+        "value": "Screen print style, limited colors, graphic, poster art, Andy Warhol technique",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "雕塑感 (Sculptural)",
-        "value": "Sculptural 3D render, marble texture, classical sculpture, chiseled, dimensional"
+        "value": "Sculptural 3D render, marble texture, classical sculpture, chiseled, dimensional",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "黏土動畫 (Claymation)",
-        "value": "Claymation style, stop-motion look, handcrafted clay texture, tactile feel"
+        "value": "Claymation style, stop-motion look, handcrafted clay texture, tactile feel",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "紙藝拼貼 (Paper Craft)",
-        "value": "Paper craft style, cut paper, layered, collage, dimensional, handmade"
+        "value": "Paper craft style, cut paper, layered, collage, dimensional, handmade",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "刺繡風格 (Embroidery)",
-        "value": "Embroidery style, thread texture, stitched patterns, fabric art, handcrafted"
+        "value": "Embroidery style, thread texture, stitched patterns, fabric art, handcrafted",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "玻璃彩繪 (Stained Glass)",
-        "value": "Stained glass style, lead lines, vibrant colors, translucent, cathedral windows"
+        "value": "Stained glass style, lead lines, vibrant colors, translucent, cathedral windows",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       }
     ]
   },
@@ -479,51 +794,87 @@
     "styles": [
       {
         "name": "夢幻 (Dreamy)",
-        "value": "Dreamy atmosphere, soft focus, ethereal glow, pastel colors, surreal, whimsical"
+        "value": "Dreamy atmosphere, soft focus, ethereal glow, pastel colors, surreal, whimsical",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "神秘 (Mysterious)",
-        "value": "Mysterious atmosphere, moody lighting, shadows, enigmatic, suspenseful"
+        "value": "Mysterious atmosphere, moody lighting, shadows, enigmatic, suspenseful",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "史詩 (Epic)",
-        "value": "Epic atmosphere, grand scale, dramatic lighting, heroic, awe-inspiring"
+        "value": "Epic atmosphere, grand scale, dramatic lighting, heroic, awe-inspiring",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "恐怖 (Horror)",
-        "value": "Horror atmosphere, dark, unsettling, creepy, ominous shadows, fear-inducing"
+        "value": "Horror atmosphere, dark, unsettling, creepy, ominous shadows, fear-inducing",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "浪漫 (Romantic)",
-        "value": "Romantic atmosphere, soft lighting, warm tones, intimate, tender mood"
+        "value": "Romantic atmosphere, soft lighting, warm tones, intimate, tender mood",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "憂鬱 (Melancholic)",
-        "value": "Melancholic atmosphere, muted colors, overcast, wistful, contemplative"
+        "value": "Melancholic atmosphere, muted colors, overcast, wistful, contemplative",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "歡樂 (Joyful)",
-        "value": "Joyful atmosphere, bright colors, dynamic, celebratory, energetic"
+        "value": "Joyful atmosphere, bright colors, dynamic, celebratory, energetic",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "寧靜 (Serene)",
-        "value": "Serene atmosphere, calm, peaceful, tranquil, balanced composition, zen"
+        "value": "Serene atmosphere, calm, peaceful, tranquil, balanced composition, zen",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "懷舊 (Nostalgic)",
-        "value": "Nostalgic atmosphere, vintage feel, warm sepia, faded colors, memory-like"
+        "value": "Nostalgic atmosphere, vintage feel, warm sepia, faded colors, memory-like",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "未來感 (Futuristic)",
-        "value": "Futuristic atmosphere, sleek, high-tech, chrome, blue lighting, advanced"
+        "value": "Futuristic atmosphere, sleek, high-tech, chrome, blue lighting, advanced",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "陰森 (Eerie)",
-        "value": "Eerie atmosphere, unsettling calm, fog, abandoned places, unnatural silence"
+        "value": "Eerie atmosphere, unsettling calm, fog, abandoned places, unnatural silence",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "奢華 (Luxurious)",
-        "value": "Luxurious atmosphere, gold accents, rich textures, opulent, premium quality"
+        "value": "Luxurious atmosphere, gold accents, rich textures, opulent, premium quality",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -532,51 +883,87 @@
     "styles": [
       {
         "name": "雙重曝光 (Double Exposure)",
-        "value": "Double exposure effect, overlapping images, silhouettes, artistic blend"
+        "value": "Double exposure effect, overlapping images, silhouettes, artistic blend",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "故障藝術 (Glitch Art)",
-        "value": "Glitch art style, digital corruption, RGB split, datamoshing, cyberpunk"
+        "value": "Glitch art style, digital corruption, RGB split, datamoshing, cyberpunk",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "霓虹光暈 (Neon Glow)",
-        "value": "Neon glow effect, luminous outlines, dark background, vibrant colors, electric"
+        "value": "Neon glow effect, luminous outlines, dark background, vibrant colors, electric",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "彩虹棱鏡 (Prismatic)",
-        "value": "Prismatic effect, rainbow light dispersion, crystalline, iridescent, spectrum"
+        "value": "Prismatic effect, rainbow light dispersion, crystalline, iridescent, spectrum",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "煙霧效果 (Smoke Art)",
-        "value": "Smoke art effect, flowing vapor, ethereal, dynamic shapes, mysterious"
+        "value": "Smoke art effect, flowing vapor, ethereal, dynamic shapes, mysterious",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "分形藝術 (Fractal)",
-        "value": "Fractal art, mathematical patterns, infinite detail, psychedelic, complex geometry"
+        "value": "Fractal art, mathematical patterns, infinite detail, psychedelic, complex geometry",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "抽象幾何 (Abstract Geometric)",
-        "value": "Abstract geometric art, shapes and colors, non-representational, modern"
+        "value": "Abstract geometric art, shapes and colors, non-representational, modern",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "生成藝術 (Generative)",
-        "value": "Generative art, algorithmic patterns, procedural, creative coding aesthetic"
+        "value": "Generative art, algorithmic patterns, procedural, creative coding aesthetic",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "萬花筒 (Kaleidoscope)",
-        "value": "Kaleidoscope effect, symmetrical patterns, colorful, mesmerizing, psychedelic"
+        "value": "Kaleidoscope effect, symmetrical patterns, colorful, mesmerizing, psychedelic",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "X光透視 (X-Ray)",
-        "value": "X-ray style, transparent view, skeletal, medical imaging aesthetic, blue tones"
+        "value": "X-ray style, transparent view, skeletal, medical imaging aesthetic, blue tones",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "熱成像 (Thermal)",
-        "value": "Thermal imaging style, heat map colors, infrared look, temperature visualization"
+        "value": "Thermal imaging style, heat map colors, infrared look, temperature visualization",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "全像投影 (Holographic)",
-        "value": "Holographic effect, iridescent shimmer, futuristic, rainbow reflections, 3D projection"
+        "value": "Holographic effect, iridescent shimmer, futuristic, rainbow reflections, 3D projection",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   },
@@ -585,51 +972,87 @@
     "styles": [
       {
         "name": "可愛貼紙 (Kawaii Sticker)",
-        "value": "Kawaii sticker style, cute, bold outlines, pastel colors, die-cut, white background"
+        "value": "Kawaii sticker style, cute, bold outlines, pastel colors, die-cut, white background",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "吉祥物設計 (Mascot)",
-        "value": "Mascot character design, friendly, memorable, brand identity, cartoon style"
+        "value": "Mascot character design, friendly, memorable, brand identity, cartoon style",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "塔羅牌 (Tarot Card)",
-        "value": "Tarot card art style, mystical, symbolic, ornate borders, esoteric imagery"
+        "value": "Tarot card art style, mystical, symbolic, ornate borders, esoteric imagery",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "撲克牌 (Playing Card)",
-        "value": "Playing card design, symmetrical, royal court, decorative, classic patterns"
+        "value": "Playing card design, symmetrical, royal court, decorative, classic patterns",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "徽章紋章 (Heraldry)",
-        "value": "Heraldic design, coat of arms, medieval, symbolic animals, royal crests"
+        "value": "Heraldic design, coat of arms, medieval, symbolic animals, royal crests",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "Y"
       },
       {
         "name": "地圖插畫 (Illustrated Map)",
-        "value": "Illustrated map style, fantasy cartography, vintage atlas, detailed landmarks"
+        "value": "Illustrated map style, fantasy cartography, vintage atlas, detailed landmarks",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "植物圖鑑 (Botanical)",
-        "value": "Botanical illustration, scientific accuracy, detailed flora, vintage naturalist"
+        "value": "Botanical illustration, scientific accuracy, detailed flora, vintage naturalist",
+        "keyframe": "N",
+        "Pattern": "Y",
+        "Icon": "N"
       },
       {
         "name": "解剖圖 (Anatomical)",
-        "value": "Anatomical illustration style, medical, detailed cross-section, educational, realistic"
+        "value": "Anatomical illustration style, medical, detailed cross-section, educational, realistic",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "機械圖解 (Technical)",
-        "value": "Technical illustration, blueprint style, exploded view, mechanical parts, precise"
+        "value": "Technical illustration, blueprint style, exploded view, mechanical parts, precise",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "節日賀卡 (Greeting Card)",
-        "value": "Greeting card style, festive, decorative, heartwarming, celebratory design"
+        "value": "Greeting card style, festive, decorative, heartwarming, celebratory design",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "專輯封面 (Album Art)",
-        "value": "Album cover art style, iconic, artistic, music-inspired, memorable graphic design"
+        "value": "Album cover art style, iconic, artistic, music-inspired, memorable graphic design",
+        "keyframe": "N",
+        "Pattern": "N",
+        "Icon": "N"
       },
       {
         "name": "電影海報 (Movie Poster)",
-        "value": "Movie poster style, dramatic composition, Hollywood, key art, promotional"
+        "value": "Movie poster style, dramatic composition, Hollywood, key art, promotional",
+        "keyframe": "Y",
+        "Pattern": "N",
+        "Icon": "N"
       }
     ]
   }

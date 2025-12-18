@@ -2,87 +2,147 @@
     "ratios": [
         {
             "name": "1:1 (Square)",
-            "value": "1:1 aspect ratio, square format"
+            "value": "1:1 aspect ratio, square format",
+            "keyframe": "Y",
+            "Pattern": "Y",
+            "Icon": "Y"
         },
         {
             "name": "4:3 (Standard)",
-            "value": "4:3 aspect ratio, standard format"
+            "value": "4:3 aspect ratio, standard format",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "3:4 (Portrait Standard)",
-            "value": "3:4 aspect ratio, vertical standard"
+            "value": "3:4 aspect ratio, vertical standard",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "16:9 (Widescreen)",
-            "value": "16:9 aspect ratio, widescreen format"
+            "value": "16:9 aspect ratio, widescreen format",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "9:16 (Vertical/Story)",
-            "value": "9:16 aspect ratio, vertical video, story format"
+            "value": "9:16 aspect ratio, vertical video, story format",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "21:9 (Cinematic Ultra)",
-            "value": "21:9 aspect ratio, ultra-wide cinematic"
+            "value": "21:9 aspect ratio, ultra-wide cinematic",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "2:3 (Classic Portrait)",
-            "value": "2:3 aspect ratio, classic portrait format"
+            "value": "2:3 aspect ratio, classic portrait format",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "3:2 (Classic Landscape)",
-            "value": "3:2 aspect ratio, classic landscape, 35mm film"
+            "value": "3:2 aspect ratio, classic landscape, 35mm film",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "4:5 (Instagram Portrait)",
-            "value": "4:5 aspect ratio, Instagram portrait"
+            "value": "4:5 aspect ratio, Instagram portrait",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "5:4 (Large Format)",
-            "value": "5:4 aspect ratio, large format photography"
+            "value": "5:4 aspect ratio, large format photography",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "2.35:1 (Anamorphic)",
-            "value": "2.35:1 aspect ratio, anamorphic widescreen, Cinemascope"
+            "value": "2.35:1 aspect ratio, anamorphic widescreen, Cinemascope",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "1.85:1 (Film Standard)",
-            "value": "1.85:1 aspect ratio, standard theatrical film"
+            "value": "1.85:1 aspect ratio, standard theatrical film",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         }
     ],
     "orientations": [
         {
             "name": "橫向 (Landscape)",
-            "value": "landscape orientation, horizontal"
+            "value": "landscape orientation, horizontal",
+            "keyframe": "Y",
+            "Pattern": "Y",
+            "Icon": "N"
         },
         {
             "name": "直向 (Portrait)",
-            "value": "portrait orientation, vertical"
+            "value": "portrait orientation, vertical",
+            "keyframe": "Y",
+            "Pattern": "Y",
+            "Icon": "N"
         },
         {
             "name": "正方 (Square)",
-            "value": "square format"
+            "value": "square format",
+            "keyframe": "Y",
+            "Pattern": "Y",
+            "Icon": "Y"
         }
     ],
     "margins": [
         {
             "name": "無邊距 (Full Bleed)",
-            "value": "full bleed, edge to edge, no margins"
+            "value": "full bleed, edge to edge, no margins",
+            "keyframe": "Y",
+            "Pattern": "Y",
+            "Icon": "Y"
         },
         {
             "name": "窄邊距 (Thin Border)",
-            "value": "thin border, small margins, subtle frame"
+            "value": "thin border, small margins, subtle frame",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "標準邊距 (Standard Margin)",
-            "value": "standard margins, balanced spacing"
+            "value": "standard margins, balanced spacing",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "寬邊距 (Wide Margin)",
-            "value": "wide margins, generous white space"
+            "value": "wide margins, generous white space",
+            "keyframe": "Y",
+            "Pattern": "N",
+            "Icon": "N"
         },
         {
             "name": "畫框風格 (Framed)",
-            "value": "framed style, decorative border, gallery presentation"
+            "value": "framed style, decorative border, gallery presentation",
+            "keyframe": "N",
+            "Pattern": "N",
+            "Icon": "N"
         }
     ]
 }
