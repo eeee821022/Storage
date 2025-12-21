@@ -5,7 +5,8 @@
 window.PROMPT_REGISTRY = window.PROMPT_REGISTRY || {};
 
 window.PROMPT_REGISTRY["Miter Saw Validator"] = {
-    systemPromptTemplate: (type, country) => `Target Region: ${country}
+  // Google Search 模式專用 Prompt
+  systemPromptTemplate: (type, country) => `Target Region: ${country}
 Market Context: Focus on tool models, certifications, and market-specific standards (e.g., regional safety labels, voltage systems, and plug types) common in this region.
 
 You are a data validation expert for ${type}.
@@ -68,14 +69,50 @@ IMPORTANT INSTRUCTIONS:
    - "new_items": [ ... list of new model objects ... ]
 
 Output VALID JSON only.`,
-    defaultSchema: {
-        "Type": ["1.Miter Base", "2.Floor"],
-        "Bevel": ["Single", "Dual"],
-        "Slide": ["Rail", "No", "Side Rail", "Rail-Front", "Robust Arm"],
-        "Laser": ["Laser", "Dual laser", "Shadow", "Laser+Shadow"],
-        "Power Supply": ["Cordless 18V", "Cordless 18V2", "Cordless 40V", "Cordless 54V", "Cordless 20V", "CAS Cordless 18V"],
-        "Motor Type": ["Carbon", "BLDC"]
-    }
+
+  // Model 知識模式專用 Prompt (不使用 Google Search)
+  systemPromptTemplateNoSearch: (type, country) => `Target Region: ${country}
+Market Context: Focus on tool models, certifications, and market-specific standards (e.g., regional safety labels, voltage systems, and plug types) common in this region.
+
+You are a data validation expert for ${type}.
+**Use your built-in knowledge to verify and correct specifications. Do NOT make up values you are unsure about.**
+
+Your task is to:
+1. Review the input JSON list of tools.
+2. **Use your training data knowledge to verify specifications** (RPM, Wattage, Blade Diameter, Type, Bevel, Slide, Laser, etc.):
+   - Only fill values you are CONFIDENT about from your training data
+   - If unsure, leave the field EMPTY rather than guessing
+3. **"Released Year"** - Only fill if you are certain, otherwise leave EMPTY.
+4. Do NOT invent new models. Only validate existing data.
+5. Be conservative: if a value seems wrong but you're not 100% sure, keep the original.
+
+STRICT DATA SCHEMA (You MUST use these exact allowed values):
+
+- Type: "1.Miter Base", "2.Floor"
+- Bevel: "Single", "Dual", "No"
+- Slide: "No", "Rail", "Side Rail", "Rail-Front", "Robust Arm"
+- Laser: "-", "Laser", "Dual laser", "Shadow", "Laser+Shadow"
+- Power Supply: "Cordless 18V", "Cordless 18V2", "Cordless 54V", "Cordless 40V", "Cordless 20V", "CAS Cordless 18V"
+- Motor Type: "Carbon", "BLDC"
+- Others: "E Brake", "Speed Ctrl", "Interface", "IoT", "VTC", "SYM Fence", "Dust Extraction"
+
+IMPORTANT INSTRUCTIONS:
+- Target Brand: **{{BRAND}}**
+- Fill empty columns based on Model # ONLY if you are confident.
+- **Be conservative: Empty is better than wrong.**
+- Return a JSON object with:
+   - "corrected": [ ... list of objects with SAME count as input ... ]
+   - "new_items": [] (Do NOT add new items in Model-only mode)
+
+Output VALID JSON only.`,
+  defaultSchema: {
+    "Type": ["1.Miter Base", "2.Floor"],
+    "Bevel": ["Single", "Dual"],
+    "Slide": ["Rail", "No", "Side Rail", "Rail-Front", "Robust Arm"],
+    "Laser": ["Laser", "Dual laser", "Shadow", "Laser+Shadow"],
+    "Power Supply": ["Cordless 18V", "Cordless 18V2", "Cordless 40V", "Cordless 54V", "Cordless 20V", "CAS Cordless 18V"],
+    "Motor Type": ["Carbon", "BLDC"]
+  }
 };
 
 console.log("Loaded Prompt: Miter Saw Validator");
