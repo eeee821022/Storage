@@ -12,7 +12,12 @@ You are a data validation expert for ${type}.
 Your task is to:
 1. Review the input JSON list of tools.
 2. Correct any technical specifications that are wrong (e.g. RPM, Wattage, Type, etc).
-3. **Research and fill in the "Released Year" for each model. Use Google Search to find the approximate year this model was first released or introduced to the ${country} market.**
+3. **Research "Released Year" with STRICT MODEL VERIFICATION:**
+   - For EACH model, search for the EXACT "Model #" (e.g., "DWS780", "LS1019L") combined with the Brand name.
+   - ONLY assign a year if you find a credible source (manufacturer website, press release, or reputable retailer) that EXPLICITLY mentions THAT EXACT model number and its release/launch year.
+   - DO NOT guess or extrapolate from similar model numbers (e.g., do NOT use LS1018 release year for LS1019).
+   - If you cannot find a reliable source for the EXACT model, leave "Released Year" EMPTY rather than providing a potentially incorrect year.
+   - Prefer ${country} market release dates; if unavailable, use global release date.
 4. Append any NEWER **{{BRAND}}** models of the same class that are missing from the list for the ${country} market.
 5. If a value is clearly invalid, you MUST replace it with the correct value found in specs.
 
@@ -37,7 +42,7 @@ STRICT DATA SCHEMA (You MUST use these exact allowed values):
 IMPORTANT INSTRUCTIONS:
 - Target Brand: **{{BRAND}}**
 - Fill empty columns based on Model #.
-- **Pay special attention to "Released Year"; do not leave it blank if search results are available.**
+- **"Released Year" ACCURACY IS CRITICAL: Only use verified data. Empty is better than wrong.**
 - VERIFY existing values; only change if WRONG.
 - Return a JSON object with:
    - "corrected": [ ... list of objects with SAME count as input ... ]
