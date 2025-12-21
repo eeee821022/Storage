@@ -5,8 +5,8 @@
 window.PROMPT_REGISTRY = window.PROMPT_REGISTRY || {};
 
 window.PROMPT_REGISTRY["Miter Saw Validator"] = {
-  // Google Search 模式專用 Prompt
-  systemPromptTemplate: (type, country) => `Target Region: ${country}
+    // Google Search 模式專用 Prompt
+    systemPromptTemplate: (type, country) => `Target Region: ${country}
 Market Context: Focus on tool models, certifications, and market-specific standards (e.g., regional safety labels, voltage systems, and plug types) common in this region.
 
 You are a data validation expert for ${type}.
@@ -87,8 +87,8 @@ IMPORTANT INSTRUCTIONS:
 
 Output VALID JSON only.`,
 
-  // Model 知識模式專用 Prompt (不使用 Google Search)
-  systemPromptTemplateNoSearch: (type, country) => `Target Region: ${country}
+    // Model 知識模式專用 Prompt (不使用 Google Search)
+    systemPromptTemplateNoSearch: (type, country) => `Target Region: ${country}
 Market Context: Focus on tool models, certifications, and market-specific standards (e.g., regional safety labels, voltage systems, and plug types) common in this region.
 
 You are a data validation expert for ${type}.
@@ -105,13 +105,46 @@ Your task is to:
 
 STRICT DATA SCHEMA (You MUST use these exact allowed values):
 
-- Type: "1.Miter Base", "2.Floor"
-- Bevel: "Single", "Dual", "No"
-- Slide: "No", "Rail", "Side Rail", "Rail-Front", "Robust Arm"
-- Laser: "-", "Laser", "Dual laser", "Shadow", "Laser+Shadow"
-- Power Supply: "Cordless 18V", "Cordless 18V2", "Cordless 54V", "Cordless 40V", "Cordless 20V", "CAS Cordless 18V"
-- Motor Type: "Carbon", "BLDC"
-- Others: "E Brake", "Speed Ctrl", "Interface", "IoT", "VTC", "SYM Fence", "Dust Extraction"
+- Type (Machine mounting style):
+  * "1.Miter Base" = Benchtop/portable miter saw, sits on a workbench or stand
+  * "2.Floor" = Floor-standing/stationary machine with integrated stand or legs
+
+- Bevel (Tilting capability of the blade):
+  * "Single" = Blade tilts to ONE side only (typically left)
+  * "Dual" = Blade tilts to BOTH left AND right sides
+  * "No" = No bevel capability, blade is fixed at 90°
+
+- Slide (Rail/slide mechanism for extended cut width):
+  * "No" = No sliding mechanism, fixed cutting width
+  * "Rail" = Traditional dual-rail sliding system behind the blade
+  * "Side Rail" = Rail system mounted on the side of the saw
+  * "Rail-Front" = Forward-pull rail design (like Festool Kapex)
+  * "Robust Arm" = Articulating arm system (like Bosch Glide/Axial-Glide)
+
+- Laser (Cut-line indicator system):
+  * "-" = No laser or shadow line system
+  * "Laser" = Single laser line indicator
+  * "Dual laser" = Two parallel laser lines showing kerf width
+  * "Shadow" = LED shadow line system
+  * "Laser+Shadow" = Has both laser AND shadow line systems
+
+- Power Supply (Format: "Cordless [Voltage]" or leave empty for corded):
+  * Examples: "Cordless 18V", "Cordless 18V2" (dual battery), "Cordless 20V", "Cordless 36V", "Cordless 40V", "Cordless 54V", "Cordless 60V"
+  * Leave EMPTY for AC corded tools
+
+- Motor Type: "Carbon" (brushed motor), "BLDC" (brushless DC motor)
+
+- Others (Comma-separated list of features, ONLY include features that are CONFIRMED):
+  * "E Brake" = Electric Brake - Blade stops quickly after trigger release. MUST have active braking, NOT just inertia stop.
+  * "Speed Ctrl" = Variable Speed Control - User can adjust RPM
+  * "Interface" = System Interface - Has proprietary accessory attachment system
+  * "IoT" = Smart/Connected features - Bluetooth, WiFi, app connectivity
+  * "VTC" = Vertical Table Clamp
+  * "SYM Fence" = Symmetrical Fence
+  * "Dust Extraction" = Dust collection port/system
+  * "Soft Start" = Gradual motor acceleration
+  
+  IMPORTANT: Do NOT assume "E Brake" just because it's brushless (BLDC). If unsure, do NOT include.
 
 IMPORTANT INSTRUCTIONS:
 - Target Brand: **{{BRAND}}**
@@ -122,14 +155,14 @@ IMPORTANT INSTRUCTIONS:
    - "new_items": [] (Do NOT add new items in Model-only mode)
 
 Output VALID JSON only.`,
-  defaultSchema: {
-    "Type": ["1.Miter Base", "2.Floor"],
-    "Bevel": ["Single", "Dual"],
-    "Slide": ["Rail", "No", "Side Rail", "Rail-Front", "Robust Arm"],
-    "Laser": ["Laser", "Dual laser", "Shadow", "Laser+Shadow"],
-    "Power Supply": ["Cordless 18V", "Cordless 18V2", "Cordless 40V", "Cordless 54V", "Cordless 20V", "CAS Cordless 18V"],
-    "Motor Type": ["Carbon", "BLDC"]
-  }
+    defaultSchema: {
+        "Type": ["1.Miter Base", "2.Floor"],
+        "Bevel": ["Single", "Dual"],
+        "Slide": ["Rail", "No", "Side Rail", "Rail-Front", "Robust Arm"],
+        "Laser": ["Laser", "Dual laser", "Shadow", "Laser+Shadow"],
+        "Power Supply": ["Cordless 18V", "Cordless 18V2", "Cordless 40V", "Cordless 54V", "Cordless 20V", "CAS Cordless 18V"],
+        "Motor Type": ["Carbon", "BLDC"]
+    }
 };
 
 console.log("Loaded Prompt: Miter Saw Validator");
