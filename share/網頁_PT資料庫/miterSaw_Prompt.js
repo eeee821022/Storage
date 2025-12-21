@@ -9,25 +9,44 @@ window.PROMPT_REGISTRY["Miter Saw Validator"] = {
 Market Context: Focus on tool models, certifications, and market-specific standards (e.g., regional safety labels, voltage systems, and plug types) common in this region.
 
 You are a data validation expert for ${type}.
+**You have access to Google Search. USE IT to verify and correct specifications.**
+
 Your task is to:
 1. Review the input JSON list of tools.
-2. Correct any technical specifications that are wrong (e.g. RPM, Wattage, Type, etc).
-3. **Research "Released Year" with STRICT MODEL VERIFICATION:**
-   - For EACH model, search for the EXACT "Model #" (e.g., "DWS780", "LS1019L") combined with the Brand name.
-   - ONLY assign a year if you find a credible source (manufacturer website, press release, or reputable retailer) that EXPLICITLY mentions THAT EXACT model number and its release/launch year.
-   - DO NOT guess or extrapolate from similar model numbers (e.g., do NOT use LS1018 release year for LS1019).
-   - If you cannot find a reliable source for the EXACT model, leave "Released Year" EMPTY rather than providing a potentially incorrect year.
-   - Prefer ${country} market release dates; if unavailable, use global release date.
+2. **Use Google Search to verify ALL specifications** (RPM, Wattage, Blade Diameter, Type, Bevel, Slide, Laser, etc.):
+   - Search for "[Brand] [Model #] specifications" to find official specs
+   - Correct any wrong values based on search results from manufacturer websites or reputable sources
+3. **Research "Released Year"** - If search results are unclear or model is very new (2024-2025), leave EMPTY.
 4. Append any NEWER **{{BRAND}}** models of the same class that are missing from the list for the ${country} market.
-5. If a value is clearly invalid, you MUST replace it with the correct value found in specs.
+5. If a value is clearly invalid or missing, you MUST fill it based on Google Search results.
 
 STRICT DATA SCHEMA (You MUST use these exact allowed values):
-- Type: "1.Miter Base", "2.Floor"
-- Bevel: "Single", "Dual"
-- Slide: "Rail", "No", "Side Rail", "Rail-Front", "Robust Arm"
+
+- Type (Machine mounting style):
+  * "1.Miter Base" = Benchtop/portable miter saw, sits on a workbench or stand
+  * "2.Floor" = Floor-standing/stationary machine with integrated stand or legs
+
+- Bevel (Tilting capability of the blade):
+  * "Single" = Blade tilts to ONE side only (typically left)
+  * "Dual" = Blade tilts to BOTH left AND right sides
+  * "No" = No bevel capability, blade is fixed at 90°
+
+- Slide (Rail/slide mechanism for extended cut width):
+  * "No" = No sliding mechanism, fixed cutting width
+  * "Rail" = Traditional dual-rail sliding system behind the blade
+  * "Side Rail" = Rail system mounted on the side of the saw
+  * "Rail-Front" = Forward-pull rail design, blade slides forward instead of backward, reduces rear clearance space (like Festool Kapex)
+  * "Robust Arm" = Articulating arm system (like Bosch Glide/Axial-Glide)
+
+- Laser (Cut-line indicator system):
+  * "-" = No laser or shadow line system
+  * "Laser" = Single laser line indicator
+  * "Dual laser" = Two parallel laser lines showing kerf width
+  * "Shadow" = LED shadow line system (blade casts shadow on cut line)
+  * "Laser+Shadow" = Has both laser AND shadow line systems
+
 - Power Supply: "Cordless 18V", "Cordless 18V2", "Cordless 54V", "Cordless 40V", "Cordless 20V", "CAS Cordless 18V"
-- Laser: "Laser", "Dual laser", "Shadow", "Laser+Shadow"
-- Motor Type: "Carbon", "BLDC"
+- Motor Type: "Carbon" (brushed motor), "BLDC" (brushless DC motor)
 - Others: "E Brake", "Speed Ctrl", "Interface", "IoT", "VTC", "SYM Fence", "Dust Extraction"
 
 - Blade Range (STRICT MAPPING based on Blade Diameter):
