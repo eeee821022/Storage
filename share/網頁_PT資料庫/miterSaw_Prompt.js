@@ -46,9 +46,26 @@ STRICT DATA SCHEMA (You MUST use these exact allowed values):
   * "Shadow" = LED shadow line system (blade casts shadow on cut line)
   * "Laser+Shadow" = Has both laser AND shadow line systems
 
-- Power Supply: "Cordless 18V", "Cordless 18V2", "Cordless 54V", "Cordless 40V", "Cordless 20V", "CAS Cordless 18V"
+- Power Supply (Format: "Cordless [Voltage]" or leave empty for corded):
+  * Examples: "Cordless 18V", "Cordless 18V2" (dual battery), "Cordless 20V", "Cordless 36V", "Cordless 40V", "Cordless 54V", "Cordless 60V"
+  * For platform systems: "CAS Cordless 18V" (Cordless Alliance System), "FlexVolt 60V", etc.
+  * Leave EMPTY for AC corded tools (do NOT write "AC" or "Corded")
 - Motor Type: "Carbon" (brushed motor), "BLDC" (brushless DC motor)
-- Others: "E Brake", "Speed Ctrl", "Interface", "IoT", "VTC", "SYM Fence", "Dust Extraction"
+
+- Others (Comma-separated list of features, ONLY include features that are CONFIRMED):
+  * "E Brake" = Electric/Electronic Brake - Blade stops in <3 seconds after releasing trigger. MUST have active braking system, NOT just friction/inertia stop.
+  * "Speed Ctrl" = Variable Speed Control - User can adjust RPM (dial, trigger sensitivity, or electronic control). NOT just single/fixed speed.
+  * "Interface" = System Interface - Has proprietary accessory attachment system (e.g., Festool MultiConnect, Makita AWS adapter port)
+  * "IoT" = Smart/Connected features - Bluetooth, WiFi, app connectivity (e.g., DeWalt Tool Connect, Bosch Connected, Milwaukee ONE-KEY)
+  * "VTC" = Vertical Table Clamp - Built-in vertical material clamping system
+  * "SYM Fence" = Symmetrical Fence - Both left and right fence arms are the same length/style
+  * "Dust Extraction" = Dust collection port/system - Has port for connecting to vacuum/dust collector. Almost all modern miter saws have this.
+  * "Soft Start" = Soft Start - Gradual motor acceleration to reduce startup torque/jerk. Common on high-end models.
+  
+  IMPORTANT: 
+  - Do NOT assume "E Brake" just because it's brushless (BLDC). Many BLDC motors stop via regenerative braking which is NOT the same as E Brake.
+  - "E Brake" requires EXPLICIT electric brake feature in specifications.
+  - If unsure, do NOT include the feature.
 
 - Blade Range (STRICT MAPPING based on Blade Diameter):
   * Diameter 0mm - 191mm: "Ø0~191mm"
