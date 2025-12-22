@@ -5,8 +5,8 @@
 window.PROMPT_REGISTRY = window.PROMPT_REGISTRY || {};
 
 window.PROMPT_REGISTRY["Miter Saw Validator"] = {
-    // Google Search 模式專用 Prompt
-    systemPromptTemplate: (type, country) => `Target Region: ${country}
+  // Google Search 模式專用 Prompt
+  systemPromptTemplate: (type, country) => `Target Region: ${country}
 Market Context: Focus on tool models, certifications, and market-specific standards (e.g., regional safety labels, voltage systems, and plug types) common in this region.
 
 You are a data validation expert for ${type}.
@@ -67,14 +67,7 @@ STRICT DATA SCHEMA (You MUST use these exact allowed values):
   - "E Brake" requires EXPLICIT electric brake feature in specifications.
   - If unsure, do NOT include the feature.
 
-- Blade Range (STRICT MAPPING based on Blade Diameter):
-  * Diameter 0mm - 191mm: "Ø0~191mm"
-  * Diameter 191.1mm - 222mm: "Ø191~222mm"
-  * Diameter 222.1mm - 267mm: "Ø222~267mm"
-  * Diameter 267.1mm - 279mm: "Ø267~279mm"
-  * Diameter 279.1mm - 333mm: "Ø279~333mm"
-  * Diameter 333.1mm - 371mm: "Ø333~371mm"
-  * Diameter > 371.1mm: "Ø371mm +"
+
 
 IMPORTANT INSTRUCTIONS:
 - Target Brand: **{{BRAND}}**
@@ -87,8 +80,8 @@ IMPORTANT INSTRUCTIONS:
 
 Output VALID JSON only.`,
 
-    // Model 知識模式專用 Prompt (不使用 Google Search)
-    systemPromptTemplateNoSearch: (type, country) => `Target Region: ${country}
+  // Model 知識模式專用 Prompt (不使用 Google Search)
+  systemPromptTemplateNoSearch: (type, country) => `Target Region: ${country}
 Market Context: Focus on tool models, certifications, and market-specific standards (e.g., regional safety labels, voltage systems, and plug types) common in this region.
 
 You are a data validation expert for ${type}.
@@ -155,14 +148,14 @@ IMPORTANT INSTRUCTIONS:
    - "new_items": [] (Do NOT add new items in Model-only mode)
 
 Output VALID JSON only.`,
-    defaultSchema: {
-        "Type": ["1.Miter Base", "2.Floor"],
-        "Bevel": ["Single", "Dual"],
-        "Slide": ["Rail", "No", "Side Rail", "Rail-Front", "Robust Arm"],
-        "Laser": ["Laser", "Dual laser", "Shadow", "Laser+Shadow"],
-        "Power Supply": ["Cordless 18V", "Cordless 18V2", "Cordless 40V", "Cordless 54V", "Cordless 20V", "CAS Cordless 18V"],
-        "Motor Type": ["Carbon", "BLDC"]
-    }
+  defaultSchema: {
+    "Type": ["1.Miter Base", "2.Floor"],
+    "Bevel": ["Single", "Dual"],
+    "Slide": ["Rail", "No", "Side Rail", "Rail-Front", "Robust Arm"],
+    "Laser": ["Laser", "Dual laser", "Shadow", "Laser+Shadow"],
+    "Power Supply": ["Cordless 18V", "Cordless 18V2", "Cordless 40V", "Cordless 54V", "Cordless 20V", "CAS Cordless 18V"],
+    "Motor Type": ["Carbon", "BLDC"]
+  }
 };
 
 console.log("Loaded Prompt: Miter Saw Validator");
