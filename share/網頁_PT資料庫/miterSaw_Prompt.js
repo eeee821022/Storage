@@ -24,11 +24,17 @@ Your task is to:
 STRICT DATA SCHEMA (You MUST use these exact allowed values):
 
 ### NUMERIC FORMATTING RULES (CRITICAL):
-1. **Watt, RPM, Blade Diameter, Voltage (if numeric)**:
+1. **Watt, RPM, Voltage (if numeric)**:
    - Output **ONLY DIGITS**.
-   - **NO UNITS** (e.g. write "1500", NOT "1500W" or "1500 W").
+   - **NO UNITS** (e.g. write "1500", NOT "1500W").
    - **NO COMMAS** (e.g. write "2500", NOT "2,500").
-   - Decimals are allowed (e.g. "254.4").
+   - Decimals are allowed.
+
+2. **Blade Diameter**:
+   - **ALWAYS CONVERT to MM** (Millimeters).
+   - If source is in Inches (e.g. 10", 12"), convert to MM (e.g. 254, 305).
+   - Output **INTEGER ONLY** (No decimals for MM).
+   - Example: 10" -> 254; 7-1/4" -> 184.
 
 - Type (Machine mounting style):
   * "1.Miter Base" = Benchtop/portable miter saw, sits on a workbench or stand
@@ -106,11 +112,17 @@ Your task is to:
 STRICT DATA SCHEMA (You MUST use these exact allowed values):
 
 ### NUMERIC FORMATTING RULES (CRITICAL):
-1. **Watt, RPM, Blade Diameter, Voltage (if numeric)**:
+1. **Watt, RPM, Voltage (if numeric)**:
    - Output **ONLY DIGITS**.
-   - **NO UNITS** (e.g. write "1500", NOT "1500W" or "1500 W").
+   - **NO UNITS** (e.g. write "1500", NOT "1500W").
    - **NO COMMAS** (e.g. write "2500", NOT "2,500").
-   - Decimals are allowed (e.g. "254.4").
+   - Decimals are allowed.
+
+2. **Blade Diameter**:
+   - **ALWAYS CONVERT to MM** (Millimeters).
+   - If source is in Inches (e.g. 10", 12"), convert to MM (e.g. 254, 305).
+   - Output **INTEGER ONLY** (No decimals for MM).
+   - Example: 10" -> 254; 7-1/4" -> 184.
 
 - Type (Machine mounting style):
   * "1.Miter Base" = Benchtop/portable miter saw, sits on a workbench or stand
