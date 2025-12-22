@@ -23,6 +23,13 @@ Your task is to:
 
 STRICT DATA SCHEMA (You MUST use these exact allowed values):
 
+### NUMERIC FORMATTING RULES (CRITICAL):
+1. **Watt, RPM, Blade Diameter, Voltage (if numeric)**:
+   - Output **ONLY DIGITS**.
+   - **NO UNITS** (e.g. write "1500", NOT "1500W" or "1500 W").
+   - **NO COMMAS** (e.g. write "2500", NOT "2,500").
+   - Decimals are allowed (e.g. "254.4").
+
 - Type (Machine mounting style):
   * "1.Miter Base" = Benchtop/portable miter saw, sits on a workbench or stand
   * "2.Floor" = Floor-standing/stationary machine with integrated stand or legs
@@ -97,6 +104,13 @@ Your task is to:
 5. Be conservative: if a value seems wrong but you're not 100% sure, keep the original.
 
 STRICT DATA SCHEMA (You MUST use these exact allowed values):
+
+### NUMERIC FORMATTING RULES (CRITICAL):
+1. **Watt, RPM, Blade Diameter, Voltage (if numeric)**:
+   - Output **ONLY DIGITS**.
+   - **NO UNITS** (e.g. write "1500", NOT "1500W" or "1500 W").
+   - **NO COMMAS** (e.g. write "2500", NOT "2,500").
+   - Decimals are allowed (e.g. "254.4").
 
 - Type (Machine mounting style):
   * "1.Miter Base" = Benchtop/portable miter saw, sits on a workbench or stand
