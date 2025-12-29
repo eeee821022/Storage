@@ -39,6 +39,7 @@ STRICT DATA SCHEMA (You MUST use these exact allowed values):
 - Type (Machine mounting style):
   * "1.Miter Base" = Benchtop/portable miter saw, sits on a workbench or stand
   * "2.Floor" = Floor-standing/stationary machine with integrated stand or legs
+  * "3.Multi Function" = Combination miter saw and table saw in one unit (flip-over/combi saws)
 
 - Bevel (Tilting capability of the blade):
   * "Single" = Blade tilts to ONE side only (typically left)
@@ -127,6 +128,7 @@ STRICT DATA SCHEMA (You MUST use these exact allowed values):
 - Type (Machine mounting style):
   * "1.Miter Base" = Benchtop/portable miter saw, sits on a workbench or stand
   * "2.Floor" = Floor-standing/stationary machine with integrated stand or legs
+  * "3.Multi Function" = Combination miter saw and table saw in one unit (flip-over/combi saws)
 
 - Bevel (Tilting capability of the blade):
   * "Single" = Blade tilts to ONE side only (typically left)
@@ -175,7 +177,7 @@ IMPORTANT INSTRUCTIONS:
 
 Output VALID JSON only.`,
   defaultSchema: {
-    "Type": ["1.Miter Base", "2.Floor"],
+    "Type": ["1.Miter Base", "2.Floor", "3.Multi Function"],
     "Bevel": ["Single", "Dual"],
     "Slide": ["Rail", "No", "Side Rail", "Rail-Front", "Robust Arm"],
     "Laser": ["Laser", "Dual laser", "Shadow", "Laser+Shadow"],
