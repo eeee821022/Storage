@@ -1,50 +1,50 @@
 [
     {
         "id": "MTS",
-        "name": "Miter Saw (切斷機)",
-        "description": "擁有 Bevel 與 Slide 功能的切斷機",
+        "name": "Miter Saw",
+        "description": "Miter saw with Bevel and Slide features",
         "filename_patterns": [
             "MTS",
             "miter",
-            "切斷機"
+            "miter_saw"
         ],
         "filters": [
             {
                 "key": "Platform",
-                "label": "平台"
+                "label": "Platform"
             },
             {
                 "key": "Price Range",
-                "label": "價格區間"
+                "label": "Price Range"
             },
             {
                 "key": "Brand",
-                "label": "品牌",
+                "label": "Brand",
                 "hasSearch": true
             },
             {
                 "key": "Bevel",
-                "label": "斜切"
+                "label": "Bevel"
             },
             {
                 "key": "Slide",
-                "label": "滑軌"
+                "label": "Slide"
             },
             {
                 "key": "Blade Diameter",
-                "label": "鋸片直徑"
+                "label": "Blade"
             },
             {
                 "key": "Power Supply",
-                "label": "電源"
+                "label": "Power"
             },
             {
                 "key": "Soft Start",
-                "label": "緩啟動"
+                "label": "Soft Start"
             },
             {
                 "key": "Laser",
-                "label": "雷射"
+                "label": "Laser"
             }
         ],
         "specs": [
@@ -70,43 +70,43 @@
     },
     {
         "id": "TBS",
-        "name": "Table Saw (桌上型圓鋸)",
-        "description": "一般桌上型圓鋸",
+        "name": "Table Saw",
+        "description": "Standard table saw",
         "filename_patterns": [
             "TBS",
             "table",
-            "圓鋸"
+            "table_saw"
         ],
         "filters": [
             {
                 "key": "Platform",
-                "label": "平台"
+                "label": "Platform"
             },
             {
                 "key": "Price Range",
-                "label": "價格區間"
+                "label": "Price Range"
             },
             {
                 "key": "Brand",
-                "label": "品牌",
+                "label": "Brand",
                 "hasSearch": true
             },
             {
                 "key": "Blade Diameter",
-                "label": "鋸片直徑"
+                "label": "Blade"
             },
             {
                 "key": "Watt",
-                "label": "瓦數",
+                "label": "Watt",
                 "fallback_key": "Power Supply"
             },
             {
                 "key": "RPM",
-                "label": "轉速"
+                "label": "RPM"
             },
             {
                 "key": "Start Mode",
-                "label": "啟動模式",
+                "label": "Start Mode",
                 "fallback_key": "Soft Start"
             }
         ],
