@@ -1612,30 +1612,23 @@
         function initApp() {
             showLoading(true);
 
-            // 1. Fetch File List first
-            fetchFileList().then(initialUrl => {
+            // 1. Populate both GS sheet dropdowns FIRST (so GS機種整理 is available)
+            Promise.all([
+                populateSheetDropdown(),  // GS 機種整理 (MTS List / TBS List)
+                fetchFileList()           // GS PT DATA (Data_MTS / Data_TBS)
+            ]).then(([_, initialUrl]) => {
                 if (!initialUrl) {
                     console.warn('No CSV files found');
                     updateStatus('No data found');
+                    showLoading(false);
                 } else {
-                    // Auto-load data if file found
+                    // Now load data - GS sheets are already populated
                     loadAllData();
                 }
             }).catch(err => {
                 console.error('Init Error:', err);
                 alert('Failed to load data source list. Please check your network.');
-            }).finally(() => {
-                // Loading spinner will be handled by loadAllData if called, 
-                // or cleared here if init failed.
-                // However, loadAllData sets showLoading(true) internally wait...
-                // Actually loadAllData calls loadCSV which is async.
-                // To avoid flickering, we rely on loadAllData to manage loading state eventually,
-                // but if we call loadAllData, we should probably let it handle the spinner.
-                // If we DON'T call loadAllData (error case), we must hide spinner.
-
-                // Simplified: If we called loadAllData, it will keep spinner on until done.
-                // If we didn't, we turn it off. 
-                // But fetchFileList is async.
+                showLoading(false);
             });
         }
 
@@ -1990,22 +1983,29 @@
 
         async function populateSheetDropdown() {
             const sel = document.getElementById('gsSheetSelect');
-            updateGSStatus('loading', '...');
             try {
                 const res = await fetch(`${GS_URL}?action=getSheets`, { redirect: 'follow' });
                 const sheets = await res.json();
                 // Bug #5: Only show sheets with "List" in name (e.g., "MTS List", "TBS List")
                 const listSheets = sheets.filter(n => n.includes('List'));
-                sel.innerHTML = '<option value="">GS分頁</option>';
-                listSheets.forEach(n => {
+
+                sel.innerHTML = '';
+                listSheets.forEach((n, idx) => {
                     const opt = document.createElement('option');
-                    opt.value = n; opt.textContent = n;
-                    if (n.includes('MTS List')) opt.selected = true;
+                    opt.value = n;
+                    opt.textContent = n;
+                    // Auto-select MTS List if exists, otherwise first item
+                    if (n.includes('MTS List') || (idx === 0 && !listSheets.some(s => s.includes('MTS List')))) {
+                        opt.selected = true;
+                    }
                     sel.appendChild(opt);
                 });
-                updateGSStatus('success', `${listSheets.length}`);
+
+                console.log('GS Sheets populated:', listSheets, 'Selected:', sel.value);
+                return listSheets.length > 0 ? sel.value : null;
             } catch (e) {
-                updateGSStatus('error', '失敗');
+                console.error('Failed to populate GS sheets:', e);
+                return null;
             }
         }
 
@@ -2024,8 +2024,10 @@
         }
 
         function updateGSStatus(t, m) {
+            const el = document.getElementById('gsStatus');
+            if (!el) return; // Element was removed, skip update
             const icons = { loading: 'fa-spin fa-circle-notch text-blue-500', success: 'fa-check-circle text-green-500', error: 'fa-exclamation-circle text-red-500' };
-            document.getElementById('gsStatus').innerHTML = `<i class="fas ${icons[t]} mr-1"></i>${m}`;
+            el.innerHTML = `<i class="fas ${icons[t]} mr-1"></i>${m}`;
         }
 
         function updateStatus(m) { document.getElementById('loadStatus').textContent = m; }
@@ -2344,6 +2346,71 @@
             if (pivotWrapper && pivotWrapper.style.display !== 'none') {
                 updatePivotTable();
             }
+
+            // Cascading filters: update other filter options based on filtered data
+            updateFilterOptionsVisibility();
+        }
+
+        // Cascading Filter Logic: Hide options that have no matching data
+        function updateFilterOptionsVisibility() {
+            // Build a map of valid values for each filter field based on filtered data
+            const validValuesMap = {};
+
+            // Get all filter fields
+            const filterFields = activeConfig && activeConfig.filters ? activeConfig.filters : FILTER_FIELDS;
+
+            filterFields.forEach(f => {
+                const effectiveKey = filterSelections[f.key + '_effectiveKey'] || f.key;
+                const values = new Set();
+
+                filteredData.forEach(row => {
+                    const val = row[effectiveKey];
+                    if (val) {
+                        values.add(val);
+                    } else {
+                        values.add('(Empty)');
+                    }
+                });
+
+                validValuesMap[f.key] = values;
+            });
+
+            // Update each filter dropdown's option visibility
+            document.querySelectorAll('.filter-group').forEach(group => {
+                const btn = group.querySelector('.filter-btn');
+                if (!btn) return;
+
+                const field = btn.dataset.field;
+                if (!field || !validValuesMap[field]) return;
+
+                const validValues = validValuesMap[field];
+                const dropdown = group.querySelector('.filter-dropdown');
+                if (!dropdown) return;
+
+                let visibleCount = 0;
+                let checkedCount = 0;
+
+                // Update option visibility using DOM diff (just toggle display, don't rebuild)
+                dropdown.querySelectorAll('.filter-option').forEach(label => {
+                    const checkbox = label.querySelector('input[type="checkbox"]');
+                    if (!checkbox) return;
+
+                    const value = checkbox.value;
+                    const isValid = validValues.has(value);
+
+                    // Hide invalid options, show valid ones
+                    label.style.display = isValid ? '' : 'none';
+
+                    if (isValid) {
+                        visibleCount++;
+                        if (checkbox.checked) checkedCount++;
+                    }
+                });
+
+                // Update button text to show visible/checked counts
+                const labelText = FILTER_FIELDS.find(f => f.key === field)?.label || field;
+                btn.innerHTML = `${labelText} <span class="text-gray-400">(${checkedCount}/${visibleCount})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+            });
         }
 
         function clearAllFilters() {
