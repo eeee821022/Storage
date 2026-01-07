@@ -249,8 +249,7 @@
             top: 100%;
             left: 0;
             min-width: 140px;
-            max-height: 200px;
-            overflow-y: auto;
+            max-height: 280px;
             background: white;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
@@ -844,9 +843,9 @@
         }
 
         .scatter-chart-wrapper {
-            flex: none;
+            flex: 1;
             position: relative;
-            min-height: 100px;
+            min-height: 300px;
         }
 
         .scatter-chart-wrapper canvas {
@@ -1129,21 +1128,21 @@
                     </h1>
                     <!-- Controls - Right aligned -->
                     <div class="flex items-center gap-2">
-                        <!-- GS Sheet (left) -->
+                        <!-- GS 機種整理 Sheet -->
                         <select id="gsSheetSelect" class="py-1 px-2 border border-gray-300 rounded text-xs w-24">
-                            <option value="">GS Sheet</option>
+                            <option value="">MTS List</option>
                         </select>
-                        <button id="fetchSheetsBtn" class="px-2 py-1 bg-blue-600 text-white rounded text-xs">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <div id="gsStatus" class="text-xs text-gray-500 flex items-center w-12">
-                            <i class="fas fa-circle-notch fa-spin mr-1"></i>
-                        </div>
-                        <!-- Data Source (right) -->
+                        <!-- GS PT DATA -->
                         <select id="fileSelect"
                             class="py-1 px-2 text-xs border border-gray-300 rounded bg-violet-50 text-violet-700 font-bold focus:outline-none focus:ring-2 focus:ring-violet-500 w-28">
                             <option value="" disabled selected>Data...</option>
                         </select>
+                        <!-- Unified Refresh + Load -->
+                        <button id="fetchSheetsBtn"
+                            class="px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs hover:bg-blue-200"
+                            title="Refresh GS Sheets">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
                         <button id="loadDataBtn"
                             class="py-1 px-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded text-xs font-medium">
                             <i class="fas fa-play mr-1"></i>Load
@@ -1350,11 +1349,11 @@
                     <option value="200">200</option>
                 </select>
             </div>
+            <!-- Chart wrapper NOW INSIDE scatter-container for flex layout -->
+            <div class="scatter-chart-wrapper" id="scatterChartWrapper">
+                <canvas id="scatterChart"></canvas>
+            </div>
         </div>
-        <div class="scatter-chart-wrapper" id="scatterChartWrapper">
-            <canvas id="scatterChart"></canvas>
-        </div>
-    </div>
     </div>
 
     <!-- Pivot Analysis Wrapper -->
@@ -1390,16 +1389,13 @@
                 </div>
             </div>
         </div>
-    </div>
-    </div>
 
-    <!-- Pivot Table Display Area -->
-    <div class="bg-white p-4 rounded-lg shadow-lg" style="overflow: visible;">
-        <div id="pivotTableContainer" class="text-sm">
-            <p class="text-gray-500">Select Row and Column fields to generate matrix table</p>
+        <!-- Pivot Table Display Area (INSIDE pivotWrapper) -->
+        <div class="bg-white p-4 rounded-lg shadow-lg" style="overflow: visible;">
+            <div id="pivotTableContainer" class="text-sm">
+                <p class="text-gray-500">Select Row and Column fields to generate matrix table</p>
+            </div>
         </div>
-    </div>
-    </div>
     </div>
 
     <div class="overlay" id="overlay"></div>
@@ -1511,8 +1507,8 @@
 
                 const sheets = await response.json();
 
-                // 過濾出 Data_ 開頭的分頁 (排除其他分頁)
-                const dataSheets = sheets.filter(s => s.startsWith('Data_'));
+                // 過濾出 Data_ 開頭的分頁 (Bug #6: Only show sheets with "Data" in name)
+                const dataSheets = sheets.filter(s => s.includes('Data'));
 
                 select.innerHTML = '';
                 dataSheets.forEach(sheetName => {
@@ -1520,23 +1516,6 @@
                     opt.value = sheetName; // 直接使用分頁名稱
                     opt.textContent = sheetName; // 顯示原始分頁名稱
                     select.appendChild(opt);
-                });
-
-                // Add change handler to auto-sync gsSheetSelect
-                select.addEventListener('change', () => {
-                    const fileValue = select.value; // e.g., "Data_TBS" or "Data_MTS"
-                    const sheetSel = document.getElementById('gsSheetSelect');
-                    if (!sheetSel) return;
-
-                    // Determine target sheet based on file selection
-                    const targetSheet = fileValue.includes('TBS') ? 'TBS List' : 'MTS List';
-
-                    // Try to find and select the matching option
-                    const matchingOption = Array.from(sheetSel.options).find(opt => opt.value.includes(targetSheet));
-                    if (matchingOption) {
-                        sheetSel.value = matchingOption.value;
-                        console.log(`Auto-selected sheet: ${matchingOption.value}`);
-                    }
                 });
 
                 // Return first sheet name if available
@@ -2015,14 +1994,16 @@
             try {
                 const res = await fetch(`${GS_URL}?action=getSheets`, { redirect: 'follow' });
                 const sheets = await res.json();
+                // Bug #5: Only show sheets with "List" in name (e.g., "MTS List", "TBS List")
+                const listSheets = sheets.filter(n => n.includes('List'));
                 sel.innerHTML = '<option value="">GS分頁</option>';
-                sheets.forEach(n => {
+                listSheets.forEach(n => {
                     const opt = document.createElement('option');
                     opt.value = n; opt.textContent = n;
                     if (n.includes('MTS List')) opt.selected = true;
                     sel.appendChild(opt);
                 });
-                updateGSStatus('success', `${sheets.length}`);
+                updateGSStatus('success', `${listSheets.length}`);
             } catch (e) {
                 updateGSStatus('error', '失敗');
             }
