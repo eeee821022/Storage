@@ -406,6 +406,31 @@
             font-weight: bold;
         }
 
+        /* Mode Button Style (Purple Gradient) - Matches View Tabs */
+        .mode-btn {
+            padding: 2px 6px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
         /* NEW STICKY CLASSES */
         .sticky-left-col {
             position: sticky;
@@ -807,6 +832,8 @@
             line-height: 1.15;
             overflow: hidden;
             flex-shrink: 0;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
 
         .card-price {
@@ -1167,6 +1194,7 @@
                     <button class="mode-btn active" data-mode="all"><i class="fas fa-layer-group"></i>All</button>
                     <button class="mode-btn" data-mode="unique"><i class="fas fa-fingerprint"></i>Unique</button>
                     <button class="mode-btn" data-mode="lowestPrice"><i class="fas fa-tag"></i>Lowest</button>
+                    <button class="mode-btn" data-mode="range"><i class="fas fa-arrows-alt-v"></i>Range</button>
                 </div>
             </div>
         </div>
@@ -1182,9 +1210,11 @@
             <!-- Price Filter (Inputs Only) -->
             <div class="price-range-filter" id="priceRangeFilter">
                 <div class="price-inputs">
-                    <input type="number" id="priceMin" class="price-input" placeholder="Min" style="width: 70px;">
+                    <input type="number" id="priceMin" class="price-input" placeholder="Min" value="0"
+                        style="width: 70px;">
                     <span class="text-gray-400">-</span>
-                    <input type="number" id="priceMax" class="price-input" placeholder="Max" style="width: 70px;">
+                    <input type="number" id="priceMax" class="price-input" placeholder="Max" value="1000"
+                        style="width: 70px;">
                     <span class="text-xs text-gray-500">€</span>
                 </div>
             </div>
@@ -1199,7 +1229,6 @@
         <div class="controls-bar" id="controlsBar" style="display: none;">
             <span><i class="fas fa-box mr-1"></i>Products: <strong id="productCount">0</strong></span>
             <span><i class="fas fa-store mr-1"></i>Platforms: <strong id="platformCount">0</strong></span>
-            <span><i class="fas fa-tag mr-1"></i>Prices: <strong id="pricePointCount">0</strong></span>
 
             <!-- Card Visibility Toggles -->
             <div class="flex items-center gap-3 ml-4 px-2 border-l border-gray-300">
@@ -1275,6 +1304,8 @@
                     <span id="matrixZoomLevel" class="text-xs w-12 text-center text-gray-600">100%</span>
                     <button class="zoom-btn" id="matrixZoomIn"><i class="fas fa-plus"></i></button>
                     <button class="zoom-btn" id="matrixZoomReset"><i class="fas fa-undo"></i></button>
+                    <button class="zoom-btn ml-2" id="matrixCopyBtn" title="Copy Table"><i
+                            class="fas fa-copy"></i></button>
                 </div>
             </div>
         </div>
@@ -1304,8 +1335,8 @@
         <div class="platform-column" id="platformColumn">
             <div class="platform-header">
                 <div class="toggle-container">
-                    <button class="toggle-btn active" data-mode="platform">Platform</button>
-                    <button class="toggle-btn" data-mode="brand">Brand</button>
+                    <button class="mode-btn active" data-mode="platform"><i class="fas fa-store"></i>Platform</button>
+                    <button class="mode-btn" data-mode="brand"><i class="fas fa-tag"></i>Brand</button>
                 </div>
             </div>
             <div class="platform-list" id="platformList"></div>
@@ -1338,6 +1369,7 @@
                         <option value="Brand">Brand</option>
                         <option value="Platform">Platform</option>
                         <option value="Type">Type</option>
+                        <option value="Model #">Model</option>
                         <option value="Power Supply">Power Supply</option>
                     </select>
                 </div>
@@ -1442,7 +1474,7 @@
         let csvData = [], gsData = [], mergedData = [], filteredData = [];
         let dateColumns = [];
         let filterSelections = {};
-        let priceRange = { min: 0, max: 2000 };
+        let priceRange = { min: 0, max: 1000 };
         let zoomLevel = 1;
         let scatterZoomLevel = 1;
         let currentView = 'grid';
@@ -1463,14 +1495,14 @@
             setupEventListeners();
             populateSheetDropdown();
 
-            // Toggle Button Logic
-            document.querySelectorAll('.toggle-btn').forEach(btn => {
+            // Toggle Button Logic (Platform/Brand in Landscape view)
+            document.querySelectorAll('.toggle-container .mode-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const mode = e.target.dataset.mode;
+                    const mode = e.target.closest('.mode-btn')?.dataset.mode;
                     if (mode) {
                         gridRowMode = mode;
                         // UI update
-                        document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+                        document.querySelectorAll('.toggle-container .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
                         renderGrid();
                     }
                 });
@@ -1708,6 +1740,9 @@
             document.getElementById('scatterZoomIn').addEventListener('click', () => setScatterZoom(scatterZoomLevel + 0.2));
             document.getElementById('scatterZoomOut').addEventListener('click', () => setScatterZoom(scatterZoomLevel - 0.2));
             document.getElementById('scatterZoomReset').addEventListener('click', () => setScatterZoom(1));
+
+            // Matrix Copy Button
+            document.getElementById('matrixCopyBtn')?.addEventListener('click', copyMatrixTable);
 
             // 資料模式切換
             document.querySelectorAll('[data-mode]').forEach(btn => {
@@ -2157,6 +2192,11 @@
                 fields.splice(1, 0, { key: 'Platform Type', label: 'Platform Type' });
             }
 
+            // Ensure Accessories is always present
+            if (!fields.some(f => f.key === 'Accessories')) {
+                fields.push({ key: 'Accessories', label: 'Accessories' });
+            }
+
             fields.forEach(f => {
                 // Determine effective key (use fallback if primary has no values)
                 let effectiveKey = f.key;
@@ -2187,8 +2227,27 @@
 
                 if (!nonEmptyValues.length && !hasEmpty) return;
 
-                // Build options list: empty first, then others
-                const allOptions = hasEmpty ? ['(Empty)', ...nonEmptyValues] : nonEmptyValues;
+                // Special handling for Accessories: group into just 2 options
+                let allOptions;
+                if (f.key === 'Accessories') {
+                    console.log('Accessories values:', nonEmptyValues); // DEBUG
+                    const hasNone = nonEmptyValues.includes('-');
+                    const hasWithAccessories = nonEmptyValues.some(v => v && v !== '-');
+                    console.log('Accessories check:', { hasNone, hasWithAccessories }); // DEBUG
+
+                    allOptions = [];
+                    if (hasNone) allOptions.push('-');
+                    if (hasWithAccessories) allOptions.push('with XXXXXX');
+                    if (hasEmpty) allOptions.unshift('(Empty)');
+
+                    // Force show if we have explicit options even if length is small
+                    if (allOptions.length === 0 && nonEmptyValues.length > 0) {
+                        allOptions = [...nonEmptyValues]; // Fallback
+                    }
+                } else {
+                    // Build options list: empty first, then others
+                    allOptions = hasEmpty ? ['(Empty)', ...nonEmptyValues] : nonEmptyValues;
+                }
                 filterSelections[f.key] = new Set(allOptions);
                 // Store effective key mapping for filter application
                 filterSelections[f.key + '_effectiveKey'] = effectiveKey;
@@ -2198,7 +2257,12 @@
 
                 const btn = document.createElement('button');
                 btn.className = 'filter-btn';
-                btn.innerHTML = `${f.label} <span class="text-gray-400">(${allOptions.length})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+                // Only show count for Platform and Brand
+                if (f.key === 'Platform' || f.key === 'Brand') {
+                    btn.innerHTML = `${f.label} <span class="text-gray-400">(${allOptions.length})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+                } else {
+                    btn.innerHTML = `${f.label} <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+                }
                 btn.dataset.field = f.key;
 
                 const dropdown = document.createElement('div');
@@ -2270,7 +2334,12 @@
 
             btn.classList.toggle('active', selected < total);
             const label = FILTER_FIELDS.find(f => f.key === field)?.label || field;
-            btn.innerHTML = `${label} <span class="text-gray-400">(${selected}/${total})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+            // Only show count for Platform and Brand
+            if (field === 'Platform' || field === 'Brand') {
+                btn.innerHTML = `${label} <span class="text-gray-400">(${selected}/${total})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+            } else {
+                btn.innerHTML = `${label} <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+            }
 
             applyFilters();
         }
@@ -2297,6 +2366,16 @@
 
                     // Handle empty values
                     if (!itemValue && values.has('(Empty)')) return true;
+
+                    // Special handling for Accessories filter
+                    if (key === 'Accessories') {
+                        // If selecting '-', match exactly '-'
+                        if (itemValue === '-' && values.has('-')) return true;
+                        // If selecting 'with XXXXXX', match any value starting with 'with'
+                        if (itemValue && itemValue !== '-' && values.has('with XXXXXX')) return true;
+                        return false;
+                    }
+
                     return values.has(itemValue);
                 });
             });
@@ -2315,7 +2394,7 @@
                 });
                 filteredData = [...modelMap.values()];
             } else if (dataMode === 'lowestPrice') {
-                // Lowest Price: Keep only lowest price per model+platform combo
+                // Lowest: Keep only lowest price per model+platform combo
                 const comboMap = new Map();
                 baseFiltered.forEach(row => {
                     const model = row['Model #'];
@@ -2328,6 +2407,41 @@
                     }
                 });
                 filteredData = [...comboMap.values()];
+            } else if (dataMode === 'range') {
+                // Range: Global lowest + highest per MODEL (across ALL platforms)
+                const lowestMap = new Map();
+                const highestMap = new Map();
+
+                baseFiltered.forEach(row => {
+                    const model = row['Model #'];
+                    if (!model) return;
+                    const price = parseFloat(row.Price);
+
+                    // Track global lowest for this model
+                    const existingLow = lowestMap.get(model);
+                    if (!existingLow || price < parseFloat(existingLow.Price)) {
+                        lowestMap.set(model, row);
+                    }
+
+                    // Track global highest for this model
+                    const existingHigh = highestMap.get(model);
+                    if (!existingHigh || price > parseFloat(existingHigh.Price)) {
+                        highestMap.set(model, row);
+                    }
+                });
+
+                // Combine lowest and highest (avoid duplicates if same price)
+                const resultMap = new Map();
+                lowestMap.forEach((row, model) => resultMap.set(model + '_low', row));
+                highestMap.forEach((row, model) => {
+                    const lowRow = lowestMap.get(model);
+                    // Only add highest if different from lowest
+                    if (!lowRow || parseFloat(row.Price) !== parseFloat(lowRow.Price)) {
+                        resultMap.set(model + '_high', row);
+                    }
+                });
+
+                filteredData = [...resultMap.values()];
             } else {
                 filteredData = baseFiltered;
             }
@@ -2396,7 +2510,21 @@
                     if (!checkbox) return;
 
                     const value = checkbox.value;
-                    const isValid = validValues.has(value);
+                    let isValid;
+
+                    // Special handling for Accessories grouped options
+                    if (field === 'Accessories') {
+                        if (value === '-') {
+                            isValid = validValues.has('-');
+                        } else if (value === 'with XXXXXX') {
+                            // Check if any 'with...' value exists in data
+                            isValid = [...validValues].some(v => v && v !== '-' && v !== '(Empty)');
+                        } else {
+                            isValid = validValues.has(value);
+                        }
+                    } else {
+                        isValid = validValues.has(value);
+                    }
 
                     // Hide invalid options, show valid ones
                     label.style.display = isValid ? '' : 'none';
@@ -2407,9 +2535,13 @@
                     }
                 });
 
-                // Update button text to show visible/checked counts
+                // Update button text to show visible/checked counts (only for Platform and Brand)
                 const labelText = FILTER_FIELDS.find(f => f.key === field)?.label || field;
-                btn.innerHTML = `${labelText} <span class="text-gray-400">(${checkedCount}/${visibleCount})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+                if (field === 'Platform' || field === 'Brand') {
+                    btn.innerHTML = `${labelText} <span class="text-gray-400">(${checkedCount}/${visibleCount})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+                } else {
+                    btn.innerHTML = `${labelText} <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+                }
             });
         }
 
@@ -3007,8 +3139,8 @@
             // 基本預設
             // 根據 FILTER_FIELDS
             FILTER_FIELDS.forEach(h => {
-                // 排除一些不適合的欄位
-                if (h.key !== '圖片' && h.key !== 'Image URL' && h.key !== 'Model #') {
+                // 排除一些不適合的欄位 (只排除圖片)
+                if (h.key !== '圖片' && h.key !== 'Image URL') {
                     addOpt(axisSelect, h.key, h.label || h.key);
                     addOpt(colorSelect, h.key, h.label || h.key);
                 }
@@ -3478,7 +3610,6 @@
         function updateStats() {
             document.getElementById('productCount').textContent = filteredData.length;
             document.getElementById('platformCount').textContent = [...new Set(filteredData.map(d => d.Platform))].length;
-            document.getElementById('pricePointCount').textContent = [...new Set(filteredData.map(d => d['Price Tag']))].length;
         }
 
         function showLoading(show) {
@@ -3935,6 +4066,51 @@
                 // instead of transform: scale() which only affects visual rendering
                 container.style.zoom = matrixZoomLevel;
             }
+        }
+
+        // Copy Matrix Table to Clipboard
+        function copyMatrixTable() {
+            const container = document.getElementById('pivotTableContainer');
+            const table = container?.querySelector('table');
+            if (!table) {
+                alert('No table to copy');
+                return;
+            }
+
+            // Create a temporary text from table for plain text clipboard
+            let text = '';
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('th, td');
+                const rowData = [];
+                cells.forEach(cell => {
+                    rowData.push(cell.textContent.trim());
+                });
+                text += rowData.join('\t') + '\n';
+            });
+
+            // Copy as both HTML and plain text
+            navigator.clipboard.write([
+                new ClipboardItem({
+                    'text/html': new Blob([table.outerHTML], { type: 'text/html' }),
+                    'text/plain': new Blob([text], { type: 'text/plain' })
+                })
+            ]).then(() => {
+                const btn = document.getElementById('matrixCopyBtn');
+                const originalContent = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                btn.classList.add('bg-green-100', 'text-green-600');
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.remove('bg-green-100', 'text-green-600');
+                }, 1500);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                // Fallback: copy as plain text
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Table copied as text!');
+                });
+            });
         }
 
         function calculateAggregation(data, field, aggFunc, format) {
