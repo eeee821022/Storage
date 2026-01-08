@@ -1201,7 +1201,7 @@
                     <div class="flex items-center gap-2">
                         <!-- GS 機種整理 Sheet -->
                         <select id="gsSheetSelect" class="py-1 px-2 border border-gray-300 rounded text-xs w-24">
-                            <option value="">MTS List</option>
+                            <option value="MTS List">MTS List</option>
                         </select>
                         <!-- GS PT DATA -->
                         <select id="fileSelect"
@@ -1236,7 +1236,7 @@
                 <div class="mode-group data-mode" style="margin-left: 1rem;">
                     <span class="mode-group-label">Data:</span>
                     <button class="mode-btn active" data-mode="all"><i class="fas fa-layer-group"></i>All</button>
-                    <button class="mode-btn" data-mode="unique"><i class="fas fa-fingerprint"></i>Unique</button>
+                    <button class="mode-btn" data-mode="unique"><i class="fas fa-fingerprint"></i>OnlyOne</button>
                     <button class="mode-btn" data-mode="lowestPrice"><i class="fas fa-tag"></i>Lowest</button>
                     <button class="mode-btn" data-mode="range"><i class="fas fa-arrows-alt-v"></i>Range</button>
                 </div>
@@ -1520,6 +1520,7 @@
         let csvData = [], gsData = [], mergedData = [], filteredData = [];
         let dateColumns = [];
         let filterSelections = {};
+        let filterDependencies = {}; // Map<Field, Map<Value, Map<TargetField, TargetValue>>>
         let priceRange = { min: 0, max: 1000 };
         let zoomLevel = 1;
         let scatterZoomLevel = 1;
@@ -1670,6 +1671,9 @@
                 mergedData = mergeData(dataFromSource, gs);
 
                 console.log(`Merged data: ${mergedData.length} products`);
+
+                // Calculate dependencies
+                calculateDependencies();
 
                 // Re-init filters and render
                 setupFilters();
@@ -2214,7 +2218,7 @@
                     Bevel: g['Bevel'] || r['Bevel'] || '',
                     Slide: g['Slide'] || r['Slide'] || '',
                     'Blade Diameter': g['Blade Diameter'] || r['Blade Diameter'] || '',
-                    'Blade Range': g['Blade Range'] || r['Blade Range'] || '',
+                    'Blade Range': g['Blade Range'] || r['Blade Range'] || g['Blade Diameter'] || r['Blade Diameter'] || '',
                     'Motor Type': g['Motor Type'] || r['Motor Type'] || '',
                     'Power Supply': g['Power Supply'] || r['Power Supply'] || '',
                     'Soft Start': g['Soft Start'] || r['Soft Start'] || r['Start Mode'] || '',
@@ -2305,6 +2309,9 @@
                 // Store effective key mapping for filter application
                 filterSelections[f.key + '_effectiveKey'] = effectiveKey;
 
+                // Calculate dependencies again if needed (or move to reloadData)
+                // calculateDependencies();
+
                 const group = document.createElement('div');
                 group.className = 'filter-group';
 
@@ -2391,6 +2398,59 @@
         function updateFilterFromDropdown(field, dropdown) {
             const checked = [...dropdown.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
             filterSelections[field] = new Set(checked);
+
+            // NEW: Generic Bidirectional Auto-Check (Child -> Parent)
+            // Example: Select "Bosch" (Platform) -> Auto-check "Brander" (Platform Type)
+            if (filterDependencies[field]) {
+                const dependencies = filterDependencies[field];
+
+                // Identify target fields that need updates
+                const fieldsToUpdate = new Map(); // Field -> Set<RequiredValues>
+
+                checked.forEach(val => {
+                    if (dependencies[val]) {
+                        Object.entries(dependencies[val]).forEach(([targetField, targetValue]) => {
+                            if (!fieldsToUpdate.has(targetField)) {
+                                fieldsToUpdate.set(targetField, new Set());
+                            }
+                            fieldsToUpdate.get(targetField).add(targetValue);
+                        });
+                    }
+                });
+
+                // Apply updates
+                fieldsToUpdate.forEach((requiredValues, targetField) => {
+                    const targetBtn = document.querySelector(`.filter-btn[data-field="${targetField}"]`);
+                    if (targetBtn && requiredValues.size > 0) {
+                        const targetDropdown = targetBtn.nextElementSibling;
+                        let changed = false;
+
+                        targetDropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                            if (requiredValues.has(cb.value) && !cb.checked) {
+                                cb.checked = true;
+                                changed = true;
+                            }
+                        });
+
+                        if (changed) {
+                            const targetChecked = [...targetDropdown.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+                            filterSelections[targetField] = new Set(targetChecked);
+
+                            // Update Button UI
+                            const total = targetDropdown.querySelectorAll('input[type="checkbox"]').length;
+                            const selected = targetChecked.length;
+                            targetBtn.classList.toggle('active', selected < total);
+
+                            const label = FILTER_FIELDS.find(f => f.key === targetField)?.label || targetField;
+                            if (targetField === 'Platform' || targetField === 'Brand') {
+                                targetBtn.innerHTML = `${label} <span class="text-gray-400">(${selected}/${total})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+                            } else {
+                                targetBtn.innerHTML = `${label} <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+                            }
+                        }
+                    }
+                });
+            }
 
             const btn = dropdown.previousElementSibling;
             const total = dropdown.querySelectorAll('input[type="checkbox"]').length;
@@ -2554,6 +2614,7 @@
             });
 
             // Update each filter dropdown's option visibility
+            let anyFilterChanged = false;
             document.querySelectorAll('.filter-group').forEach(group => {
                 const btn = group.querySelector('.filter-btn');
                 if (!btn) return;
@@ -2591,9 +2652,28 @@
                     }
 
                     // Hide invalid options, show valid ones
-                    label.style.display = isValid ? '' : 'none';
+                    if (!isValid) {
+                        // User request: Don't hide invalid options, just uncheck them.
+                        // So we always show label.
+                        label.style.display = '';
 
-                    if (isValid) {
+                        // But strictly mark as unchecked if they were checked
+                        if (checkbox.checked) {
+                            checkbox.checked = false;
+                            // Remove from state to prevent 0 results
+                            if (filterSelections[field]) {
+                                filterSelections[field].delete(value);
+                            }
+                            anyFilterChanged = true;
+                        }
+
+                        // Optional: Add visual indication of invalidity? (e.g. opacity)
+                        // label.style.opacity = '0.5'; 
+                        // But user specifically asked to "remove check mark" vs "hide".
+                        // Use default style for now.
+
+                    } else {
+                        label.style.display = '';
                         visibleCount++;
                         if (checkbox.checked) checkedCount++;
                     }
@@ -2607,6 +2687,69 @@
                     btn.innerHTML = `${labelText} <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
                 }
             });
+
+            // If we auto-unchecked any invalid options, we MUST re-apply filters to update the grid
+            if (anyFilterChanged) {
+                // Use setTimeout to avoid deep recursion loop on same stack, though direct call is also safe here
+                setTimeout(applyFilters, 0);
+            }
+        }
+
+
+
+        // Calculate 1-to-1 dependencies between filter fields
+        function calculateDependencies() {
+            filterDependencies = {};
+
+            // Prepare fields list exactly like setupFilters does
+            let fields = activeConfig && activeConfig.filters ? [...activeConfig.filters] : [...FILTER_FIELDS];
+
+            // Ensure Platform Type is always present
+            if (!fields.some(f => f.key === 'Platform Type')) {
+                fields.splice(1, 0, { key: 'Platform Type', label: 'Platform Type' });
+            }
+
+            // Ensure Accessories is always present
+            if (!fields.some(f => f.key === 'Accessories')) {
+                fields.push({ key: 'Accessories', label: 'Accessories' });
+            }
+
+            // Temporary map to store unique target values: Field -> Value -> TargetField -> Set<TargetValue>
+            const tempMap = {};
+
+            mergedData.forEach(row => {
+                fields.forEach(f1 => {
+                    const val1 = row[f1.key]; // Use raw key or effective key? Using raw key implies 1:1 in data
+                    if (!val1) return;
+
+                    if (!tempMap[f1.key]) tempMap[f1.key] = {};
+                    if (!tempMap[f1.key][val1]) tempMap[f1.key][val1] = {};
+
+                    fields.forEach(f2 => {
+                        if (f1.key === f2.key) return;
+                        const val2 = row[f2.key];
+                        if (val2) {
+                            if (!tempMap[f1.key][val1][f2.key]) tempMap[f1.key][val1][f2.key] = new Set();
+                            tempMap[f1.key][val1][f2.key].add(val2);
+                        }
+                    });
+                });
+            });
+
+            // Convert to strict 1-to-1 dependencies
+            Object.keys(tempMap).forEach(f1 => {
+                Object.keys(tempMap[f1]).forEach(val1 => {
+                    Object.keys(tempMap[f1][val1]).forEach(f2 => {
+                        const targetValues = tempMap[f1][val1][f2];
+                        if (targetValues.size === 1) {
+                            if (!filterDependencies[f1]) filterDependencies[f1] = {};
+                            if (!filterDependencies[f1][val1]) filterDependencies[f1][val1] = {};
+                            filterDependencies[f1][val1][f2] = [...targetValues][0];
+                        }
+                    });
+                });
+            });
+            console.log('Filter Dependencies:', filterDependencies);
         }
 
         function clearAllFilters() {
@@ -2886,7 +3029,7 @@
                     { "key": "Type", "label": "Type" },
                     { "key": "Bevel", "label": "Bevel" },
                     { "key": "Slide", "label": "Slide" },
-                    { "key": "Blade Diameter", "label": "Blade" },
+                    { "key": "Blade Range", "label": "Blade Range" },
                     { "key": "Power Supply", "label": "Power" },
                     { "key": "Soft Start", "label": "Soft Start" },
                     { "key": "Laser", "label": "Laser" }
@@ -2913,7 +3056,7 @@
                     { "key": "Brand", "label": "Brand", "hasSearch": true },
                     { "key": "Model #", "label": "Model", "hasSearch": true },
                     { "key": "Type", "label": "Type" },
-                    { "key": "Blade Diameter", "label": "Blade" },
+                    { "key": "Blade Range", "label": "Blade Range" },
                     { "key": "Watt", "label": "Watt", "fallback_key": "Power Supply" },
                     { "key": "RPM", "label": "RPM" },
                     { "key": "Soft Start", "label": "Soft Start" }
