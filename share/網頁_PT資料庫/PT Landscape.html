@@ -382,28 +382,54 @@
         /* Toggle Button Style */
         .toggle-container {
             display: flex;
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            padding: 2px;
-            gap: 2px;
+            flex-direction: column;
+            /* Vertical alignment */
+            gap: 4px;
+            align-items: flex-start;
+            /* Align left to create space on right */
+            width: 100%;
+            /* Ensure full width usage */
+            padding-left: 4px;
+            /* Small offset from left edge */
         }
 
-        .toggle-btn {
-            background: transparent;
-            border: none;
-            color: #64748b;
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            border-radius: 3px;
+        /* Grid Toggle Button Style (Specific class to ensure styling) */
+        .grid-toggle-btn {
+            width: 65%;
+            /* 1/3 reduced as requested */
+            justify-content: center;
+            padding: 4px 0px !important;
+            /* Tight padding */
+            font-size: 0.6rem !important;
+            /* Force small font */
+            font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+            /* Force sans-serif */
+            font-weight: 600 !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 4px !important;
+            background: white !important;
+            color: #4b5563 !important;
             cursor: pointer;
+            display: flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            transition: all 0.2s;
+            text-transform: none !important;
+            /* Prevent uppercase transformation if any */
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            min-height: 24px;
+            /* Ensure clickability */
         }
 
-        .toggle-btn.active {
-            background: white;
-            color: #1e3a8a;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            font-weight: bold;
+        .grid-toggle-btn:hover {
+            background: #f3f4f6 !important;
+        }
+
+        .grid-toggle-btn.active {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border-color: transparent !important;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3) !important;
         }
 
         /* Mode Button Style (Purple Gradient) - Matches View Tabs */
@@ -432,6 +458,22 @@
         }
 
         /* NEW STICKY CLASSES */
+        .sticky-corner-header {
+            width: var(--platform-col-width);
+            min-width: var(--platform-col-width);
+            flex-shrink: 0;
+            position: sticky;
+            left: 0;
+            z-index: 30;
+            /* Higher than content */
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            /* Align content to left */
+        }
+
         .sticky-left-col {
             position: sticky;
             left: 0;
@@ -1335,8 +1377,10 @@
         <div class="platform-column" id="platformColumn">
             <div class="platform-header">
                 <div class="toggle-container">
-                    <button class="mode-btn active" data-mode="platform"><i class="fas fa-store"></i>Platform</button>
-                    <button class="mode-btn" data-mode="brand"><i class="fas fa-tag"></i>Brand</button>
+                    <button class="grid-toggle-btn active notranslate" data-mode="platform"><i
+                            class="fas fa-store"></i>Platform</button>
+                    <button class="grid-toggle-btn notranslate" data-mode="brand"><i
+                            class="fas fa-tag"></i>Brand</button>
                 </div>
             </div>
             <div class="platform-list" id="platformList"></div>
@@ -1496,13 +1540,13 @@
             populateSheetDropdown();
 
             // Toggle Button Logic (Platform/Brand in Landscape view)
-            document.querySelectorAll('.toggle-container .mode-btn').forEach(btn => {
+            document.querySelectorAll('.toggle-container .grid-toggle-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const mode = e.target.closest('.mode-btn')?.dataset.mode;
+                    const mode = e.target.closest('.grid-toggle-btn')?.dataset.mode;
                     if (mode) {
                         gridRowMode = mode;
                         // UI update
-                        document.querySelectorAll('.toggle-container .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+                        document.querySelectorAll('.toggle-container .grid-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
                         renderGrid();
                     }
                 });
@@ -1510,7 +1554,14 @@
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.filter-group')) {
-                    document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.remove('show'));
+                    let anyClosed = false;
+                    document.querySelectorAll('.filter-dropdown').forEach(d => {
+                        if (d.classList.contains('show')) {
+                            d.classList.remove('show');
+                            anyClosed = true;
+                        }
+                    });
+                    if (anyClosed) applyFilters();
                 }
             });
             initApp(); // Initialize GitHub file list
@@ -2289,7 +2340,18 @@
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const isOpen = dropdown.classList.contains('show');
-                    document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.remove('show'));
+
+                    let anyClosed = false;
+                    document.querySelectorAll('.filter-dropdown').forEach(d => {
+                        if (d.classList.contains('show')) {
+                            d.classList.remove('show');
+                            anyClosed = true;
+                        }
+                    });
+
+                    // If we closed anything (including the current one if it was open), apply filters
+                    if (anyClosed) applyFilters();
+
                     if (!isOpen) dropdown.classList.add('show');
                 });
 
@@ -2341,7 +2403,7 @@
                 btn.innerHTML = `${label} <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
             }
 
-            applyFilters();
+            // applyFilters(); // DEFERRED: execute only when dropdown closes
         }
 
         function applyFilters() {
@@ -2657,8 +2719,8 @@
             corner.className = 'sticky-corner-header';
             corner.innerHTML = `
                 <div class="toggle-container">
-                    <button class="toggle-btn ${gridRowMode === 'platform' ? 'active' : ''}" onclick="gridRowMode='platform'; renderGrid()">平台</button>
-                    <button class="toggle-btn ${gridRowMode === 'brand' ? 'active' : ''}" onclick="gridRowMode='brand'; renderGrid()">品牌</button>
+                    <button class="grid-toggle-btn ${gridRowMode === 'platform' ? 'active' : ''} notranslate" onclick="gridRowMode='platform'; renderGrid()"><i class="fas fa-store"></i>Platform</button>
+                    <button class="grid-toggle-btn ${gridRowMode === 'brand' ? 'active' : ''} notranslate" onclick="gridRowMode='brand'; renderGrid()"><i class="fas fa-tag"></i>Brand</button>
                 </div>`;
             headerRow.appendChild(corner);
 
