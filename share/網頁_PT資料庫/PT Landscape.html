@@ -1355,6 +1355,7 @@
         </div>
     </div>
 
+
     <!-- Loading Overlay -->
     <div id="loadingOverlay"
         class="fixed inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center"
@@ -1372,6 +1373,14 @@
         <p id="loadingMessage" class="loading-text text-lg font-semibold text-indigo-700 tracking-wider">PT LANDSCAPE
         </p>
         <p class="text-sm text-gray-400 mt-1">Loading Data...</p>
+        <!-- Progress Bar -->
+        <div class="w-64 h-2 bg-gray-200 rounded-full overflow-hidden mt-4">
+            <div id="loadingProgressBar" class="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                style="width: 0%"></div>
+        </div>
+        <p id="loadingPercent" class="text-sm text-gray-500 mt-2">0%</p>
+        <!-- Tips -->
+        <p id="loadingTip" class="text-sm text-gray-400 mt-4 max-w-md text-center px-4"></p>
     </div>
 
     <!-- 格子視圖 -->
@@ -1537,6 +1546,95 @@
         let activeConfig = null;
         let matrixZoomLevel = 1.0;
 
+        // Loading Tips Array (隨機顯示)
+        const LOADING_TIPS = [
+            // --- 視圖與模式 (Views & Modes) ---
+            "💡 Display 模式：Landscape (全覽)、Scatter (散點圖)、Matrix (矩陣熱力圖)",
+            "💡 Data 模式：All (全部)、OnlyOne (唯一)、Lowest (最低價)、Range (價差)",
+            "💡 使用左上角 Platform / Brand 按鈕可切換表格分組視圖",
+            "💡 Zoom 按鈕可放大/縮小 Grid、Scatter、Matrix 視圖",
+
+            // --- 互動操作 (Interaction) ---
+            "💡 點擊產品卡片可查看詳細規格與價格走勢圖",
+            "💡 Chart Tab 可查看該產品的歷史價格走勢",
+            "💡 紅色線條每 €50 出現一次，幫助快速定位價格區間",
+
+            // --- 篩選與搜尋 (Filters & Search) ---
+            "💡 篩選器支援多選，勾選的項目會自動排到最上方",
+            "💡 按 [清除] 可快速取消該篩選器的所有選擇",
+            "💡 Price Range 可輸入數值限定顯示的價格範圍",
+            "💡 Model # 欄位支援文字搜尋，快速找到特定型號",
+            "💡 切換 MTS / TBS 資料會自動套用對應的篩選欄位",
+
+            // --- 系統功能 (System & Export) ---
+            "💡 PDF Export 可將當前表格匯出為 PDF 檔案",
+            "💡 按住 Ctrl+F5 可強制刷新頁面以載入最新資料"
+        ];
+
+        // Show/Hide Loading Overlay (Uses existing HTML element)
+        function showLoading(show, progress = 0) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (!overlay) return;
+
+            if (show) {
+                resetProgress(); // Reset to 0% first
+                overlay.style.display = 'flex';
+                updateLoadingProgress(progress);
+                // Show random tip
+                const tipEl = document.getElementById('loadingTip');
+                if (tipEl && LOADING_TIPS) {
+                    tipEl.textContent = LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)];
+                }
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+
+        // Animated Loading Progress Bar
+        let currentProgress = 0;
+        let targetProgress = 0;
+        let progressAnimationId = null;
+
+        function updateLoadingProgress(percent) {
+            targetProgress = percent;
+            if (!progressAnimationId) {
+                animateProgress();
+            }
+        }
+
+        function animateProgress() {
+            const bar = document.getElementById('loadingProgressBar');
+            const text = document.getElementById('loadingPercent');
+
+            if (currentProgress < targetProgress) {
+                // Speed: faster when far from target, slower when close
+                const diff = targetProgress - currentProgress;
+                const step = Math.max(0.5, diff * 0.1); // At least 0.5% per frame
+                currentProgress = Math.min(currentProgress + step, targetProgress);
+            } else if (currentProgress > targetProgress) {
+                currentProgress = targetProgress; // Snap down if target decreased
+            }
+
+            if (bar) bar.style.width = currentProgress + '%';
+            if (text) text.textContent = Math.round(currentProgress) + '%';
+
+            if (currentProgress < targetProgress) {
+                progressAnimationId = requestAnimationFrame(animateProgress);
+            } else {
+                progressAnimationId = null;
+            }
+        }
+
+        // Reset progress when showing loading
+        function resetProgress() {
+            currentProgress = 0;
+            targetProgress = 0;
+            const bar = document.getElementById('loadingProgressBar');
+            const text = document.getElementById('loadingPercent');
+            if (bar) bar.style.width = '0%';
+            if (text) text.textContent = '0%';
+        }
+
 
         document.addEventListener('DOMContentLoaded', () => {
             setupEventListeners();
@@ -1634,13 +1732,15 @@
         }
 
         async function reloadData(source) {
-            showLoading(true);
+            showLoading(true, 0);
             try {
                 // Reset filter selections when switching data sources
                 // This prevents old filter values from hiding all new data
                 Object.keys(filterSelections).forEach(key => delete filterSelections[key]);
 
                 let dataFromSource = [];
+
+                updateLoadingProgress(10); // 開始
 
                 // 判斷資料來源類型
                 if (source.startsWith('github:')) {
@@ -1660,17 +1760,28 @@
                     }
                 }
 
+                updateLoadingProgress(70); // 價格資料載入完成
+
                 // 載入 PT 機型整理 的規格資料
                 const gs = await fetchGSData(document.getElementById('gsSheetSelect').value).catch(e => {
                     console.warn("GS Data Failed, continuing...", e);
                     return [];
                 });
 
+                updateLoadingProgress(80); // 規格資料載入完成，開始合併
+
                 csvData = dataFromSource;
                 gsData = gs;
-                mergedData = mergeData(dataFromSource, gs);
+
+                // mergeData with progress callback (80% to 95%)
+                mergedData = mergeData(dataFromSource, gs, (processed, total) => {
+                    const mergeProgress = 80 + (processed / total) * 15; // 80% to 95%
+                    updateLoadingProgress(mergeProgress);
+                });
 
                 console.log(`Merged data: ${mergedData.length} products`);
+
+                updateLoadingProgress(95); // 資料合併完成
 
                 // Calculate dependencies
                 calculateDependencies();
@@ -1678,6 +1789,8 @@
                 // Re-init filters and render
                 setupFilters();
                 applyFilters(); // Apply default
+
+                updateLoadingProgress(99); // 篩選器套用
 
                 // Ensure UI is visible
                 document.getElementById('viewTabs').style.display = 'flex';
@@ -1694,6 +1807,8 @@
                 console.error('Reload Error:', err);
                 alert('Load Failed: ' + err.message);
             } finally {
+                updateLoadingProgress(100); // Complete
+                await new Promise(r => setTimeout(r, 500)); // Brief pause to show 100%
                 showLoading(false);
             }
         }
@@ -2136,34 +2251,47 @@
             reloadData(url);
         }
 
-        function mergeData(csv, gs) {
+        function mergeData(csv, gs, progressCallback = null) {
             const gsMap = {};
             gs.forEach(r => {
                 const m = (r['Model #'] || '').trim().toLowerCase();
                 if (m) gsMap[m] = r;
             });
 
-            return csv.filter(r => {
-                if (r['Exclude Update'] === 'Y') return false;
+            const result = [];
+            const total = csv.length;
+            let processed = 0;
+
+            for (const r of csv) {
+                processed++;
+
+                // Update progress every 50 rows
+                if (progressCallback && processed % 50 === 0) {
+                    progressCallback(processed, total);
+                }
+
+                if (r['Exclude Update'] === 'Y') continue;
                 const m = (r['Model #'] || '').trim();
-                if (!m) return false;
+                if (!m) continue;
 
                 // Check for price in dateColumns (MTS format)
+                let hasPrice = false;
                 for (const c of dateColumns) {
                     const p = parseFloat(r[c]);
-                    if (!isNaN(p) && p > 0) return true;
+                    if (!isNaN(p) && p > 0) { hasPrice = true; break; }
                 }
 
                 // Also check for direct Price column (TBS format - may be like "€598.34")
-                const directPrice = r['Price'];
-                if (directPrice) {
-                    const numPrice = parseFloat(String(directPrice).replace(/[€,]/g, ''));
-                    if (!isNaN(numPrice) && numPrice > 0) return true;
+                if (!hasPrice) {
+                    const directPrice = r['Price'];
+                    if (directPrice) {
+                        const numPrice = parseFloat(String(directPrice).replace(/[€,]/g, ''));
+                        if (!isNaN(numPrice) && numPrice > 0) hasPrice = true;
+                    }
                 }
 
-                return false;
-            }).map(r => {
-                const m = (r['Model #'] || '').trim();
+                if (!hasPrice) continue;
+
                 const g = gsMap[m.toLowerCase()] || {};
 
                 // Get price: first from dateColumns, fallback to direct Price column
@@ -2187,7 +2315,6 @@
 
                 // Get Price Tag (rounded price for categorization)
                 let priceTag = r['Price Tag'];
-                let debugCalc = 0;
 
                 if (priceTag && !isNaN(parseFloat(priceTag))) {
                     priceTag = parseFloat(priceTag);
@@ -2196,10 +2323,9 @@
                     const base = Math.floor(price / 100) * 100;
                     const remainder = price % 100;
                     priceTag = base + (remainder <= 25 ? 0 : remainder <= 75 ? 50 : 100);
-                    debugCalc = 1;
                 }
 
-                return {
+                result.push({
                     Platform: r['Platform'] || '',
                     'Platform Type': (r['Platform'] || '').startsWith('R-') ? 'Retailer' : 'Brander',
                     'Model #': m,
@@ -2228,8 +2354,13 @@
                     RPM: g['RPM'] || r['RPM'] || '',
                     Watt: g['Watt'] || r['Watt'] || '',
                     att: g['att'] || r['att'] || ''
-                };
-            });
+                });
+            }
+
+            // Final progress update
+            if (progressCallback) progressCallback(total, total);
+
+            return result;
         }
 
         function setupFilters() {
@@ -2466,6 +2597,33 @@
             }
 
             // applyFilters(); // DEFERRED: execute only when dropdown closes
+
+            // Reorder: checked first (A-Z), then unchecked (A-Z)
+            reorderFilterOptions(dropdown);
+        }
+
+        function reorderFilterOptions(dropdown) {
+            const optionsList = dropdown.querySelector('.filter-options-list');
+            if (!optionsList) {
+                console.warn('reorderFilterOptions: optionsList not found');
+                return;
+            }
+
+            const labels = Array.from(optionsList.querySelectorAll('.filter-option'));
+            console.log('reorderFilterOptions: sorting', labels.length, 'options');
+
+            labels.sort((a, b) => {
+                const aChecked = a.querySelector('input').checked;
+                const bChecked = b.querySelector('input').checked;
+                // Checked first (true=1 > false=0, so checked comes first)
+                if (aChecked !== bChecked) return aChecked ? -1 : 1;
+                // Then A-Z
+                return a.textContent.localeCompare(b.textContent);
+            });
+
+            // Clear and re-append in sorted order
+            optionsList.innerHTML = '';
+            labels.forEach(label => optionsList.appendChild(label));
         }
 
         function applyFilters() {
@@ -3385,6 +3543,12 @@
         }
 
         function updateScatterChart() {
+            // Guard: Check if Chart.js is loaded (CDN may fail)
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js not loaded, skipping scatter chart');
+                return;
+            }
+
             const yField = document.getElementById('scatterYAxis').value;
             const colorField = document.getElementById('scatterColorBy').value;
 
@@ -3819,10 +3983,8 @@
             document.getElementById('platformCount').textContent = [...new Set(filteredData.map(d => d.Platform))].length;
         }
 
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-        }
 
+        // showLoading function is defined earlier with progress bar support
         // PDF 匯出功能 - 使用 html2canvas 擷取實際畫面
         document.getElementById('exportPdfBtn')?.addEventListener('click', exportToPdf);
 
