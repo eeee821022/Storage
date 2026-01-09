@@ -10,6 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <style>
         :root {
             --platform-col-width: 90px;
@@ -141,6 +143,221 @@
             border: 1px solid #d1d5db;
         }
 
+        /* --- Chat UI --- */
+        #chatFab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 9000;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #chatFab:hover {
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #chatPanel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+            z-index: 9000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            transition: opacity 0.2s, transform 0.2s, width 0.3s, height 0.3s, top 0.3s, left 0.3s;
+        }
+
+        #chatPanel.fullscreen {
+            width: 90vw !important;
+            height: 90vh !important;
+            top: 5vh;
+            left: 5vw;
+            bottom: auto;
+            right: auto;
+            border-radius: 8px;
+        }
+
+        #chatPanel.fullscreen .chat-msg {
+            max-width: 95%;
+            /* Wider bubbles in fullscreen */
+        }
+
+        .api-key-container {
+            padding: 8px 12px;
+            background: #fffbeb;
+            border-bottom: 1px solid #fcd34d;
+            font-size: 0.8rem;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .api-key-input {
+            flex: 1;
+            padding: 4px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
+
+        #chatPanel.visible {
+            display: flex;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-msg {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            background: #6366f1;
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-msg.model {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-msg.system {
+            align-self: center;
+            background: #f3f4f6;
+            color: #6b7280;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            padding: 4px 8px;
+        }
+
+        .chat-controls {
+            padding: 8px 12px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-action-btn {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #f3f4f6;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .chat-action-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .chat-action-btn.active {
+            background: #dbeafe;
+            color: #2563eb;
+            border-color: #bfdbfe;
+        }
+
+        .chat-input-area {
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 8px;
+        }
+
+        #chatInput {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 20px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        #chatInput:focus {
+            border-color: #6366f1;
+        }
+
+        #sendChatBtn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #6366f1;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #sendChatBtn:hover {
+            background: #4f46e5;
+        }
+
         .price-inputs {
             display: flex;
             align-items: center;
@@ -237,6 +454,151 @@
 
         .filter-btn:hover {
             background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        /* --- Chat UI --- */
+        #chatFab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            z-index: 9000;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s;
+        }
+
+        #chatFab:hover {
+            transform: scale(1.1);
+        }
+
+        #chatPanel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 380px;
+            height: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            z-index: 9000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        #chatPanel.visible {
+            display: flex;
+        }
+
+        #chatPanel.chat-fullscreen {
+            position: fixed;
+            top: 200px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: calc(100vh - 200px);
+            max-width: none;
+            max-height: none;
+            border-radius: 0;
+            z-index: 9999;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-msg {
+            max-width: 90%;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            background: #6366f1;
+            color: white;
+        }
+
+        .chat-msg.model {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+        }
+
+        .chat-msg.system {
+            align-self: center;
+            background: #f3f4f6;
+            color: #6b7280;
+            font-size: 0.75rem;
+        }
+
+        .chat-input-area {
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 8px;
+        }
+
+        #chatInput {
+            flex: 1;
+            padding: 8px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .api-key-bar {
+            padding: 8px 12px;
+            background: #fffbeb;
+            border-bottom: 1px solid #fcd34d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+        }
+
+        .api-key-bar input {
+            flex: 1;
+            padding: 4px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-family: monospace;
         }
 
         .filter-btn.active {
@@ -1240,6 +1602,11 @@
                     <button class="mode-btn" data-mode="lowestPrice"><i class="fas fa-tag"></i>Lowest</button>
                     <button class="mode-btn" data-mode="range"><i class="fas fa-arrows-alt-v"></i>Range</button>
                 </div>
+
+                <button class="mode-btn" onclick="openTipsModal()" title="View All Feature Tips"
+                    style="margin-left: 12px; background: #fffbeb; color: #b45309;">
+                    <i class="fas fa-lightbulb text-yellow-500"></i> Tips
+                </button>
             </div>
         </div>
 
@@ -1312,6 +1679,16 @@
                 <button id="exportPdfBtn" class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
                     <i class="fas fa-download mr-1"></i>Export
                 </button>
+            </div>
+
+            <!-- AI Context Copy -->
+            <div class="flex items-center gap-2 ml-2 px-3 py-1 bg-indigo-50 rounded border border-indigo-200">
+                <button id="downloadCsvBtn" onclick="downloadCsvContext()"
+                    class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                    title="Download filtered data as CSV">
+                    <i class="fas fa-file-csv mr-1"></i>Download CSV
+                </button>
+
             </div>
 
             <!-- View Controls Area (Dynamic) -->
@@ -1572,6 +1949,8 @@
         ];
 
         // Show/Hide Loading Overlay (Uses existing HTML element)
+        let lastTipIndex = -1;
+
         function showLoading(show, progress = 0) {
             const overlay = document.getElementById('loadingOverlay');
             if (!overlay) return;
@@ -1580,14 +1959,76 @@
                 resetProgress(); // Reset to 0% first
                 overlay.style.display = 'flex';
                 updateLoadingProgress(progress);
-                // Show random tip
+
+                // Show random tip (Avoid Repeating previous one)
                 const tipEl = document.getElementById('loadingTip');
-                if (tipEl && LOADING_TIPS) {
-                    tipEl.textContent = LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)];
+                if (tipEl && LOADING_TIPS && LOADING_TIPS.length > 0) {
+                    let newIndex;
+                    let attempts = 0;
+                    do {
+                        newIndex = Math.floor(Math.random() * LOADING_TIPS.length);
+                        attempts++;
+                    } while (newIndex === lastTipIndex && LOADING_TIPS.length > 1 && attempts < 5);
+
+                    lastTipIndex = newIndex;
+                    tipEl.textContent = LOADING_TIPS[newIndex];
                 }
             } else {
                 overlay.style.display = 'none';
             }
+        }
+
+        // Tips Modal Logic
+        function openTipsModal() {
+            let modal = document.getElementById('tipsModal');
+            if (!modal) {
+                // Create Modal DOM if missing
+                modal = document.createElement('div');
+                modal.id = 'tipsModal';
+                modal.className = 'modal';
+                modal.style.display = 'none';
+                modal.style.position = 'fixed';
+                modal.style.zIndex = '9999';
+                modal.style.left = '0';
+                modal.style.top = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.overflow = 'auto';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.4)';
+
+                modal.innerHTML = `
+                    <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 8px; position: relative;">
+                        <span class="close-tips" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                        <h2 class="text-xl font-bold mb-4 text-indigo-800"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i>Feature Tips & Tricks</h2>
+                        <div class="tips-body overflow-y-auto" style="max-height: 60vh;">
+                            <ul id="tipsList" class="space-y-2"></ul>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                // Bind Close Event
+                const closeBtn = modal.querySelector('.close-tips');
+                closeBtn.onclick = () => modal.style.display = 'none';
+
+                window.addEventListener('click', (e) => {
+                    if (e.target === modal) modal.style.display = 'none';
+                });
+            }
+
+            // Populate Tips
+            const list = modal.querySelector('#tipsList');
+            if (list && LOADING_TIPS) {
+                list.innerHTML = LOADING_TIPS.map(tip => {
+                    const cleanTip = tip.replace('💡 ', '');
+                    return `<li class="flex items-start p-3 bg-yellow-50 rounded-lg border border-yellow-100 hover:bg-yellow-100 transition-colors">
+                        <i class="fas fa-info-circle text-yellow-500 mt-1 mr-3 flex-shrink-0"></i>
+                        <span class="text-gray-700 text-sm leading-relaxed">${cleanTip}</span>
+                    </li>`;
+                }).join('');
+            }
+
+            modal.style.display = 'block';
         }
 
         // Animated Loading Progress Bar
@@ -1638,7 +2079,8 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             setupEventListeners();
-            populateSheetDropdown();
+            // populateSheetDropdown(); // Removed: Called inside initApp() to avoid duplicate log
+
 
             // Toggle Button Logic (Platform/Brand in Landscape view)
             document.querySelectorAll('.toggle-container .grid-toggle-btn').forEach(btn => {
@@ -4742,115 +5184,588 @@
             }
         })();
 
-        /* Legacy Logic Disabled
-        window.addEventListener('load', function () {
-            console.log("System v2.1 Loaded");
-            // alert('系統更新: v2.1 - 設定功能已修復'); // Optional: Uncomment if user still has issues, but console is cleaner.
-            // Let's use a subtle notification or just rely on console. User was annoyed, maybe alert is too much?
-            // User said "You didn't change it". An alert proves I did.
-            // I will use a temporary visual indicator ensuring chart title update.
-
-            const modalTitle = document.querySelector('#settingsModal h3');
-            if (modalTitle && !modalTitle.textContent.includes('v2.1')) {
-                modalTitle.textContent = "圖表設定 (v2.1 - 最新版)";
+        // --- AI Context Copy Functionality ---
+        function copyAiContext() {
+            if (!filteredData || filteredData.length === 0) {
+                alert('No data to copy! Please load data first.');
+                return;
             }
 
-            // Settings Modal Logic
-            const modal = document.getElementById('settingsModal');
-            const btn = document.getElementById('openSettingsBtn');
-            const span = document.getElementsByClassName("close-modal")[0];
-            const applyBtn = document.getElementById('applySettingsBtn');
+            const btn = document.getElementById('copyAiContextBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
 
-            if (btn) {
-                btn.onclick = function () {
-                    modal.style.display = "block";
-                    // Initialize inputs from current chartSettings
-                    if (typeof chartSettings !== 'undefined') {
-                        if (document.getElementById('setRowHeight')) document.getElementById('setRowHeight').value = chartSettings.rowHeight;
-                        if (document.getElementById('valRowHeight')) document.getElementById('valRowHeight').textContent = chartSettings.rowHeight;
+            setTimeout(() => { // Small delay to allow UI update
+                try {
+                    // 1. Prepare Header
+                    let context = `[Context: Power Tool Market Data]\n`;
+                    context += `Total Products: ${filteredData.length}\n`;
+                    context += `Current View: ${currentView.charAt(0).toUpperCase() + currentView.slice(1)}\n`;
 
-                        if (document.getElementById('setMinHeight')) document.getElementById('setMinHeight').value = chartSettings.minHeight;
-                        if (document.getElementById('valMinHeight')) document.getElementById('valMinHeight').textContent = chartSettings.minHeight;
-
-                        if (document.getElementById('setPointRadius')) document.getElementById('setPointRadius').value = chartSettings.pointRadius;
-                        if (document.getElementById('valPointRadius')) document.getElementById('valPointRadius').textContent = chartSettings.pointRadius;
-
-                        if (document.getElementById('setTickInterval')) document.getElementById('setTickInterval').value = chartSettings.tickInterval;
-                    }
-                }
-            } else {
-                console.error("Open Settings Button not found!");
-            }
-
-            if (span) {
-                span.onclick = function () {
-                    modal.style.display = "none";
-                }
-            }
-
-            window.onclick = function (event) {
-                if (event.target == modal) {
-                    modal.style.display = "none";
-                }
-            }
-
-            // Explicit Inputs Sync
-            function bindInput(key) {
-                const upperKey = key.charAt(0).toUpperCase() + key.slice(1);
-                const input = document.getElementById('set' + upperKey);
-                const label = document.getElementById('val' + upperKey);
-
-                if (input && label) {
-                    input.addEventListener('input', (e) => {
-                        label.textContent = e.target.value;
-                        if (typeof chartSettings !== 'undefined') {
-                            chartSettings[key] = parseInt(e.target.value);
-                            console.log(`Setting ${key} changed to ${e.target.value}`);
-                        }
+                    // Add active filters info
+                    const activeFilters = [];
+                    Object.entries(filterSelections).forEach(([key, values]) => {
+                        if (values && values.size > 0) activeFilters.push(`${key}: ${Array.from(values).join(', ')}`);
                     });
-                } else {
-                    console.error(`Input or Label for ${key} not found`);
+                    if (priceRange.min > 0 || priceRange.max < 1000) {
+                        activeFilters.push(`Price: ${priceRange.min}-${priceRange.max}`);
+                    }
+                    if (activeFilters.length > 0) context += `Active Filters: ${activeFilters.join('; ')}\n`;
+                    context += `\n[Data Structure: CSV]\n`;
+
+                    // 2. Select Key Columns
+                    const columns = ['Model #', 'Brand', 'Platform', 'Price', 'Price Tag', 'Power Supply', 'Blade Diameter', 'Watt', 'RPM', 'Type', 'Bevel', 'Slide', 'Laser', 'Soft Start'];
+                    context += columns.join(',') + '\n';
+
+                    // 3. Data Rows (Limit to prevent huge paste)
+                    const MAX_ROWS = 2000; // Text is cheap
+                    const rowsToProcess = filteredData.slice(0, MAX_ROWS);
+
+                    const csvRows = rowsToProcess.map(row => {
+                        return columns.map(col => {
+                            let val = row[col] || '';
+                            if (col === 'Price') val = typeof val === 'number' ? val.toFixed(2) : val;
+                            // Clean value
+                            val = String(val).replace(/[\r\n]+/g, ' ').trim();
+                            // Escape quotes and wrap if contains comma
+                            if (val.includes(',') || val.includes('"')) {
+                                val = `"${val.replace(/"/g, '""')}"`;
+                            }
+                            return val;
+                        }).join(',');
+                    });
+
+                    context += csvRows.join('\n');
+
+                    if (filteredData.length > MAX_ROWS) {
+                        context += `\n... (truncated ${filteredData.length - MAX_ROWS} more rows)`;
+                    }
+
+                    // 4. Instructions mainly for user pasting
+                    context += `\n[Instruction]\nUse this data to answer questions about product specs, pricing, and comparisons.`;
+
+                    // 5. Copy
+                    navigator.clipboard.writeText(context).then(() => {
+                        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                        btn.classList.replace('bg-indigo-600', 'bg-green-600');
+                        btn.classList.replace('hover:bg-indigo-700', 'hover:bg-green-700');
+
+                        setTimeout(() => {
+                            btn.innerHTML = originalText;
+                            btn.classList.replace('bg-green-600', 'bg-indigo-600');
+                            btn.classList.replace('hover:bg-green-700', 'hover:bg-indigo-700');
+                        }, 2000);
+                    });
+
+                } catch (err) {
+                    console.error('Copy AI Context Failed:', err);
+                    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+                    setTimeout(() => btn.innerHTML = originalText, 2000);
                 }
+            }, 10);
+        }
+
+        // Add Listener safely
+        const copyAiBtn = document.getElementById('copyAiContextBtn');
+        if (copyAiBtn) copyAiBtn.addEventListener('click', copyAiContext);
+
+    </script>
+
+    <!-- Tips & Context Helper (Global Scope) -->
+    <script>
+        // --- Random Tips Logic ---
+        function showRandomTip() {
+            if (typeof LOADING_TIPS === 'undefined' || LOADING_TIPS.length === 0) {
+                alert("💡 Tip: Try using the 'Scatter' view to see price vs performance!");
+                return;
+            }
+            const tip = LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)];
+            // Simple sleek notification instead of alert? Alert is fine for now as requested 'popup'.
+            alert("💡 " + tip);
+        }
+
+        // --- Context Helper (Exposed for Module) ---
+        window.getContextString = function () {
+            if (typeof filteredData === 'undefined' || !filteredData || filteredData.length === 0) return null;
+
+            let context = `Total Products: ${filteredData.length}\n`;
+            context += `Current View: ${currentView}\n`;
+
+            // Core columns for analysis
+            const columns = ['Model #', 'Brand', 'Platform', 'Price', 'Price Tag', 'Power Supply', 'Blade Diameter', 'Watt', 'RPM', 'Type'];
+            context += columns.join(',') + '\n';
+
+            const MAX_ROWS = 1000;
+            const rows = filteredData.slice(0, MAX_ROWS).map(row => {
+                return columns.map(col => {
+                    let val = row[col] || '';
+                    if (col === 'Price') val = typeof val === 'number' ? val.toFixed(2) : val;
+                    return String(val).replace(/,/g, ' ').trim();
+                }).join(',');
+            });
+            context += rows.join('\n');
+
+            if (filteredData.length > MAX_ROWS) context += `\n...(${filteredData.length - MAX_ROWS} more)...`;
+            return context;
+        }
+    </script>
+
+
+
+
+    </script>
+
+    <!-- Chat Interface -->
+    <div id="chatFab" onclick="toggleChat()" title="Open AI Assistant">
+        <i class="fas fa-comment-dots fa-lg"></i>
+    </div>
+
+    <div id="chatPanel">
+
+        <div class="chat-header">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-robot"></i>
+                <span id="aiModelName">AI Data Analyst (Gemini 2.5 Preview)</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <i class="fas fa-expand cursor-pointer hover:text-gray-200" onclick="toggleFullScreen()"
+                    title="Toggle Fullscreen"></i>
+                <i class="fas fa-times cursor-pointer hover:text-gray-200" onclick="toggleChat()" title="Close"></i>
+            </div>
+        </div>
+
+        <div class="api-key-container">
+            <i class="fas fa-key text-yellow-600"></i>
+            <input type="password" id="apiKeyInput" class="api-key-input"
+                placeholder="Paste Gemini API Key here (auto-saved)" onchange="saveApiKey()">
+            <i class="fas fa-eye cursor-pointer text-gray-500 hover:text-gray-700" onclick="toggleKeyVisibility()"></i>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg system">
+                System: <b>Gemini Flash Agent</b> Ready.<br>
+                Please enter your Google API Key above to start.
+            </div>
+        </div>
+
+        <div class="chat-controls flex gap-2 p-2 bg-gray-50 border-t border-gray-200">
+            <div class="chat-action-btn flex-1 text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-gray-100 transition-colors text-xs"
+                onclick="toggleContext('data')" id="btnContextData" title="Toggle Data Context (Top 100 Rows)">
+                <i class="fas fa-database text-gray-400"></i> <span class="text-gray-600">數據資料</span>
+            </div>
+            <div class="chat-action-btn flex-1 text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-gray-100 transition-colors text-xs"
+                onclick="toggleContext('manual')" id="btnContextManual" title="Toggle Operation Manual (Page Source)">
+                <i class="fas fa-book text-gray-400"></i> <span class="text-gray-600">操作詢問</span>
+            </div>
+            <div class="chat-action-btn flex-1 text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-gray-100 transition-colors text-xs"
+                onclick="toggleContext('history')" id="btnContextHistory"
+                title="Toggle History Context (Continue Conversation)">
+                <i class="fas fa-history text-gray-400"></i> <span class="text-gray-600">記錄對話</span>
+            </div>
+            <div class="chat-action-btn flex-none text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-gray-100 transition-colors text-xs w-16"
+                onclick="saveChatHistory()" id="saveChatBtn" title="Save History to Server">
+                <i class="fas fa-save text-gray-500"></i> <span class="text-gray-600">Save</span>
+            </div>
+            <div class="chat-action-btn flex-none text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-red-100 transition-colors text-xs w-16"
+                onclick="clearChat()" id="clearChatBtn" title="Clear Chat">
+                <i class="fas fa-trash text-red-400"></i> <span class="text-gray-600">Clear</span>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Ask about the data..." onkeydown="handleChatKey(event)">
+            <div id="micBtn" onclick="toggleVoiceInput()" class="text-gray-400 hover:text-red-500 cursor-pointer p-2"
+                title="Voice Input">
+                <i class="fas fa-microphone"></i>
+            </div>
+            <div id="sendChatBtn" onclick="sendChatMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Input Logic -->
+    <script>
+        function toggleVoiceInput() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("Browser does not support Voice Input. Try Chrome/Edge.");
+                return;
             }
 
-            bindInput('rowHeight');
-            bindInput('minHeight');
-            bindInput('pointRadius');
+            const btn = document.getElementById('micBtn');
+            const icon = btn.querySelector('i');
 
-            // Tick Interval sync (Main UI)
-            const tickSelect = document.getElementById('mainTickInterval');
-            if (tickSelect) {
-                // Initialize value
-                if (typeof chartSettings !== 'undefined') {
-                    tickSelect.value = chartSettings.tickInterval;
+            if (window.recognition && window.recognition.started) {
+                window.recognition.stop();
+                return;
+            }
+
+            const recognition = new webkitSpeechRecognition();
+            window.recognition = recognition; // Global
+            recognition.lang = 'zh-TW'; // Default generic Chinese
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = function () {
+                recognition.started = true;
+                icon.classList.add('fa-beat');
+                icon.style.color = 'red';
+            };
+
+            recognition.onend = function () {
+                recognition.started = false;
+                icon.classList.remove('fa-beat');
+                icon.style.color = ''; // Reset
+            };
+
+            recognition.onresult = function (event) {
+                const transcript = event.results[0][0].transcript;
+                const input = document.getElementById('chatInput');
+                input.value += (input.value ? ' ' : '') + transcript;
+                input.focus();
+            };
+
+            recognition.start();
+        }
+
+        // --- Context Management ---
+        window.activeContexts = {
+            data: false,
+            manual: false,
+            history: false
+        };
+
+        function toggleFullScreen() {
+            const panel = document.getElementById('chatPanel');
+            // Query for either expand or compress icon
+            const icon = document.querySelector('.chat-header .fa-expand, .chat-header .fa-compress');
+            if (!panel) return;
+
+            panel.classList.toggle('chat-fullscreen');
+
+            if (icon) {
+                if (panel.classList.contains('chat-fullscreen')) {
+                    icon.classList.remove('fa-expand');
+                    icon.classList.add('fa-compress');
+                } else {
+                    icon.classList.remove('fa-compress');
+                    icon.classList.add('fa-expand');
                 }
+            }
+        }
 
-                tickSelect.addEventListener('change', (e) => {
-                    if (typeof chartSettings !== 'undefined') {
-                        chartSettings.tickInterval = parseInt(e.target.value);
-                        console.log(`Tick Interval changed to ${e.target.value}`);
-                        // Immediate update for main UI control
-                        if (typeof updateScatterChart === 'function') {
-                            updateScatterChart();
-                        }
+        function clearChat() {
+            if (!confirm("Are you sure you want to clear the conversation?")) return;
+            document.getElementById('chatMessages').innerHTML =
+                '<div class="chat-msg system">System: <b>Chat Cleared.</b><br>History memory reset.</div>';
+        }
+
+        function toggleContext(type) {
+            const isActive = !window.activeContexts[type];
+            window.activeContexts[type] = isActive;
+
+            let btnId = '';
+            if (type === 'data') btnId = 'btnContextData';
+            else if (type === 'manual') btnId = 'btnContextManual';
+            else if (type === 'history') btnId = 'btnContextHistory';
+
+            const btn = document.getElementById(btnId);
+            const icon = btn.querySelector('i');
+
+            if (isActive) {
+                btn.classList.add('bg-blue-100', 'border-blue-500');
+                btn.classList.remove('hover:bg-gray-100');
+                icon.classList.remove('text-gray-400');
+                icon.classList.add('text-blue-600');
+            } else {
+                btn.classList.remove('bg-blue-100', 'border-blue-500');
+                btn.classList.add('hover:bg-gray-100');
+                icon.classList.add('text-gray-400');
+                icon.classList.remove('text-blue-600');
+            }
+        }
+
+        // Prepare Context String (Lazy Load)
+        function getCombinedContext() {
+            let parts = [];
+
+            // 1. Data Context
+            if (window.activeContexts.data && typeof filteredData !== 'undefined' && filteredData.length > 0) {
+                const header = "Model,Brand,Platform,Price,Spec\n";
+                const csv = filteredData.slice(0, 100).map(d =>
+                    `${d.model || d['Model #']},${d.brand || d['Brand']},${d.platform || d['Platform']},${d.price || d['Price']}`
+                ).join('\n');
+                parts.push(`[DATA CONTEXT (Top 100)]\n${header}${csv}`);
+            }
+
+            // 2. Manual Context (Source Code)
+            if (window.activeContexts.manual) {
+                // Get relevant HTML structure
+                const htmlContent = document.body.innerHTML.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gm, "")
+                    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gm, "[SVG Icon]")
+                    .substring(0, 15000);
+                parts.push(`[OPERATION MANUAL CONTEXT (Source Code Fragment)]\n${htmlContent}`);
+            }
+
+            // 3. History Context
+            if (window.activeContexts.history) {
+                const msgs = document.querySelectorAll('#chatMessages .chat-msg');
+                let historyText = "";
+                msgs.forEach(msg => {
+                    const role = msg.classList.contains('user') ? 'USER' : (msg.classList.contains('model') ? 'AI' : 'SYSTEM');
+                    if (role !== 'SYSTEM') {
+                        historyText += `${role}: ${msg.innerText.trim()}\n`;
                     }
                 });
-            } else {
-                console.error("Main Tick Interval Select not found!");
+                if (historyText.length > 5000) historyText = "...(truncated)...\n" + historyText.slice(-5000);
+
+                if (historyText) {
+                    parts.push(`[CONVERSATION HISTORY]\n${historyText}\n[INSTRUCTION]: Please continue the conversation above.`);
+                }
             }
 
-            if (applyBtn) {
-                applyBtn.onclick = () => {
-                    console.log("Applying settings...");
-                    if (typeof updateScatterChart === 'function') {
-                        updateScatterChart();
-                    }
-                    modal.style.display = "none";
-                };
-            }
+            return parts.join("\n\n");
+        }
+
+    </script>
+    <!-- Chat UI HTML -->
+    <button id="chatFab" onclick="toggleChat()">
+        <i class="fas fa-robot fa-lg"></i>
+    </button>
+
+    <div id="chatPanel">
+        <div class="chat-header">
+            <span><i class="fas fa-brain mr-2"></i>Gemini AI Analyst</span>
+            <i class="fas fa-times cursor-pointer" onclick="toggleChat()"></i>
+        </div>
+        <div class="api-key-bar">
+            <i class="fas fa-key text-amber-600"></i>
+            <input type="password" id="apiKeyInput" placeholder="輸入 Gemini API Key..." onchange="saveApiKey()">
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg system">歡迎！請輸入 API Key 開始。</div>
+        </div>
+        <div class="p-2 border-t flex gap-2">
+            <button class="text-xs px-2 py-1 bg-gray-100 rounded border hover:bg-gray-200" id="attachDataBtn"
+                onclick="attachDataToAI()">
+                <i class="fas fa-paperclip mr-1"></i>附加目前數據 (Context)
+            </button>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="請輸入問題..."
+                onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()"
+                class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Logic Script -->
+    <script>
+        // --- Setup AI Vars ---
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const chatInput = document.getElementById('chatInput');
+        const chatMessages = document.getElementById('chatMessages');
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadApiKey();
         });
 
-    */
+        function saveApiKey() { localStorage.setItem('gemini_api_key', apiKeyInput.value); }
+        function loadApiKey() {
+            const k = localStorage.getItem('gemini_api_key');
+            if (k && apiKeyInput) apiKeyInput.value = k;
+        }
+
+        function toggleChat() { document.getElementById('chatPanel').classList.toggle('visible'); }
+
+        // --- Core Gemini API (REST) ---
+        async function callGeminiAPI(prompt, systemInstruction = "") {
+            const userKey = localStorage.getItem('gemini_api_key');
+            if (!userKey) {
+                appendMessage('system', '⚠️ 請先設定 API Key。');
+                return null;
+            }
+
+            // Fallback chain handled manually or simple one model first
+            // Reference used: gemini-2.5-flash-preview-09-2025
+            // Updated to 2026 standard
+            const model = "gemini-2.5-flash-preview-09-2025";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${userKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined,
+                generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
+            };
+
+            const maxRetries = 3;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error?.message || 'API Error: ' + response.status);
+                    }
+
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                } catch (error) {
+                    console.warn(`Attempt ${i + 1} failed:`, error);
+                    if (i === maxRetries - 1) throw error;
+                    await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+                }
+            }
+        }
+
+        async function sendChatMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            appendMessage('user', text);
+            chatInput.value = '';
+
+            const loadingId = 'loading-' + Date.now();
+            appendMessage('model', '<i class="fas fa-spinner fa-spin"></i> 思考中...', loadingId);
+
+            try {
+                // Combine Contexts
+                let finalPrompt = text;
+                const contextStr = getCombinedContext();
+
+                if (contextStr) {
+                    finalPrompt = contextStr + "\n\n[USER QUESTION]: " + text;
+                }
+
+                const response = await callGeminiAPI(finalPrompt, "你是一個專業的電動工具分析師與網頁操作助手。請用繁體中文回答。若使用者詢問操作，請參考操作手冊上下文。");
+
+                // Use marked.js for proper Markdown rendering (Tables, Lists, Bold, etc.)
+                let formatted = marked.parse(response || "");
+
+                const el = document.getElementById(loadingId);
+                if (el) el.innerHTML = formatted;
+
+            } catch (error) {
+                const el = document.getElementById(loadingId);
+                if (el) el.innerHTML = `<span class="text-red-500">錯誤: ${error.message}</span>`;
+            }
+        }
+
+        function appendMessage(role, content, id = null) {
+            const div = document.createElement('div');
+            div.className = `chat-msg ${role}`;
+            if (id) div.id = id;
+            div.innerHTML = content;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function saveChatHistory() {
+            if (chatMessages.innerText.trim().length === 0) {
+                alert("No history to save.");
+                return;
+            }
+
+            // Collect messages
+            let content = "# AI Chat History\n\n";
+            const msgs = chatMessages.querySelectorAll('.chat-msg');
+            msgs.forEach(msg => {
+                const role = msg.classList.contains('user') ? 'USER' : (msg.classList.contains('model') ? 'AI' : 'SYSTEM');
+                content += `### ${role}\n${msg.innerText}\n\n`;
+            });
+
+            // Generate Filename
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+            const timeStr = now.toTimeString().slice(0, 5).replace(/:/g, '');
+            const filename = `AI+${dateStr}+${timeStr}.md`;
+            const targetPath = "d:/OneDrive/Python_File/網頁_PT資料庫/PT爬蟲工具/" + filename; // Hardcoded target
+
+            // Try Server Save
+            try {
+                const response = await fetch('/save_file', { // Assuming local python server has this endpoint or similar generic saver
+                    // If standard python http.server doesn't support save, we might need a custom handler.
+                    // But user said "Like crawler upload". 
+                    // If no backend endpoint exists, we MUST fallback to client download but rename it.
+                    // Let's try to assume a generic save_file endpoint exists or we use the client download as reliable fallback.
+                    // WAIT, standard python -m http.server DOES NOT support upload.
+                    // The user mentioned "PT爬蟲工具" which implies a Python script environment.
+                    // If there IS a running server (CodeRunner/Flash), we need to know the port/API.
+                    // Given I cannot see the server code, I will implement value-add:
+                    // 1. Attempt fetch to local server (if user has one).
+                    // 2. Fallback to Client Blob download with correct name.
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: targetPath, content: content })
+                });
+                if (response.ok) {
+                    alert("Saved to Server: " + filename);
+                    return;
+                }
+            } catch (e) {
+                console.warn("Server save failed, falling back to download.");
+            }
+
+            // Fallback: Client Download
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Download Filtered Data as CSV
+        function downloadCsvContext() {
+            if (typeof filteredData === 'undefined' || filteredData.length === 0) {
+                alert("No data to download.");
+                return;
+            }
+
+            // Get all headers
+            const headers = Object.keys(filteredData[0]);
+            const csvRows = [headers.join(',')];
+
+            filteredData.forEach(row => {
+                const values = headers.map(header => {
+                    // Escape quotes and wrap in quotes
+                    const val = row[header] !== null && row[header] !== undefined ? String(row[header]) : '';
+                    const escaped = val.replace(/"/g, '""');
+                    return `"${escaped}"`;
+                });
+                csvRows.push(values.join(','));
+            });
+
+            const csvContent = "\uFEFF" + csvRows.join('\n'); // Add BOM for Excel compatibility
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PT_Data_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        window.handleChatKey = function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent default if it's inside a form or weird behavior
+                sendChatMessage();
+            }
+        }
+
     </script>
 </body>
 
