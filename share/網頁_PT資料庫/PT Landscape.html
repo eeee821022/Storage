@@ -5315,74 +5315,7 @@
 
     </script>
 
-    <!-- Chat Interface -->
-    <div id="chatFab" onclick="toggleChat()" title="Open AI Assistant">
-        <i class="fas fa-comment-dots fa-lg"></i>
-    </div>
 
-    <div id="chatPanel">
-
-        <div class="chat-header">
-            <div class="flex items-center gap-2">
-                <i class="fas fa-robot"></i>
-                <span id="aiModelName">AI Data Analyst (Gemini 2.5 Preview)</span>
-            </div>
-            <div class="flex items-center gap-3">
-                <i class="fas fa-expand cursor-pointer hover:text-gray-200" onclick="toggleFullScreen()"
-                    title="Toggle Fullscreen"></i>
-                <i class="fas fa-times cursor-pointer hover:text-gray-200" onclick="toggleChat()" title="Close"></i>
-            </div>
-        </div>
-
-        <div class="api-key-container">
-            <i class="fas fa-key text-yellow-600"></i>
-            <input type="password" id="apiKeyInput" class="api-key-input"
-                placeholder="Paste Gemini API Key here (auto-saved)" onchange="saveApiKey()">
-            <i class="fas fa-eye cursor-pointer text-gray-500 hover:text-gray-700" onclick="toggleKeyVisibility()"></i>
-        </div>
-
-        <div class="chat-messages" id="chatMessages">
-            <div class="chat-msg system">
-                System: <b>Gemini Flash Agent</b> Ready.<br>
-                Please enter your Google API Key above to start.
-            </div>
-        </div>
-
-        <div class="chat-controls flex gap-2 p-2 bg-gray-50 border-t border-gray-200">
-            <div class="chat-action-btn flex-1 text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-gray-100 transition-colors text-xs"
-                onclick="toggleContext('data')" id="btnContextData" title="Toggle Data Context (Top 100 Rows)">
-                <i class="fas fa-database text-gray-400"></i> <span class="text-gray-600">數據資料</span>
-            </div>
-            <div class="chat-action-btn flex-1 text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-gray-100 transition-colors text-xs"
-                onclick="toggleContext('manual')" id="btnContextManual" title="Toggle Operation Manual (Page Source)">
-                <i class="fas fa-book text-gray-400"></i> <span class="text-gray-600">操作詢問</span>
-            </div>
-            <div class="chat-action-btn flex-1 text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-gray-100 transition-colors text-xs"
-                onclick="toggleContext('history')" id="btnContextHistory"
-                title="Toggle History Context (Continue Conversation)">
-                <i class="fas fa-history text-gray-400"></i> <span class="text-gray-600">記錄對話</span>
-            </div>
-            <div class="chat-action-btn flex-none text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-gray-100 transition-colors text-xs w-16"
-                onclick="saveChatHistory()" id="saveChatBtn" title="Save History to Server">
-                <i class="fas fa-save text-gray-500"></i> <span class="text-gray-600">Save</span>
-            </div>
-            <div class="chat-action-btn flex-none text-center cursor-pointer p-2 rounded border border-gray-300 hover:bg-red-100 transition-colors text-xs w-16"
-                onclick="clearChat()" id="clearChatBtn" title="Clear Chat">
-                <i class="fas fa-trash text-red-400"></i> <span class="text-gray-600">Clear</span>
-            </div>
-        </div>
-
-        <div class="chat-input-area">
-            <input type="text" id="chatInput" placeholder="Ask about the data..." onkeydown="handleChatKey(event)">
-            <div id="micBtn" onclick="toggleVoiceInput()" class="text-gray-400 hover:text-red-500 cursor-pointer p-2"
-                title="Voice Input">
-                <i class="fas fa-microphone"></i>
-            </div>
-            <div id="sendChatBtn" onclick="sendChatMessage()">
-                <i class="fas fa-paper-plane"></i>
-            </div>
-        </div>
-    </div>
 
     <!-- Voice Input Logic -->
     <script>
@@ -5489,13 +5422,18 @@
         function getCombinedContext() {
             let parts = [];
 
-            // 1. Data Context
+            // 1. Data Context (Updated: Top 400 rows, 4 Columns)
             if (window.activeContexts.data && typeof filteredData !== 'undefined' && filteredData.length > 0) {
-                const header = "Model,Brand,Platform,Price,Spec\n";
-                const csv = filteredData.slice(0, 100).map(d =>
-                    `${d.model || d['Model #']},${d.brand || d['Brand']},${d.platform || d['Platform']},${d.price || d['Price']}`
-                ).join('\n');
-                parts.push(`[DATA CONTEXT (Top 100)]\n${header}${csv}`);
+                const header = "Platform,Brand,Model,Price\n";
+                // Slice 400 rows, map specific columns
+                const csv = filteredData.slice(0, 400).map(d => {
+                    const p = d.platform || d['Platform'] || '';
+                    const b = d.brand || d['Brand'] || '';
+                    const m = d.model || d['Model #'] || '';
+                    const pr = d.price || d['Price'] || '';
+                    return `${p},${b},${m},${pr}`;
+                }).join('\n');
+                parts.push(`[DATA CONTEXT (Current View, Top 400)]\n${header}${csv}`);
             }
 
             // 2. Manual Context (Source Code)
@@ -5517,14 +5455,28 @@
                         historyText += `${role}: ${msg.innerText.trim()}\n`;
                     }
                 });
-                if (historyText.length > 5000) historyText = "...(truncated)...\n" + historyText.slice(-5000);
+                if (historyText.length > 8000) historyText = "...(truncated)...\n" + historyText.slice(-8000);
 
                 if (historyText) {
-                    parts.push(`[CONVERSATION HISTORY]\n${historyText}\n[INSTRUCTION]: Please continue the conversation above.`);
+                    parts.push(`[CONVERSATION HISTORY]\n${historyText}\n[INSTRUCTION]: Usage of history is to maintain conversation context.`);
                 }
             }
 
             return parts.join("\n\n");
+        }
+
+        function toggleKeyVisibility() {
+            const input = document.getElementById('apiKeyInput');
+            const icon = document.getElementById('apiKeyEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
         }
 
     </script>
@@ -5536,26 +5488,68 @@
     <div id="chatPanel">
         <div class="chat-header">
             <span><i class="fas fa-brain mr-2"></i>Gemini AI Analyst</span>
-            <i class="fas fa-times cursor-pointer" onclick="toggleChat()"></i>
+            <div class="flex items-center gap-3">
+                <i class="fas fa-download cursor-pointer text-gray-400 hover:text-white transition-colors"
+                    onclick="saveChatHistory()" title="Download Edited Conversation (TXT)"></i>
+                <i class="fas fa-expand cursor-pointer text-gray-400 hover:text-white transition-colors"
+                    onclick="toggleFullScreen()" title="Full Screen"></i>
+                <i class="fas fa-times cursor-pointer text-gray-400 hover:text-red-400 transition-colors"
+                    onclick="toggleChat()" title="Close"></i>
+            </div>
         </div>
-        <div class="api-key-bar">
+
+        <!-- Key Bar with Actions -->
+        <div class="api-key-bar flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50">
             <i class="fas fa-key text-amber-600"></i>
-            <input type="password" id="apiKeyInput" placeholder="輸入 Gemini API Key..." onchange="saveApiKey()">
+            <div class="relative flex-1">
+                <input type="password" id="apiKeyInput" placeholder="Gemini API Key..." onchange="saveApiKey()"
+                    class="w-full pl-2 pr-8 py-1 text-xs border rounded focus:outline-none focus:border-indigo-500">
+                <i id="apiKeyEyeIcon"
+                    class="fas fa-eye absolute right-2 top-1.5 text-gray-400 cursor-pointer hover:text-gray-600"
+                    onclick="toggleKeyVisibility()"></i>
+            </div>
+
+            <div class="flex items-center gap-1 border-l pl-2 border-gray-300">
+                <button onclick="saveChatHistory()"
+                    class="text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-100 text-gray-700">
+                    Save
+                </button>
+                <button onclick="clearChat()"
+                    class="text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-red-50 text-red-600">
+                    Clear
+                </button>
+            </div>
         </div>
+
+        <!-- Context Toggles -->
+        <div class="context-toggles grid grid-cols-3 gap-1 p-2 bg-gray-50 border-b border-gray-200">
+            <button id="btnContextData"
+                class="text-xs py-1 px-1 border rounded bg-white text-gray-500 hover:bg-gray-100 flex items-center justify-center gap-1 transition-colors"
+                onclick="toggleContext('data')" title="Attach Data: Platform, Brand, Model, Price (Top 400)">
+                <i class="fas fa-database"></i> 數據資料
+            </button>
+            <button id="btnContextManual"
+                class="text-xs py-1 px-1 border rounded bg-white text-gray-500 hover:bg-gray-100 flex items-center justify-center gap-1 transition-colors"
+                onclick="toggleContext('manual')" title="Attach UI Source Code">
+                <i class="fas fa-code"></i> 操作詢問
+            </button>
+            <button id="btnContextHistory"
+                class="text-xs py-1 px-1 border rounded bg-white text-gray-500 hover:bg-gray-100 flex items-center justify-center gap-1 transition-colors"
+                onclick="toggleContext('history')" title="Attach Conversation History">
+                <i class="fas fa-history"></i> 記錄對話
+            </button>
+        </div>
+
         <div class="chat-messages" id="chatMessages">
             <div class="chat-msg system">歡迎！請輸入 API Key 開始。</div>
         </div>
-        <div class="p-2 border-t flex gap-2">
-            <button class="text-xs px-2 py-1 bg-gray-100 rounded border hover:bg-gray-200" id="attachDataBtn"
-                onclick="attachDataToAI()">
-                <i class="fas fa-paperclip mr-1"></i>附加目前數據 (Context)
-            </button>
-        </div>
+
         <div class="chat-input-area">
             <input type="text" id="chatInput" placeholder="請輸入問題..."
                 onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <!-- Voice Input Button if needed, or keeping simplified -->
             <button onclick="sendChatMessage()"
-                class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center">
+                class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center hover:bg-indigo-700 shadow-sm transition-colors">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
@@ -5571,6 +5565,7 @@
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             loadApiKey();
+            // Check context states (optional restoration)
         });
 
         function saveApiKey() { localStorage.setItem('gemini_api_key', apiKeyInput.value); }
@@ -5675,47 +5670,21 @@
             }
 
             // Collect messages
-            let content = "# AI Chat History\n\n";
+            let content = "AI Chat History\n=================\n\n";
             const msgs = chatMessages.querySelectorAll('.chat-msg');
             msgs.forEach(msg => {
                 const role = msg.classList.contains('user') ? 'USER' : (msg.classList.contains('model') ? 'AI' : 'SYSTEM');
-                content += `### ${role}\n${msg.innerText}\n\n`;
+                content += `[${role}]\n${msg.innerText}\n\n`;
             });
 
             // Generate Filename
             const now = new Date();
             const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
             const timeStr = now.toTimeString().slice(0, 5).replace(/:/g, '');
-            const filename = `AI+${dateStr}+${timeStr}.md`;
-            const targetPath = "d:/OneDrive/Python_File/網頁_PT資料庫/PT爬蟲工具/" + filename; // Hardcoded target
+            const filename = `AI_Chat_${dateStr}_${timeStr}.txt`;
 
-            // Try Server Save
-            try {
-                const response = await fetch('/save_file', { // Assuming local python server has this endpoint or similar generic saver
-                    // If standard python http.server doesn't support save, we might need a custom handler.
-                    // But user said "Like crawler upload". 
-                    // If no backend endpoint exists, we MUST fallback to client download but rename it.
-                    // Let's try to assume a generic save_file endpoint exists or we use the client download as reliable fallback.
-                    // WAIT, standard python -m http.server DOES NOT support upload.
-                    // The user mentioned "PT爬蟲工具" which implies a Python script environment.
-                    // If there IS a running server (CodeRunner/Flash), we need to know the port/API.
-                    // Given I cannot see the server code, I will implement value-add:
-                    // 1. Attempt fetch to local server (if user has one).
-                    // 2. Fallback to Client Blob download with correct name.
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: targetPath, content: content })
-                });
-                if (response.ok) {
-                    alert("Saved to Server: " + filename);
-                    return;
-                }
-            } catch (e) {
-                console.warn("Server save failed, falling back to download.");
-            }
-
-            // Fallback: Client Download
-            const blob = new Blob([content], { type: 'text/markdown' });
+            // Client Download
+            const blob = new Blob([content], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -5725,6 +5694,7 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
+
 
         // Download Filtered Data as CSV
         function downloadCsvContext() {
@@ -5758,6 +5728,13 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
+
+        function clearChat() {
+            if (!confirm("Are you sure you want to clear the conversation?")) return;
+            document.getElementById('chatMessages').innerHTML =
+                '<div class="chat-msg system">System: <b>Chat Cleared.</b><br>History memory reset.</div>';
+        }
+
 
         window.handleChatKey = function (e) {
             if (e.key === 'Enter') {
