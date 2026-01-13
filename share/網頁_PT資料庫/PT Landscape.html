@@ -11,6 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="PT_Landscape_tips.js"></script>
 
     <style>
         :root {
@@ -952,8 +953,8 @@
         }
 
         .platform-logo {
-            max-width: calc(70px * var(--zoom-level));
-            max-height: calc(40px * var(--zoom-level));
+            max-width: calc(91px * var(--zoom-level));
+            max-height: calc(52px * var(--zoom-level));
             object-fit: contain;
         }
 
@@ -2003,30 +2004,20 @@
         let matrixZoomLevel = 1.0;
 
         // Loading Tips Array (隨機顯示)
-        const LOADING_TIPS = [
-            // --- 篩選 (Filter) ---
-            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>Brand 現在是「平台選擇器」，勾選 Bosch 會自動選取所有 Bosch 平台。`,
-            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>想看「Bosch + Atika」？先選 Bosch，再手動勾選 Atika 即可疊加顯示。`,
-            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>勾選的選項會保持全亮 (Opacity 1)，只有「未勾選且無效」的選項才會變淡。`,
-            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>點擊 [清除] 按鈕可一鍵重置所有篩選條件。`,
-            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>Price Range 輸入數值後，會自動篩選出該價格區間的產品。`,
+        // Show/Hide Loading Overlay (Uses existing HTML element)
+        // Load TIPS from external config if available
+        let rawTips = window.TIPS_CONFIG || [];
 
-            // --- AI (AI Chat) ---
-            `<span class="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">AI</span>點擊右下角紫色按鈕可呼叫 AI 助理。`,
-            `<span class="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">AI</span>AI 可讀取當前畫面上的前 400 筆資料來回答問題。`,
-            `<span class="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">AI</span>點擊 AI 面板中的「操作詢問」，可讓 AI 讀取原始碼來解釋功能。`,
-            `<span class="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">AI</span>您可以要求 AI 幫忙分析特定品牌的價格趨勢或性價比。`,
+        // Fallback if external file missing (though we just created it)
+        if (!rawTips.length) {
+            rawTips = [
+                { category: "System", color: "bg-gray-500", text: "Tips file not loaded." }
+            ];
+        }
 
-            // --- 數據 (Data) ---
-            `<span class="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">數據</span>資料來自 Google Sheets 即時更新與網路爬蟲整合。`,
-            `<span class="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">數據</span>首次載入需輸入密碼 (提示: 557...)，密碼將儲存在本地。`,
-            `<span class="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">數據</span>若 Google Sheets 連線失敗，系統會自動切換至 GitHub 備份資料。`,
-
-            // --- 視圖 (View) ---
-            `<span class="bg-amber-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">視圖</span>點擊右上角「Matrix」可查看品牌與價格分佈的熱力圖。`,
-            `<span class="bg-amber-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">視圖</span>在 Scatter (散點圖) 中，點擊任何點可查看產品詳細規格。`,
-            `<span class="bg-amber-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">視圖</span>切換至 OnlyOne 模式，每個價格區間只會顯示一款最具代表性的產品。`
-        ];
+        const LOADING_TIPS = rawTips.map(t =>
+            `<span class="${t.color} text-white px-2 py-0.5 rounded text-xs font-bold mr-2">${t.category}</span>${t.text}`
+        );
 
         // Show/Hide Loading Overlay (Uses existing HTML element)
         let lastTipIndex = -1;
@@ -2309,8 +2300,11 @@
                 calculateDependencies();
 
                 // Re-init filters and render
+                // Re-init filters and render
                 setupFilters();
-                applyFilters(); // Apply default
+                // Load filters/state from URL (if any)
+                loadStateFromURL();
+                applyFilters(); // Apply default or loaded state
 
                 updateLoadingProgress(99); // 篩選器套用
 
@@ -2553,6 +2547,12 @@
             const btnScreenshot = document.getElementById('btnScreenshot');
             if (btnScreenshot) btnScreenshot.addEventListener('click', captureScatterChart);
 
+            // URL Sync for Matrix/Scatter controls
+            ['pivotRowSelect', 'pivotColSelect', 'scatterYAxis', 'scatterColorBy'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('change', updateURLFromState);
+            });
+
         }
 
         function switchView(view) {
@@ -2590,6 +2590,7 @@
             if (view === 'pivot') {
                 if (window.updatePivotTable) window.updatePivotTable();
             }
+            updateURLFromState();
         }
 
         function switchDataMode(mode) {
@@ -2902,10 +2903,23 @@
                 fields.splice(1, 0, { key: 'Platform Type', label: 'Platform Type' });
             }
 
-            // Ensure Accessories is always present
             if (!fields.some(f => f.key === 'Accessories')) {
                 fields.push({ key: 'Accessories', label: 'Accessories' });
             }
+
+            // Build Brand-to-Platform Map for Auto-Select Logic
+            window.brandToPlatforms = {};
+            window.lastAutoPlatformSet = new Set(); // Track auto-selected state
+
+            mergedData.forEach(d => {
+                const b = d.Brand;
+                const p = d.Platform;
+                if (b && p) {
+                    if (!window.brandToPlatforms[b]) window.brandToPlatforms[b] = new Set();
+                    window.brandToPlatforms[b].add(p);
+                    window.lastAutoPlatformSet.add(p); // Default state: All Brands -> All Platforms
+                }
+            });
 
             fields.forEach(f => {
                 // Determine effective key (use fallback if primary has no values)
@@ -2986,6 +3000,7 @@
                     btn.innerHTML = `${f.label} <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
                 }
                 btn.dataset.field = f.key;
+                if (f.key === 'Platform') btn.id = 'btn-platform-filter'; // Debugging Anchor
 
                 const dropdown = document.createElement('div');
                 dropdown.className = 'filter-dropdown';
@@ -3035,7 +3050,7 @@
                 });
 
                 dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                    cb.addEventListener('change', () => updateFilterFromDropdown(f.key, dropdown));
+                    cb.addEventListener('change', (e) => updateFilterFromDropdown(f.key, dropdown, e.target));
                 });
 
                 // 搜尋功能
@@ -3057,89 +3072,70 @@
             });
         }
 
-        function updateFilterFromDropdown(field, dropdown) {
+        function updateFilterFromDropdown(field, dropdown, triggerElement) {
             const checked = [...dropdown.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
             filterSelections[field] = new Set(checked);
 
-            // SPECIAL LOGIC: Brand Filter acts as a "Platform Selector"
-            // When Brand selection changes, we automatically Check/Uncheck corresponding Platforms.
-            if (field === 'Brand') {
-                const platformDropdown = document.querySelector('.filter-btn[data-field="Platform"]')?.nextElementSibling;
-                if (platformDropdown) {
-                    const allPlatforms = dropdown.querySelectorAll('input[type="checkbox"]'); // All Brands
-                    const selectedBrands = new Set(checked);
+            // Brand Auto-Select Logic (State-Diff Approach v5.7)
+            if (field === 'Brand' && window.brandToPlatforms && window.lastAutoPlatformSet) {
+                console.log('[AutoSelect] Brand changed. Calculating diff...');
 
-                    // We need a map of Brand -> Platforms. 
-                    // Let's build it dynamically from mergedData if not exists, or just scan data.
-                    // Doing it efficiently:
-                    // For each Platform option, find its Brand. If Brand is in selectedBrands, Check it.
-                    // If Brand is NOT in selectedBrands, Uncheck it.
-                    // Note: This overrides manual platform selection if it conflicts with Brand state?
-                    // User wants: "Select Bosch -> Check Bosch Platforms". "Uncheck Bosch -> Uncheck them".
-                    // But if I manually Selected Atika (while Bosch is selected), and then I Uncheck Bosch...
-                    // Atika should stay checked? NO. 
-                    // User said: "Brand=Bosch controls Bosch platforms".
+                // 1. Calculate Current Target Set (Union of Selected Brands)
+                const currentAutoSet = new Set();
+                checked.forEach(brand => {
+                    const platforms = window.brandToPlatforms[brand];
+                    if (platforms) platforms.forEach(p => currentAutoSet.add(p));
+                });
+                console.log('[AutoSelect] Current Target Set:', [...currentAutoSet]);
+                console.log('[AutoSelect] Last State:', [...window.lastAutoPlatformSet]);
 
-                    // Let's implement: Enforce Platform State based on Brand Selection
-                    // Problem: We don't easily know which Platform belongs to which Brand without scanning data.
+                // 2. Diff with Last State
+                const toCheck = [];
+                const toUncheck = [];
 
-                    const brandToPlatforms = {};
-                    mergedData.forEach(row => {
-                        if (row.Brand && row.Platform) {
-                            if (!brandToPlatforms[row.Brand]) brandToPlatforms[row.Brand] = new Set();
-                            brandToPlatforms[row.Brand].add(row.Platform);
-                        }
-                    });
+                // Check Added
+                currentAutoSet.forEach(p => {
+                    if (!window.lastAutoPlatformSet.has(p)) toCheck.push(p);
+                });
+                // Uncheck Removed
+                window.lastAutoPlatformSet.forEach(p => {
+                    if (!currentAutoSet.has(p)) toUncheck.push(p);
+                });
 
-                    const platformsCheckStatus = new Map(); // Platform -> boolean
+                console.log('[AutoSelect] To Check:', toCheck);
+                console.log('[AutoSelect] To Uncheck:', toUncheck);
 
-                    // 1. Determine target status for all platforms based on Brand selection
-                    Object.keys(brandToPlatforms).forEach(br => {
-                        const shouldBeChecked = selectedBrands.has(br);
-                        brandToPlatforms[br].forEach(plt => {
-                            // If any selected brand claims this platform, it should be checked.
-                            // (Though usually 1:1, maybe 1:N)
-                            if (shouldBeChecked) {
-                                platformsCheckStatus.set(plt, true);
-                            } else {
-                                // Only uncheck if NOT already set to true by another brand (if multi-brand platform exists)
-                                if (!platformsCheckStatus.has(plt)) {
-                                    platformsCheckStatus.set(plt, false);
-                                }
-                            }
-                        });
-                    });
+                // 3. Apply Diff to Platform Dropdown
+                if (toCheck.length > 0 || toUncheck.length > 0) {
+                    const platformBtn = document.getElementById('btn-platform-filter') || document.querySelector('.filter-btn[data-field="Platform"]');
+                    if (platformBtn) {
+                        const platformDropdown = platformBtn.nextElementSibling;
+                        let platformChanged = false;
 
-                    // 2. Apply to Platform checkboxes
-                    let platformChanged = false;
-                    platformDropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                        const plt = cb.value;
-                        if (platformsCheckStatus.has(plt)) {
-                            const shouldCheck = platformsCheckStatus.get(plt);
-                            if (cb.checked !== shouldCheck) {
-                                cb.checked = shouldCheck;
+                        platformDropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                            const val = cb.value;
+                            if (toCheck.includes(val) && !cb.checked) {
+                                cb.checked = true;
+                                platformChanged = true;
+                            } else if (toUncheck.includes(val) && cb.checked) {
+                                cb.checked = false;
                                 platformChanged = true;
                             }
+                        });
+
+                        if (platformChanged) {
+                            console.log('[AutoSelect] Updating Platform Dropdown UI...');
+                            updateFilterFromDropdown('Platform', platformDropdown);
                         }
-                    });
-
-                    // 3. Update Platform filter selections if changed
-                    if (platformChanged) {
-                        const currentPlatformChecked = [...platformDropdown.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
-                        filterSelections['Platform'] = new Set(currentPlatformChecked);
-
-                        const targetBtn = document.querySelector(`.filter-btn[data-field="Platform"]`);
-                        if (targetBtn) {
-                            const total = platformDropdown.querySelectorAll('input[type="checkbox"]').length;
-                            const selected = currentPlatformChecked.length;
-                            const label = FILTER_FIELDS.find(f => f.key === 'Platform')?.label || 'Platform';
-                            targetBtn.classList.toggle('active', selected < total);
-                            targetBtn.innerHTML = `${label} <span class="text-gray-400">(${selected}/${total})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
-                        }
-
+                    } else {
+                        console.error('[AutoSelect] Error: Platform Button not found!');
                     }
                 }
+
+                // 4. Update State
+                window.lastAutoPlatformSet = currentAutoSet;
             }
+
 
             // NEW: Generic Bidirectional Auto-Check (Child -> Parent)
             // Example: Select "Bosch" (Platform) -> Auto-check "Brander" (Platform Type)
@@ -3236,8 +3232,194 @@
             optionsList.innerHTML = '';
             labels.forEach(label => optionsList.appendChild(label));
         }
+        // Helper to update visual slider track
+        function updatePriceTrack() {
+            const sMin = document.getElementById('priceSliderMin');
+            const sMax = document.getElementById('priceSliderMax');
+            const track = document.getElementById('priceSliderTrack');
+            if (!sMin || !sMax || !track) return;
+
+            const min = parseInt(sMin.value);
+            const max = parseInt(sMax.value);
+            const rangeMin = 0;
+            const rangeMax = 2000;
+
+            const p1 = ((min - rangeMin) / (rangeMax - rangeMin)) * 100;
+            const p2 = ((max - rangeMin) / (rangeMax - rangeMin)) * 100;
+
+            // Standard Gray-300 inactive, Gray-600 active (matching clearAllFilters style)
+            track.style.background = `linear-gradient(to right, #d1d5db ${p1}%, #4b5563 ${p1}%, #4b5563 ${p2}%, #d1d5db ${p2}%)`;
+        }
+
+        // URL State Synchronization
+        function updateURLFromState() {
+            const params = new URLSearchParams();
+
+            // Config / Active Mode
+            if (activeConfig && activeConfig.id) params.set('config', activeConfig.id);
+
+            // View Mode
+            if (currentView && currentView !== 'grid') params.set('view', currentView);
+
+            // Data Mode
+            if (typeof dataMode !== 'undefined' && dataMode !== 'all') params.set('dataMode', dataMode);
+
+            // Matrix Query Params
+            const pRow = document.getElementById('pivotRowSelect');
+            const pCol = document.getElementById('pivotColSelect');
+            if (pRow && pRow.value) params.set('mRow', pRow.value);
+            if (pCol && pCol.value) params.set('mCol', pCol.value);
+
+            // Scatter Query Params
+            const sY = document.getElementById('scatterYAxis');
+            const sC = document.getElementById('scatterColorBy');
+            if (sY && sY.value !== 'Price') params.set('sY', sY.value);
+            if (sC && sC.value !== 'Brand') params.set('sC', sC.value);
+
+            // Price Range (only if changed from default)
+            // Default 0-2000. If different, set it.
+            if (priceRange.min > 0 || priceRange.max < 2000) {
+                params.set('price', `${priceRange.min}-${priceRange.max}`);
+            }
+
+            // Filters
+            // Capture only if NOT all selected.
+            // But setupFilters initializes to ALL. active state track what is selected.
+            // If checking logic is "If size < full options", then it's filtered.
+            // But getting "full options" size is hard here.
+            // Simpler: Just save what is selected if it's not empty?
+            // Actually, usually URL filters represent "What is selected".
+            // If I select "Bosch", URL has "Bosch".
+            // If I select All, URL has all? Or nothing?
+            // "Nothing" usually implies "Default" (All).
+            // But here, filterSelections contains Everything by default.
+            // If I omit it from URL, `loadStateFromURL` will assuming "Default" (All).
+            // So we need to detect "Is it full?".
+
+            document.querySelectorAll('.filter-dropdown').forEach(dd => {
+                const field = dd.previousElementSibling?.dataset?.field;
+                if (field && filterSelections[field]) {
+                    const totalOptions = dd.querySelectorAll('input[type="checkbox"]').length;
+                    const selected = filterSelections[field].size;
+                    // Only write to URL if NOT all are selected (i.e. user filtered something)
+                    // Exception: If 0 selected? (should not happen usually, logic forces at least 1 or 0 is empty)
+                    if (selected < totalOptions && selected > 0) {
+                        // Encode values
+                        // Use a separator that is url safe or encode. Comma is fine for readability if values don't have commas.
+                        // Some tool names might have commas? Better to be safe. 
+                        // But Hornbach uses plain comma. I will use comma but map values.
+                        const valStr = Array.from(filterSelections[field]).map(v => encodeURIComponent(v)).join(',');
+                        params.set(`f.${field}`, valStr);
+                    }
+                }
+            });
+
+            const newUrl = window.location.pathname + '?' + params.toString();
+            window.history.replaceState({}, '', newUrl);
+        }
+
+        function loadStateFromURL() {
+            const params = new URLSearchParams(window.location.search);
+
+            // 1. Config (Already handled by detectMode? No, detectMode uses filename usually)
+            // If we want to support ?config=TBS, we might need logic.
+            // But let's assume current page mode for now or user navigates via file.
+
+            // View Mode
+            const view = params.get('view');
+
+            // Matrix State
+            const mRow = params.get('mRow');
+            const mCol = params.get('mCol');
+            if (mRow) { const el = document.getElementById('pivotRowSelect'); if (el) el.value = mRow; }
+            if (mCol) { const el = document.getElementById('pivotColSelect'); if (el) el.value = mCol; }
+
+            // Scatter State
+            const sY = params.get('sY');
+            const sC = params.get('sC');
+            if (sY) { const el = document.getElementById('scatterYAxis'); if (el) el.value = sY; }
+            if (sC) { const el = document.getElementById('scatterColorBy'); if (el) el.value = sC; }
+
+            if (view && ['grid', 'scatter', 'pivot'].includes(view)) {
+                switchView(view);
+            }
+
+            // 2. Data Mode
+            const mode = params.get('dataMode');
+            if (mode) {
+                const btn = document.querySelector(`.mode-btn[data-mode="${mode}"]`);
+                if (btn) btn.click();
+                // Note: btn.click() triggers event -> sets dataMode -> calls applyFilters?
+                // Depending on event listener, it might just toggle class and set var.
+                // Let's assume we set variable manually if click doesn't work sync.
+                // Actually, listeners at 1599 set dataMode and call applyFilters.
+                // We want to avoid double apply. 
+                // Set variable directly:
+                dataMode = mode;
+                // Update UI active state
+                document.querySelectorAll('.data-mode .mode-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.mode === mode);
+                });
+            }
+
+            // 3. Price
+            const price = params.get('price');
+            if (price) {
+                const [min, max] = price.split('-').map(Number);
+                if (!isNaN(min) && !isNaN(max)) {
+                    priceRange.min = min;
+                    priceRange.max = max;
+                    // Update UI
+                    const sMin = document.getElementById('priceSliderMin');
+                    const sMax = document.getElementById('priceSliderMax');
+                    const iMin = document.getElementById('priceMin');
+                    const iMax = document.getElementById('priceMax');
+                    if (sMin) sMin.value = min;
+                    if (sMax) sMax.value = max;
+                    if (iMin) iMin.value = min;
+                    if (iMax) iMax.value = max;
+                    updatePriceTrack(); // Helper if exists
+                }
+            }
+
+            // 4. Filters
+            // Iterate known fields
+            let hasFilterParams = false;
+            document.querySelectorAll('.filter-dropdown').forEach(dd => {
+                const field = dd.previousElementSibling?.dataset?.field;
+                const paramVal = params.get(`f.${field}`);
+                if (field && paramVal) {
+                    hasFilterParams = true;
+                    const values = new Set(paramVal.split(',').map(decodeURIComponent));
+                    filterSelections[field] = values;
+
+                    // Update UI Checkboxes
+                    dd.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = values.has(cb.value);
+                    });
+
+                    // Update Button Count UI
+                    updateFilterFromDropdown(field, dd);
+                }
+            });
+        }
 
         function applyFilters() {
+            // Pre-calculate for Union Logic (Brand/Platform)
+            const uniqueBrands = new Set();
+            const uniquePlatforms = new Set();
+            mergedData.forEach(r => {
+                uniqueBrands.add(r.Brand || '(Empty)');
+                uniquePlatforms.add(r.Platform || '(Empty)');
+            });
+            const totalBrands = uniqueBrands.size;
+            const totalPlatforms = uniquePlatforms.size;
+
+            const brandSet = filterSelections['Brand'];
+            const platformSet = filterSelections['Platform'];
+            const isBrandActive = brandSet && brandSet.size < totalBrands;
+            const isPlatformActive = platformSet && platformSet.size < totalPlatforms;
+
             // Apply base filters
             let baseFiltered = mergedData.filter(row => {
                 // Exclude rows without price or platform
@@ -3247,12 +3429,12 @@
                 const price = parseFloat(row.Price);
                 if (price < priceRange.min || price > priceRange.max) return false;
 
-                // Dropdown filters
-                return Object.entries(filterSelections).every(([key, values]) => {
-                    // SPECIAL LOGIC: Ignore 'Brand' for filtering, as it only controls Platform selection
-                    if (key === 'Brand') return true;
+                // 2. Generic Filters (AND Logic)
+                const passOthers = Object.entries(filterSelections).every(([key, values]) => {
+                    // Skip Brand and Platform (handled separately via Union)
+                    if (key === 'Brand' || key === 'Platform') return true;
 
-                    // Skip effectiveKey mappings
+                    // Skip effectiveKey mappings and non-set values
                     if (key.endsWith('_effectiveKey')) return true;
                     if (!(values instanceof Set) || values.size === 0) return true;
 
@@ -3266,34 +3448,31 @@
                     // Special handling for Accessories filter - keyword exclusion logic
                     if (key === 'Accessories') {
                         const accessoriesValue = itemValue || '-';
+                        if (accessoriesValue === '-') return values.has('-');
 
-                        // If product has no accessories ('-'), check if '-' is selected
-                        if (accessoriesValue === '-') {
-                            return values.has('-');
-                        }
-
-                        // Define all possible keywords
                         const ALL_KEYWORDS = ['Blade', 'Battery', 'Charger', 'Stand', 'Bundle'];
-
-                        // For products with accessories: check if any UNCHECKED keyword exists in this product
-                        // If product contains an unchecked keyword, filter it out
                         for (const kw of ALL_KEYWORDS) {
                             const productHasKeyword = accessoriesValue.toLowerCase().includes(kw.toLowerCase());
                             const keywordIsChecked = values.has(kw);
-
-                            // If product has this keyword but it's not checked, exclude the product
-                            if (productHasKeyword && !keywordIsChecked) {
-                                return false;
-                            }
+                            if (productHasKeyword && !keywordIsChecked) return false;
                         }
-
-                        // Product passed all keyword checks
                         return true;
                     }
-
                     return values.has(itemValue);
                 });
+
+                if (!passOthers) return false;
+
+                // 3. Brand / Platform Union Logic
+                // 3. Smart Hybrid Logic (v5.3)
+                // Rule 1: Platform Filter is STRICT.
+                if (platformSet && !platformSet.has(row.Platform)) return false;
+
+                // Rule 2: Brand Filter Ignored (Handled by UI Auto-Select).
+
+                return true;
             });
+
 
             // Data mode filtering
             if (dataMode === 'unique') {
@@ -3378,6 +3557,9 @@
 
             // Cascading filters: update other filter options based on filtered data
             updateFilterOptionsVisibility();
+
+            // Sync current state to URL
+            updateURLFromState();
         }
 
         // Cascading Filter Logic: Hide options that have no matching data
@@ -3451,7 +3633,7 @@
 
                     if (!isValid) {
                         // If checked, keep full opacity (user explicit selection)
-                        // If unchecked, gray out to show it's not available in current context
+                        // If unchecked, gray out to show it's not available in current filtered context
                         label.style.opacity = checkbox.checked ? '1' : '0.5';
                     } else {
                         // Valid option - full opacity
@@ -5609,7 +5791,27 @@
         function getCombinedContext() {
             let parts = [];
 
-            // 1. Data Context (Updated: Top 400 rows, 4 Columns)
+            // 0. Filter Context (New)
+            if (window.activeContexts.data) {
+                const filters = {};
+                // Add View States
+                if (typeof activeConfig !== 'undefined' && activeConfig) filters.activeMode = activeConfig.id; // MTS / TBS
+                if (typeof dataMode !== 'undefined') filters.dataMode = dataMode; // all / unique / lowest / range
+
+                if (typeof priceRange !== 'undefined') filters.priceRange = priceRange;
+
+                if (typeof filterSelections !== 'undefined') {
+                    Object.entries(filterSelections).forEach(([k, v]) => {
+                        if (v instanceof Set && v.size > 0 && !k.endsWith('_effectiveKey')) {
+                            // Limit output length for large sets
+                            const arr = [...v];
+                            filters[k] = arr.length > 50 ? arr.slice(0, 50).join(',') + '... (' + arr.length + ' total)' : arr.join(',');
+                        }
+                    });
+                }
+                parts.push(`[CURRENT FILTERS]\n${JSON.stringify(filters, null, 2)}`);
+            }
+
             if (window.activeContexts.data && typeof filteredData !== 'undefined' && filteredData.length > 0) {
                 const header = "Platform,Brand,Model,Price\n";
                 // Slice 400 rows, map specific columns
