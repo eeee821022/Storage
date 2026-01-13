@@ -1963,18 +1963,21 @@
         const REPO_PATH = 'share/網頁_PT資料庫/PT Data 平台';
 
         const FILTER_FIELDS = [
-            { key: 'Platform', label: 'Platform' },
+            // General filters
             { key: 'Platform Type', label: 'Platform Type' },
-            { key: 'Model #', label: 'Model #', hasSearch: true },
+            { key: 'Platform', label: 'Platform' },
             { key: 'Brand', label: 'Brand' },
-            { key: 'Type', label: 'Type' },
-            { key: 'Bevel', label: 'Bevel' },
-            { key: 'Slide', label: 'Slide' },
+            { key: 'Price Range', label: 'Price Range' },
             { key: 'Blade Range', label: 'Blade Range' },
+            { key: 'Accessories', label: 'Accessories' },
+            { key: 'Type', label: 'Type' },
+            { key: 'Model #', label: 'Model #', hasSearch: true },
             { key: 'Power Supply', label: 'Power Supply' },
+            // Variation filters
             { key: 'Soft Start', label: 'Soft Start' },
             { key: 'Laser', label: 'Laser' },
-            { key: 'Accessories', label: 'Accessories' }
+            { key: 'Bevel', label: 'Bevel' },
+            { key: 'Slide', label: 'Slide' }
         ];
 
         const COLOR_PALETTE = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ef4444', '#84cc16', '#14b8a6', '#f97316', '#a855f7', '#22d3d8'];
@@ -2001,27 +2004,28 @@
 
         // Loading Tips Array (隨機顯示)
         const LOADING_TIPS = [
-            // --- 視圖與模式 (Views & Modes) ---
-            "💡 Display 模式：Landscape (全覽)、Scatter (散點圖)、Matrix (矩陣熱力圖)",
-            "💡 Data 模式：All (全部)、OnlyOne (唯一)、Lowest (最低價)、Range (價差)",
-            "💡 使用左上角 Platform / Brand 按鈕可切換表格分組視圖",
-            "💡 Zoom 按鈕可放大/縮小 Grid、Scatter、Matrix 視圖",
+            // --- 篩選 (Filter) ---
+            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>Brand 現在是「平台選擇器」，勾選 Bosch 會自動選取所有 Bosch 平台。`,
+            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>想看「Bosch + Atika」？先選 Bosch，再手動勾選 Atika 即可疊加顯示。`,
+            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>勾選的選項會保持全亮 (Opacity 1)，只有「未勾選且無效」的選項才會變淡。`,
+            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>點擊 [清除] 按鈕可一鍵重置所有篩選條件。`,
+            `<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">篩選</span>Price Range 輸入數值後，會自動篩選出該價格區間的產品。`,
 
-            // --- 互動操作 (Interaction) ---
-            "💡 點擊產品卡片可查看詳細規格與價格走勢圖",
-            "💡 Chart Tab 可查看該產品的歷史價格走勢",
-            "💡 紅色線條每 €50 出現一次，幫助快速定位價格區間",
+            // --- AI (AI Chat) ---
+            `<span class="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">AI</span>點擊右下角紫色按鈕可呼叫 AI 助理。`,
+            `<span class="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">AI</span>AI 可讀取當前畫面上的前 400 筆資料來回答問題。`,
+            `<span class="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">AI</span>點擊 AI 面板中的「操作詢問」，可讓 AI 讀取原始碼來解釋功能。`,
+            `<span class="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">AI</span>您可以要求 AI 幫忙分析特定品牌的價格趨勢或性價比。`,
 
-            // --- 篩選與搜尋 (Filters & Search) ---
-            "💡 篩選器支援多選，勾選的項目會自動排到最上方",
-            "💡 按 [清除] 可快速取消該篩選器的所有選擇",
-            "💡 Price Range 可輸入數值限定顯示的價格範圍",
-            "💡 Model # 欄位支援文字搜尋，快速找到特定型號",
-            "💡 切換 MTS / TBS 資料會自動套用對應的篩選欄位",
+            // --- 數據 (Data) ---
+            `<span class="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">數據</span>資料來自 Google Sheets 即時更新與網路爬蟲整合。`,
+            `<span class="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">數據</span>首次載入需輸入密碼 (提示: 557...)，密碼將儲存在本地。`,
+            `<span class="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">數據</span>若 Google Sheets 連線失敗，系統會自動切換至 GitHub 備份資料。`,
 
-            // --- 系統功能 (System & Export) ---
-            "💡 PDF Export 可將當前表格匯出為 PDF 檔案",
-            "💡 按住 Ctrl+F5 可強制刷新頁面以載入最新資料"
+            // --- 視圖 (View) ---
+            `<span class="bg-amber-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">視圖</span>點擊右上角「Matrix」可查看品牌與價格分佈的熱力圖。`,
+            `<span class="bg-amber-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">視圖</span>在 Scatter (散點圖) 中，點擊任何點可查看產品詳細規格。`,
+            `<span class="bg-amber-500 text-white px-2 py-0.5 rounded text-xs font-bold mr-2">視圖</span>切換至 OnlyOne 模式，每個價格區間只會顯示一款最具代表性的產品。`
         ];
 
         // Show/Hide Loading Overlay (Uses existing HTML element)
@@ -2047,7 +2051,7 @@
                     } while (newIndex === lastTipIndex && LOADING_TIPS.length > 1 && attempts < 5);
 
                     lastTipIndex = newIndex;
-                    tipEl.textContent = LOADING_TIPS[newIndex];
+                    tipEl.innerHTML = LOADING_TIPS[newIndex];
                 }
             } else {
                 overlay.style.display = 'none';
@@ -2789,7 +2793,7 @@
                 }
 
                 if (r['Exclude Update'] === 'Y') continue;
-                const m = (r['Model #'] || '').trim();
+                const m = String(r['Model #'] || '').trim();
                 if (!m) continue;
 
                 // Check for price in dateColumns (MTS format)
@@ -2890,8 +2894,8 @@
             const container = document.getElementById('filterControls');
             container.innerHTML = '';
 
-            // Use Active Config Filters or Fallback
-            let fields = activeConfig && activeConfig.filters ? [...activeConfig.filters] : [...FILTER_FIELDS];
+            // Always use FILTER_FIELDS for consistent filter order
+            let fields = [...FILTER_FIELDS];
 
             // Ensure Platform Type is always present (User Requirement)
             if (!fields.some(f => f.key === 'Platform Type')) {
@@ -2933,23 +2937,32 @@
 
                 if (!nonEmptyValues.length && !hasEmpty) return;
 
-                // Special handling for Accessories: group into just 2 options
+                // Special handling for Accessories: parse keywords from accessory strings
                 let allOptions;
                 if (f.key === 'Accessories') {
-                    console.log('Accessories values:', nonEmptyValues); // DEBUG
+                    const ACCESSORY_KEYWORDS = ['Blade', 'Battery', 'Charger', 'Stand', 'Bundle'];
+                    const foundKeywords = new Set();
                     const hasNone = nonEmptyValues.includes('-');
-                    const hasWithAccessories = nonEmptyValues.some(v => v && v !== '-');
-                    console.log('Accessories check:', { hasNone, hasWithAccessories }); // DEBUG
+
+                    // Scan all data for keywords
+                    mergedData.forEach(d => {
+                        const acc = d['Accessories'] || '';
+                        ACCESSORY_KEYWORDS.forEach(kw => {
+                            if (acc.toLowerCase().includes(kw.toLowerCase())) {
+                                foundKeywords.add(kw);
+                            }
+                        });
+                    });
 
                     allOptions = [];
                     if (hasNone) allOptions.push('-');
-                    if (hasWithAccessories) allOptions.push('with XXXXXX');
+                    // Add found keywords in defined order
+                    ACCESSORY_KEYWORDS.forEach(kw => {
+                        if (foundKeywords.has(kw)) allOptions.push(kw);
+                    });
                     if (hasEmpty) allOptions.unshift('(Empty)');
 
-                    // Force show if we have explicit options even if length is small
-                    if (allOptions.length === 0 && nonEmptyValues.length > 0) {
-                        allOptions = [...nonEmptyValues]; // Fallback
-                    }
+                    console.log('Accessories keywords found:', [...foundKeywords]);
                 } else {
                     // Build options list: empty first, then others
                     allOptions = hasEmpty ? ['(Empty)', ...nonEmptyValues] : nonEmptyValues;
@@ -3047,6 +3060,86 @@
         function updateFilterFromDropdown(field, dropdown) {
             const checked = [...dropdown.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
             filterSelections[field] = new Set(checked);
+
+            // SPECIAL LOGIC: Brand Filter acts as a "Platform Selector"
+            // When Brand selection changes, we automatically Check/Uncheck corresponding Platforms.
+            if (field === 'Brand') {
+                const platformDropdown = document.querySelector('.filter-btn[data-field="Platform"]')?.nextElementSibling;
+                if (platformDropdown) {
+                    const allPlatforms = dropdown.querySelectorAll('input[type="checkbox"]'); // All Brands
+                    const selectedBrands = new Set(checked);
+
+                    // We need a map of Brand -> Platforms. 
+                    // Let's build it dynamically from mergedData if not exists, or just scan data.
+                    // Doing it efficiently:
+                    // For each Platform option, find its Brand. If Brand is in selectedBrands, Check it.
+                    // If Brand is NOT in selectedBrands, Uncheck it.
+                    // Note: This overrides manual platform selection if it conflicts with Brand state?
+                    // User wants: "Select Bosch -> Check Bosch Platforms". "Uncheck Bosch -> Uncheck them".
+                    // But if I manually Selected Atika (while Bosch is selected), and then I Uncheck Bosch...
+                    // Atika should stay checked? NO. 
+                    // User said: "Brand=Bosch controls Bosch platforms".
+
+                    // Let's implement: Enforce Platform State based on Brand Selection
+                    // Problem: We don't easily know which Platform belongs to which Brand without scanning data.
+
+                    const brandToPlatforms = {};
+                    mergedData.forEach(row => {
+                        if (row.Brand && row.Platform) {
+                            if (!brandToPlatforms[row.Brand]) brandToPlatforms[row.Brand] = new Set();
+                            brandToPlatforms[row.Brand].add(row.Platform);
+                        }
+                    });
+
+                    const platformsCheckStatus = new Map(); // Platform -> boolean
+
+                    // 1. Determine target status for all platforms based on Brand selection
+                    Object.keys(brandToPlatforms).forEach(br => {
+                        const shouldBeChecked = selectedBrands.has(br);
+                        brandToPlatforms[br].forEach(plt => {
+                            // If any selected brand claims this platform, it should be checked.
+                            // (Though usually 1:1, maybe 1:N)
+                            if (shouldBeChecked) {
+                                platformsCheckStatus.set(plt, true);
+                            } else {
+                                // Only uncheck if NOT already set to true by another brand (if multi-brand platform exists)
+                                if (!platformsCheckStatus.has(plt)) {
+                                    platformsCheckStatus.set(plt, false);
+                                }
+                            }
+                        });
+                    });
+
+                    // 2. Apply to Platform checkboxes
+                    let platformChanged = false;
+                    platformDropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        const plt = cb.value;
+                        if (platformsCheckStatus.has(plt)) {
+                            const shouldCheck = platformsCheckStatus.get(plt);
+                            if (cb.checked !== shouldCheck) {
+                                cb.checked = shouldCheck;
+                                platformChanged = true;
+                            }
+                        }
+                    });
+
+                    // 3. Update Platform filter selections if changed
+                    if (platformChanged) {
+                        const currentPlatformChecked = [...platformDropdown.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+                        filterSelections['Platform'] = new Set(currentPlatformChecked);
+
+                        const targetBtn = document.querySelector(`.filter-btn[data-field="Platform"]`);
+                        if (targetBtn) {
+                            const total = platformDropdown.querySelectorAll('input[type="checkbox"]').length;
+                            const selected = currentPlatformChecked.length;
+                            const label = FILTER_FIELDS.find(f => f.key === 'Platform')?.label || 'Platform';
+                            targetBtn.classList.toggle('active', selected < total);
+                            targetBtn.innerHTML = `${label} <span class="text-gray-400">(${selected}/${total})</span> <i class="fas fa-chevron-down" style="font-size:0.5rem"></i>`;
+                        }
+
+                    }
+                }
+            }
 
             // NEW: Generic Bidirectional Auto-Check (Child -> Parent)
             // Example: Select "Bosch" (Platform) -> Auto-check "Brander" (Platform Type)
@@ -3156,6 +3249,9 @@
 
                 // Dropdown filters
                 return Object.entries(filterSelections).every(([key, values]) => {
+                    // SPECIAL LOGIC: Ignore 'Brand' for filtering, as it only controls Platform selection
+                    if (key === 'Brand') return true;
+
                     // Skip effectiveKey mappings
                     if (key.endsWith('_effectiveKey')) return true;
                     if (!(values instanceof Set) || values.size === 0) return true;
@@ -3167,13 +3263,32 @@
                     // Handle empty values
                     if (!itemValue && values.has('(Empty)')) return true;
 
-                    // Special handling for Accessories filter
+                    // Special handling for Accessories filter - keyword exclusion logic
                     if (key === 'Accessories') {
-                        // If selecting '-', match exactly '-'
-                        if (itemValue === '-' && values.has('-')) return true;
-                        // If selecting 'with XXXXXX', match any value starting with 'with'
-                        if (itemValue && itemValue !== '-' && values.has('with XXXXXX')) return true;
-                        return false;
+                        const accessoriesValue = itemValue || '-';
+
+                        // If product has no accessories ('-'), check if '-' is selected
+                        if (accessoriesValue === '-') {
+                            return values.has('-');
+                        }
+
+                        // Define all possible keywords
+                        const ALL_KEYWORDS = ['Blade', 'Battery', 'Charger', 'Stand', 'Bundle'];
+
+                        // For products with accessories: check if any UNCHECKED keyword exists in this product
+                        // If product contains an unchecked keyword, filter it out
+                        for (const kw of ALL_KEYWORDS) {
+                            const productHasKeyword = accessoriesValue.toLowerCase().includes(kw.toLowerCase());
+                            const keywordIsChecked = values.has(kw);
+
+                            // If product has this keyword but it's not checked, exclude the product
+                            if (productHasKeyword && !keywordIsChecked) {
+                                return false;
+                            }
+                        }
+
+                        // Product passed all keyword checks
+                        return true;
                     }
 
                     return values.has(itemValue);
@@ -3313,45 +3428,34 @@
                     const value = checkbox.value;
                     let isValid;
 
-                    // Special handling for Accessories grouped options
+                    // Special handling for Accessories keyword-based options
                     if (field === 'Accessories') {
                         if (value === '-') {
                             isValid = validValues.has('-');
-                        } else if (value === 'with XXXXXX') {
-                            // Check if any 'with...' value exists in data
-                            isValid = [...validValues].some(v => v && v !== '-' && v !== '(Empty)');
+                        } else if (value === '(Empty)') {
+                            isValid = validValues.has('(Empty)');
                         } else {
-                            isValid = validValues.has(value);
+                            // For keywords (Blade, Battery, etc.), check if any value contains the keyword
+                            isValid = [...validValues].some(v =>
+                                v && v !== '-' && v !== '(Empty)' && v.toLowerCase().includes(value.toLowerCase())
+                            );
                         }
                     } else {
                         isValid = validValues.has(value);
                     }
 
-                    // Hide invalid options, show valid ones
+                    // Show all options, just visually indicate invalid ones
+                    label.style.display = '';
+                    visibleCount++;
+                    if (checkbox.checked) checkedCount++;
+
                     if (!isValid) {
-                        // User request: Don't hide invalid options, just uncheck them.
-                        // So we always show label.
-                        label.style.display = '';
-
-                        // But strictly mark as unchecked if they were checked
-                        if (checkbox.checked) {
-                            checkbox.checked = false;
-                            // Remove from state to prevent 0 results
-                            if (filterSelections[field]) {
-                                filterSelections[field].delete(value);
-                            }
-                            anyFilterChanged = true;
-                        }
-
-                        // Optional: Add visual indication of invalidity? (e.g. opacity)
-                        // label.style.opacity = '0.5'; 
-                        // But user specifically asked to "remove check mark" vs "hide".
-                        // Use default style for now.
-
+                        // If checked, keep full opacity (user explicit selection)
+                        // If unchecked, gray out to show it's not available in current context
+                        label.style.opacity = checkbox.checked ? '1' : '0.5';
                     } else {
-                        label.style.display = '';
-                        visibleCount++;
-                        if (checkbox.checked) checkedCount++;
+                        // Valid option - full opacity
+                        label.style.opacity = '1';
                     }
                 });
 
@@ -3377,8 +3481,8 @@
         function calculateDependencies() {
             filterDependencies = {};
 
-            // Prepare fields list exactly like setupFilters does
-            let fields = activeConfig && activeConfig.filters ? [...activeConfig.filters] : [...FILTER_FIELDS];
+            // Always use FILTER_FIELDS for consistency with setupFilters
+            let fields = [...FILTER_FIELDS];
 
             // Ensure Platform Type is always present
             if (!fields.some(f => f.key === 'Platform Type')) {
@@ -3437,12 +3541,19 @@
 
             // 重設價格範圍
             priceRange = { min: 0, max: 2000 };
-            document.getElementById('priceSliderMin').value = 0;
-            document.getElementById('priceSliderMax').value = 2000;
-            document.getElementById('priceMin').value = '';
-            document.getElementById('priceMax').value = '';
-            document.getElementById('priceSliderTrack').style.background =
-                'linear-gradient(to right, #4b5563 0%, #4b5563 100%)';
+            const priceSliderMin = document.getElementById('priceSliderMin');
+            const priceSliderMax = document.getElementById('priceSliderMax');
+            const priceMin = document.getElementById('priceMin');
+            const priceMax = document.getElementById('priceMax');
+            const priceSliderTrack = document.getElementById('priceSliderTrack');
+
+            if (priceSliderMin) priceSliderMin.value = 0;
+            if (priceSliderMax) priceSliderMax.value = 2000;
+            if (priceMin) priceMin.value = '';
+            if (priceMax) priceMax.value = '';
+            if (priceSliderTrack) {
+                priceSliderTrack.style.background = 'linear-gradient(to right, #4b5563 0%, #4b5563 100%)';
+            }
             applyFilters();
         }
 
